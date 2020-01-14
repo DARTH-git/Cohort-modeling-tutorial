@@ -16,6 +16,8 @@ The [`R`](https://github.com/DARTH-git/Cohort-modeling-tutorial/tree/master/R) f
 
 In addition we include the [`data`](https://github.com/DARTH-git/Cohort-modeling-tutorial/tree/master/data) folder with age-specific mortality for the age-dependent and age- and history-dependent cSTM.
 
+To run the cost-effectiveness analysis, you require The Decision Analytic Modeling Package ([`dampack`](https://github.com/DARTH-git/dampack)), an R package for analyzing and visualizing the health economic outputs of mathematical models.
+
 ## Full list of Contributors:
 
   * [Fernando Alarid-Escudero](https://github.com/feralaes)
