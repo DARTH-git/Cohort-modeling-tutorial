@@ -63,7 +63,7 @@ hr_S2   <- 10   # hazard ratio of death in Sicker vs Healthy
 l <- 0.08 # scale
 g <- 1.1  # shape
 # Weibull function
-p_S1S2_tunnels <- 0.105 #l * g * (1:n_tunnel_size)^{g-1}
+p_S1S2_tunnels <- l * g * (1:n_tunnel_size)^{g-1}
 
 ## Age-dependent mortality rates
 lt_usa_2005 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
