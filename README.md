@@ -9,12 +9,12 @@ We recommend to first read the manuscript before using the code. Understanding o
 
 is recommended.
 
-The `R` folder includes three different scripts corresponding to the different implementations of the cSTM:
+The [`R`](https://github.com/DARTH-git/Cohort-modeling-tutorial/tree/master/data) folder includes three different scripts corresponding to the different implementations of the cSTM:
    - `STM_01.R`: time-independent cSTM 
    - `STM_02.R`: age-dependent cSTM with calculations of epidemiological outcomes
    - `STM_03.R`: age- and history-dependent cSTM
 
-In addition we include the `figs` folder with age-specific mortality for the age-dependent and age- and history-dependent cSTM.
+In addition we include the [`data`](https://github.com/DARTH-git/Cohort-modeling-tutorial/tree/master/data) folder with age-specific mortality for the age-dependent and age- and history-dependent cSTM.
 
 ## Full list of Contributors:
 
