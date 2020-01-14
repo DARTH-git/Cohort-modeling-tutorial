@@ -1,4 +1,4 @@
-# Cohort state-transition models in R: Fromconceptualization to implementation
+# Cohort state-transition models in R: From conceptualization to implementation
 This GitHub repository provides the code of the three different implementations of cohort state-tranistion model (cSTM): (1) time-independent, (2) age-dependent, and (3) histor-dependent, explained in the following manuscript: 
 
 - Alarid-Escudero F, Krijkamp EM, Enns EA, Hunink MGM, Pechlivanoglou P, Jalal HJ. Cohort state-transition models in R: Fromconceptualization to implementation. Working paper (2020)
