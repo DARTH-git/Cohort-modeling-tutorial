@@ -33,6 +33,15 @@ library(scales)   # for dollar signs and commas
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
 library(dampack)  # for CEA and calculate ICERs
 
+################################## DARTH colors  ###############################
+
+# code for the DARTH colors for the figures
+DARTHgreen      <- '#009999'  
+DARTHyellow     <- '#FDAD1E'  
+DARTHblue       <- '#006699' 
+DARTHlightgreen <- '#00adad'
+DARTHgray       <- '#666666'
+
 ##################################### Model input #########################################
 ## General setup
 n_age_init <- 25 # age at baseline
@@ -83,7 +92,7 @@ c_Trt <- 12000 # cost of treatment (per cycle)
 u_H   <- 1     # utility when Healthy 
 u_S1  <- 0.75  # utility when Sick 
 u_S2  <- 0.5   # utility when Sicker
-u_D   <- 0     # utility when Sealthy 
+u_D   <- 0     # utility when Healthy 
 u_Trt <- 0.95  # utility when being treated
 
 ## Transition rewards
@@ -145,6 +154,7 @@ v_s_init_tunnels <- c(1, rep(0, n_tunnel_size), 0, 0)
 m_M_tunnels <- matrix(0, 
                       nrow = (n_t + 1), ncol = n_states_tunnels, 
                       dimnames = list(0:n_t, v_n_tunnels))
+# Store the initial state vector in the first row of the cohort trace
 m_M_tunnels[1, ] <- v_s_init_tunnels
 
 ## Initialize transition array
@@ -154,11 +164,11 @@ a_A_tunnels <- array(0,
 # Set first slice of A with the initial state vector in its diagonal
 diag(a_A_tunnels[, , 1]) <- v_s_init_tunnels
 
-## Iterative solution of age-sdependent cSTM
+## Iterative solution of age-dependent cSTM
 for(t in 1:n_t){
   # Fill in cohort trace
   m_M_tunnels[t + 1, ] <- m_M_tunnels[t, ] %*% a_P_tunnels[, , t]
-  # Fill in tansition dynamics array
+  # Fill in transition dynamics array
   a_A_tunnels[, , t + 1]  <- m_M_tunnels[t, ] * a_P_tunnels[, , t]
 }
 # Create aggregated trace
@@ -168,11 +178,11 @@ m_M_tunnels_sum <- cbind(H = m_M_tunnels[, "H"],
                          D = m_M_tunnels[, "D"])
 #### Plot Outputs ####
 ### Cohort trace
-## Define customed colors and line types
-cols <- c("H" = "darkgreen", "S1" = "darkblue", 
-          "S2" = "purple", "D" = "darkred")
+## Define colors and line types
+cols <- c("H" = DARTHgreen, "S1" = DARTHblue, 
+          "S2" = DARTHyellow, "D" = DARTHgray)
 lty <-  c("H" = 1, "S1" = 2, "S2" = 4, "D" = 3)
-## ggplot
+## Plot the cohort trace
 ggplot(melt(m_M_tunnels_sum), aes(x = Var1, y = value, 
                          color = Var2, linetype = Var2)) +
   geom_line(size = 1) +
@@ -270,7 +280,7 @@ v_qaly_Tr <- rowSums(t(colSums(a_Y_u_Tr)))
 ## Vector of costs under New Treatment
 v_cost_Tr <- rowSums(t(colSums(a_Y_c_Tr)))
 
-#### Discounted total expected QALYs and Costs per srategy ####
+#### Discounted total expected QALYs and Costs per strategy ####
 ### For Usual Care
 ## QALYs
 n_totqaly_UC <- sum(v_qaly_UC * v_dwe)

@@ -33,6 +33,15 @@ library(scales)   # for dollar signs and commas
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
 library(dampack)  # for CEA and calculate ICERs
 
+################################## DARTH colors  ###############################
+
+# code for the DARTH colors for the figures
+DARTHgreen      <- '#009999'  
+DARTHyellow     <- '#FDAD1E'  
+DARTHblue       <- '#006699' 
+DARTHlightgreen <- '#00adad'
+DARTHgray       <- '#666666'
+
 ##################################### Model input #########################################
 ## General setup
 n_age_init <- 25 # age at baseline
@@ -67,7 +76,7 @@ c_Trt <- 12000 # cost of treatment (per cycle)
 u_H   <- 1     # utility when Healthy 
 u_S1  <- 0.75  # utility when Sick 
 u_S2  <- 0.5   # utility when Sicker
-u_D   <- 0     # utility when Sealthy 
+u_D   <- 0     # utility when Healthy 
 u_Trt <- 0.95  # utility when being treated
 
 ## Transition rewards
@@ -89,7 +98,7 @@ v_s_init
 m_M <- matrix(0, 
               nrow = (n_t + 1), ncol = n_states, 
               dimnames = list(0:n_t, v_n))
-# Set first row of M with the initial state vector
+# Store the initial state vector in the first row of the cohort trace
 m_M[1, ] <- v_s_init
 
 ## Initialize transition probability matrix
@@ -124,17 +133,17 @@ diag(a_A[, , 1]) <- v_s_init
 for(t in 1:n_t){
   # Fill in cohort trace
   m_M[t + 1, ] <- m_M[t, ] %*% m_P
-  # Fill in tansition dynamics array
+  # Fill in transition dynamics array
   a_A[, , t + 1]  <- m_M[t, ] * m_P
 }
 
 #### Plot Outputs ####
-## Define customed colors and line types
-cols <- c("H" = "darkgreen", "S1" = "darkblue", 
-          "S2" = "purple", "D" = "darkred")
+## Define colors and line types
+cols <- c("H" = DARTHgreen, "S1" = DARTHblue, 
+          "S2" = DARTHyellow, "D" = DARTHgray)
 lty <-  c("H" = 1, "S1" = 2, "S2" = 4, "D" = 3)
-## ggplot
-ggplot(melt(m_M_ad), aes(x = Var1, y = value, 
+## Plot the cohort trace
+ggplot(melt(m_M), aes(x = Var1, y = value, 
                          color = Var2, linetype = Var2)) +
   geom_line(size = 1) +
   scale_colour_manual(name = "Health state", 
@@ -199,106 +208,6 @@ a_R_c_Tr["H", "S1", ] <- a_R_c_Tr["H", "S1", ] + ic_HS1
 # Add transition cost of dying from all non-dead states
 a_R_c_Tr[-n_states, "D", ] <- a_R_c_Tr[-n_states, "D", ] + ic_D
 
-# ## Create arrays to store rewards for Usual Care
-# a_R_c_UC <- a_R_u_UC <- array(NA,
-#                               dim = c(n_states, n_states, n_t + 1),
-#                               dimnames = list(v_n, v_n, 0:n_t))
-# ## Create arrays to store rewards for New Treatment
-# a_R_c_Tr <- a_R_u_Tr <- array(NA,
-#                               dim = c(n_states, n_states, n_t + 1),
-#                               dimnames = list(v_n, v_n, 0:n_t))
-# 
-# 
-# a_R_c_UC[, "H", ] <- v_c_UC
-# 
-# ## Fill in array for costs for Usual Care 
-# # From Healthy
-# a_R_c_UC["H", "H", ]  <- c_H
-# a_R_c_UC["H", "S1", ] <- c_H #+ ic_HS1
-# a_R_c_UC["H", "S2", ] <- c_H 
-# a_R_c_UC["H", "D", ]  <- c_H #+ ic_D
-# # From Sick
-# a_R_c_UC["S1", "H", ]  <- c_S1
-# a_R_c_UC["S1", "S1", ] <- c_S1 
-# a_R_c_UC["S1", "S2", ] <- c_S1 
-# a_R_c_UC["S1", "D", ]  <- c_S1 #+ ic_D
-# # From Sicker
-# a_R_c_UC["S2", "H", ]  <- c_S2
-# a_R_c_UC["S2", "S1", ] <- c_S2 
-# a_R_c_UC["S2", "S2", ] <- c_S2 
-# a_R_c_UC["S2", "D", ]  <- c_S2 #+ ic_D
-# # From Death
-# a_R_c_UC["D", "H", ]  <- c_D
-# a_R_c_UC["D", "S1", ] <- c_D
-# a_R_c_UC["D", "S2", ] <- c_D
-# a_R_c_UC["D", "D", ]  <- c_D 
-# 
-# ## Fill in array for effects for Usual Care 
-# # From Healthy
-# a_R_u_UC["H", "H", ]  <- u_H
-# a_R_u_UC["H", "S1", ] <- u_H #- du_HS1 
-# a_R_u_UC["H", "S2", ] <- u_H
-# a_R_u_UC["H", "D", ]  <- u_H 
-# # From Sick
-# a_R_u_UC["S1", "H", ]  <- u_S1
-# a_R_u_UC["S1", "S1", ] <- u_S1 
-# a_R_u_UC["S1", "S2", ] <- u_S1 
-# a_R_u_UC["S1", "D", ]  <- u_S1 
-# # From Sicker
-# a_R_u_UC["S2", "H", ]  <- u_S2
-# a_R_u_UC["S2", "S1", ] <- u_S2 
-# a_R_u_UC["S2", "S2", ] <- u_S2 
-# a_R_u_UC["S2", "D", ]  <- u_S2 
-# # From Death
-# a_R_u_UC["D", "H", ]  <- u_D
-# a_R_u_UC["D", "S1", ] <- u_D
-# a_R_u_UC["D", "S2", ] <- u_D
-# a_R_u_UC["D", "D", ]  <- u_D 
-# 
-# ## Fill in array for costs for New Treatment 
-# # From Healthy
-# a_R_c_Tr["H", "H", ]  <- c_H
-# a_R_c_Tr["H", "S1", ] <- c_H #+ ic_HS1
-# a_R_c_Tr["H", "S2", ] <- c_H 
-# a_R_c_Tr["H", "D", ]  <- c_H #+ ic_D
-# # From Sick
-# a_R_c_Tr["S1", "H", ]  <- c_S1 + c_Trt
-# a_R_c_Tr["S1", "S1", ] <- c_S1 + c_Trt
-# a_R_c_Tr["S1", "S2", ] <- c_S1 + c_Trt
-# a_R_c_Tr["S1", "D", ]  <- c_S1 + c_Trt #+ ic_D
-# # From Sicker
-# a_R_c_Tr["S2", "H", ]  <- c_S2 + c_Trt
-# a_R_c_Tr["S2", "S1", ] <- c_S2 + c_Trt 
-# a_R_c_Tr["S2", "S2", ] <- c_S2 + c_Trt 
-# a_R_c_Tr["S2", "D", ]  <- c_S2 + c_Trt #+ ic_D
-# # From Death
-# a_R_c_Tr["D", "H", ]  <- c_D
-# a_R_c_Tr["D", "S1", ] <- c_D
-# a_R_c_Tr["D", "S2", ] <- c_D
-# a_R_c_Tr["D", "D", ]  <- c_D 
-# 
-# ## Fill in array for effects for New Treatment
-# # From Healthy
-# a_R_u_Tr["H", "H", ]  <- u_H
-# a_R_u_Tr["H", "S1", ] <- u_H #- du_HS1 
-# a_R_u_Tr["H", "S2", ] <- u_H
-# a_R_u_Tr["H", "D", ]  <- u_H 
-# # From Sick
-# a_R_u_Tr["S1", "H", ]  <- u_S1
-# a_R_u_Tr["S1", "S1", ] <- u_S1 
-# a_R_u_Tr["S1", "S2", ] <- u_S1 
-# a_R_u_Tr["S1", "D", ]  <- u_S1 
-# # From Sicker
-# a_R_u_Tr["S2", "H", ]  <- u_Trt
-# a_R_u_Tr["S2", "S1", ] <- u_Trt 
-# a_R_u_Tr["S2", "S2", ] <- u_Trt 
-# a_R_u_Tr["S2", "D", ]  <- u_Trt 
-# # From Death
-# a_R_u_Tr["D", "H", ]  <- u_D
-# a_R_u_Tr["D", "S1", ] <- u_D
-# a_R_u_Tr["D", "S2", ] <- u_D
-# a_R_u_Tr["D", "D", ]  <- u_D 
-
 #### Expected QALYs and Costs for all transitions per cycle ####
 ### For Usual Care
 a_Y_c_UC <- a_A * a_R_c_UC
@@ -317,7 +226,7 @@ v_qaly_Tr <- rowSums(t(colSums(a_Y_u_Tr)))
 ## Vector of costs under New Treatment
 v_cost_Tr <- rowSums(t(colSums(a_Y_c_Tr)))
 
-#### Discounted total expected QALYs and Costs per srategy ####
+#### Discounted total expected QALYs and Costs per strategy ####
 ### For Usual Care
 ## QALYs
 n_totqaly_UC <- t(v_qaly_UC) %*% v_dwe
