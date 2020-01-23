@@ -1,7 +1,7 @@
 # Cohort state-transition models in R: From conceptualization to implementation
 This GitHub repository provides the code of the three different implementations of cohort state-transition model (cSTM), explained in the following manuscript: 
 
-- Alarid-Escudero F, Krijkamp EM, Enns EA, Hunink MGM, Pechlivanoglou P, Jalal HJ. Cohort state-transition models in R: From conceptualization to implementation. Working paper (2020)
+- Alarid-Escudero F, Krijkamp EM, Enns EA, Hunink MGM, Pechlivanoglou P, Jalal H. [Cohort state-transition models in R: From conceptualization to implementation](http://arxiv.org/abs/2001.07824). arXiv:200107824v1. 2020:1-31.
 
 We recommend to first read the manuscript before using the code. Understanding of the use of the multidimensional dynamics array described in 
 
