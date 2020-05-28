@@ -19,6 +19,11 @@
 # Running under: macOS  10.14.5
 # RStudio: Version 1.1.453 2009-2018 RStudio, Inc
 
+# half-cycle correction: v_hcc <- c(0.5, 0, 0, ... , 0.5) # length = nrow(trace) (nt+1)
+# multiply vector of rewards by v_hcc (in same fashion as discount); do it before discounting
+# v_qaly_UC
+# p.26
+
 ###############################################################################
 ################# Code of Appendix A ##########################################
 ###############################################################################
@@ -46,10 +51,12 @@ DARTHgray       <- '#666666'
 ## General setup
 n_age_init <- 25 # age at baseline
 n_age_max <- 110 # maximum age of follow up
-n_t <- n_age_max - n_age_init # time horizon, number of cycles
+n_t <- n_age_max - n_age_init  # time horizon, number of cycles
 
 v_n <- c("H", "S1", "S2", "D") # the 4 health states of the model:
                                # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+v_hcc    <- rep(1, n_t+1)      # vector of half-cycle correction 
+v_hcc[1] <- v_hcc[n_t+1] <- 0.5
 n_states <- length(v_n) # number of health states 
 d_c <- 0.03 # discount rate for costs 
 d_e <- 0.03 # discount rate for QALYs
@@ -229,14 +236,14 @@ v_cost_Tr <- rowSums(t(colSums(a_Y_c_Tr)))
 #### Discounted total expected QALYs and Costs per strategy ####
 ### For Usual Care
 ## QALYs
-n_totqaly_UC <- t(v_qaly_UC) %*% v_dwe
+n_totqaly_UC <- t(v_qaly_UC) %*% (v_dwe * v_hcc)
 ## Costs
-n_totcost_UC <- t(v_cost_UC) %*% v_dwc
+n_totcost_UC <- t(v_cost_UC) %*% (v_dwc * v_hcc)
 ### For New Treatment
 ## QALYs
-n_totqaly_Tr <- t(v_qaly_Tr) %*% v_dwe
+n_totqaly_Tr <- t(v_qaly_Tr) %*% (v_dwe * v_hcc)
 ## Costs
-n_totcost_Tr <- t(v_cost_Tr) %*% v_dwc
+n_totcost_Tr <- t(v_cost_Tr) %*% (v_dwc * v_hcc)
 
 ########################### Cost-effectiveness analysis #######################
 ### Vector of total costs for both strategies
@@ -257,10 +264,10 @@ colnames(table_cea)[2:6] <- c("Costs ($)", "QALYs",
                               "ICER ($/QALY)") # name the columns
 ## Format rows
 table_cea$`Costs ($)` <- comma(round(table_cea$`Costs ($)`, 0))
-table_cea$`Incremental Costs ($)` <- comma(round(table_cea$`Incremental Costs ($)`, 0))
+table_cea$`Incremental Costs ($)`[2] <- comma(round(table_cea$`Incremental Costs ($)`[2], 0))
 table_cea$QALYs <- round(table_cea$QALYs, 3)
 table_cea$`Incremental QALYs` <- round(table_cea$`Incremental QALYs`, 3)
-table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
+table_cea$`ICER ($/QALY)`[2] <- comma(round(table_cea$`ICER ($/QALY)`[2], 0))
 table_cea
 ### CEA frontier
 plot(df_cea) +
