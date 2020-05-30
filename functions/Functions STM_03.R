@@ -78,9 +78,14 @@ decision_model <- function(l_params_all, verbose = FALSE) {
                              D = m_M_tunnels[, "D"])
     
     ########################################## RETURN OUTPUT  ##########################################
+    stored <- list(m_M_tunnels, a_A_tunnels, m_M_tunnels_sum, a_P_tunnels)
+    mem    <- object.size(stored)
+    
     out <- list(m_M_tunnels = m_M_tunnels,
                 a_A_tunnels = a_A_tunnels,
-                m_M_tunnels_sum = m_M_tunnels_sum)
+                m_M_tunnels_sum = m_M_tunnels_sum,
+                a_P_tunnels = a_P_tunnels,
+                memory = mem)
     
     return(out)
   }
@@ -101,7 +106,8 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
   with(as.list(l_params_all), {
     
     ### Run decision model to get transition dynamics array
-    a_A_tunnels <- decision_model(l_params_all = l_params_all)[[2]]
+    decision_mod <- decision_model(l_params_all = l_params_all)
+    a_A_tunnels <- decision_mod[['a_A_tunnels']]
     
     #### State and Transition Rewards ####
     ### State rewards
@@ -209,7 +215,41 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     df_ce <- data.frame(Cost       = v_ted_cost,
                         Effect     = v_ted_qaly,
                         Strategies = v_names_str)
-    return(df_ce)
+    
+    ### Memory used
+    memory_decision_model <- decision_mod[['memory']]
+    
+    stored <- list(decision_mod = decision_mod,
+                   a_A_tunnels= a_A_tunnels,
+                   v_u_S1_UC = v_u_S1_UC,
+                   v_u_UC = v_u_UC,
+                   v_c_S1_UC =v_c_S1_UC,
+                   v_c_UC = v_c_UC,
+                   v_u_S1_Tr = v_u_S1_Tr,
+                   v_u_Tr = v_u_Tr,
+                   v_c_S1_Tr = v_c_S1_Tr,
+                   v_c_Tr = v_c_Tr,
+                   a_R_u_UC = a_R_u_UC,
+                   a_R_u_Tr = a_R_u_Tr,
+                   a_R_c_Tr = a_R_c_Tr,
+                   a_Y_c_UC = a_Y_c_UC,
+                   a_Y_u_UC = a_Y_u_UC,
+                   a_Y_c_Tr = a_Y_c_Tr,
+                   a_Y_u_Tr = a_Y_u_Tr,
+                   v_qaly_UC = v_qaly_UC,
+                   v_cost_UC = v_cost_UC,
+                   v_qaly_Tr = v_qaly_Tr,
+                   v_cost_Tr = v_cost_Tr,
+                   n_totqaly_UC = n_totqaly_UC,
+                   n_totcost_UC = n_totcost_UC,
+                   n_totqaly_Tr = n_totqaly_Tr,
+                   n_totcost_Tr = n_totcost_Tr,
+                   v_ted_cost = v_ted_cost,
+                   v_ted_qaly = v_ted_qaly,
+                   df_ce = df_ce)
+    mem <- (object.size(stored) + memory_decision_model)/1000000000 # memory in GB
+    
+    return(list(df_ce=df_ce, memory=mem))
   }
   )
 }

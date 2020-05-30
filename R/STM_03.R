@@ -31,6 +31,7 @@ library(reshape2) # to transform data
 library(ggplot2)  # for nice looking plots
 library(scales)   # for dollar signs and commas
 library(truncnorm)
+library(pryr)
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
 library(dampack)  # for CEA and calculate ICERs
 
