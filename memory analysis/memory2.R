@@ -1,58 +1,40 @@
-###############################################################################
-### Cohort state-transition models in R:                                     ##
-### From conceptualization to implementation 2019                            ##
-###############################################################################
-# This code forms the basis for the state-transition model of the article: 
-# 'Cohort state-transition models in R: From conceptualization to implementation' 
-# Authors: 
-# - Fernando Alarid-Escudero <fernando.alarid@cide.edu>
-# - Eline Krijkamp
-# - Eva A. Enns
-# - Myriam G.M. Hunink
-# - Petros Pechlivanoglou
-# - Hawre Jalal
-# Please cite the article when using this code
-#
-# To program this tutorial we made use of 
-# R version 3.5.0 (2018-04-23)
-# Platform: x86_64-apple-darwin15.6.0 (64-bit)
-# Running under: macOS  10.14.5
-# RStudio: Version 1.1.453 2009-2018 RStudio, Inc
+#################################### Analysis on how much memory PSA for STM_03 uses ###############################################
 
-###############################################################################
-################# Code of Appendix A ##########################################
-###############################################################################
 # Implements an age- and history-dependent Sick-Sicker cSTM model                          
 
 ##################################### Initial setup ###########################
-# rm(list = ls())  # remove any variables in R's memory 
+rm(list = ls())  # remove any variables in R's memory 
 library(dplyr)    # to manipulate data
 library(reshape2) # to transform data
 library(ggplot2)  # for nice looking plots
 library(scales)   # for dollar signs and commas
 library(truncnorm)
-library(pryr)
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
 library(dampack)  # for CEA and calculate ICERs
+library(pryr)
 
-################################## DARTH colors  ###############################
-
-# code for the DARTH colors for the figures
-DARTHgreen      <- '#009999'  
-DARTHyellow     <- '#FDAD1E'  
-DARTHblue       <- '#006699' 
-DARTHlightgreen <- '#00adad'
-DARTHgray       <- '#666666'
-
-##################################### Model input #########################################
 ## General setup
 n_age_init <- 25 # age at baseline
-n_age_max <- 110 # maximum age of follow up
+n_age_max <- 640 # maximum age of follow up
 n_t <- n_age_max - n_age_init # time horizon, number of cycles
+
+n_tuns <- 2:(n_t*2-2)
+
+################################################### loop through number of states ################################################
+
+df_mem <- as.data.frame(matrix(0, nrow=length(n_tuns), ncol=1))
+rownames(df_mem) <- n_tuns
+colnames(df_mem) <- 'memory'
+
+# for (k in 1:length(n_tuns)) {
+  
+k <- length(n_tuns)
+
+##################################### Model input #########################################
 
 ## Tunnel inputs
 # Number of tunnels
-n_tunnel_size <- n_t 
+n_tunnel_size <- n_tuns[k]
 # Name for tunnels states of Sick state
 v_Sick_tunnel <- paste("S1_", seq(1, n_tunnel_size), "Yr", sep = "")
 # Create variables for model with tunnels
@@ -85,6 +67,9 @@ v_r_mort_by_age <- lt_usa_2005 %>%
   # filter(Age >= age & Age <= n_age_max) %>%
   select(Total) %>%
   as.matrix()
+
+# expand v_r_mort_by_age to fit the tunnel state explosion
+v_r_mort_by_age <- c(v_r_mort_by_age, rep(v_r_mort_by_age[length(v_r_mort_by_age)], 2*n_t))
 
 ## State rewards
 # Costs
@@ -122,6 +107,9 @@ v_p_S2Dage <- 1 - exp(-v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)] * hr_S2)
 # Initialize 3-D array
 a_P_tunnels <- array(0, dim = c(n_states_tunnels, n_states_tunnels, n_t),
                      dimnames = list(v_n_tunnels, v_n_tunnels, 0:(n_t - 1)))
+
+# size of the 3-D array in GB
+as.numeric(object.size(a_P_tunnels))/1000000000
 
 ### Fill in array
 ## From H
@@ -181,25 +169,6 @@ m_M_tunnels_sum <- cbind(H = m_M_tunnels[, "H"],
                          S1 = rowSums(m_M_tunnels[, 2:(n_tunnel_size +1)]), 
                          S2 = m_M_tunnels[, "S2"],
                          D = m_M_tunnels[, "D"])
-#### Plot Outputs ####
-### Cohort trace
-## Define colors and line types
-cols <- c("H" = DARTHgreen, "S1" = DARTHblue, 
-          "S2" = DARTHyellow, "D" = DARTHgray)
-lty <-  c("H" = 1, "S1" = 2, "S2" = 4, "D" = 3)
-## Plot the cohort trace
-ggplot(melt(m_M_tunnels_sum), aes(x = Var1, y = value, 
-                         color = Var2, linetype = Var2)) +
-  geom_line(size = 1) +
-  scale_colour_manual(name = "Health state", 
-                      values = cols) +
-  scale_linetype_manual(name = "Health state",
-                        values = lty) +
-  xlab("Cycle") +
-  ylab("Proportion of the cohort") +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom", 
-        legend.background = element_rect(fill = NA))
 
 #### State and Transition Rewards ####
 ### State rewards
@@ -307,147 +276,15 @@ v_ted_qaly <- c(n_totqaly_UC, n_totqaly_Tr)
 df_cea <- calculate_icers(cost = v_ted_cost,
                           effect = v_ted_qaly,
                           strategies = v_names_str)
-df_cea
-### Create CEA table
-table_cea <- df_cea
-## Format column names
-colnames(table_cea)[2:6] <- c("Costs ($)", "QALYs",
-                              "Incremental Costs ($)", "Incremental QALYs",
-                              "ICER ($/QALY)") # name the columns
-## Format rows
-table_cea$`Costs ($)` <- comma(round(table_cea$`Costs ($)`, 0))
-table_cea$`Incremental Costs ($)`[2] <- comma(round(table_cea$`Incremental Costs ($)`[2], 0))
-table_cea$QALYs <- round(table_cea$QALYs, 3)
-table_cea$`Incremental QALYs` <- round(table_cea$`Incremental QALYs`, 3)
-table_cea$`ICER ($/QALY)`[2] <- comma(round(table_cea$`ICER ($/QALY)`[2], 0))
-table_cea
-### CEA frontier
-plot(df_cea) +
-  expand_limits(x = 21.2)
+
+df_mem[k,] <- mem_used()
+
+} # end state loop
 
 
+df_mem <- df_mem / 1000000000
 
-########################### Probabalistic Sensitivty Analysis #######################
-
-# Function to generate PSA input dataset
-generate_psa_params <- function(n_sim = 1000, seed = 071818){
-  set.seed(seed) # set a seed to be able to reproduce the same results
-  df_psa <- data.frame(
-    # Transition probabilities (per cycle)
-    p_HS1   = rbeta(n_sim, 30, 170),                          # probability to become sick when healthy
-    p_S1H   = rbeta(n_sim, 60, 60) ,                          # probability to become healthy when sick
-    hr_S1   = rlnorm(n_sim, log(3),  0.01),                   # rate ratio of death in S1 vs healthy
-    hr_S2   = rlnorm(n_sim, log(10), 0.02),                   # rate ratio of death in S2 vs healthy 
-    
-    # State rewards
-    # Costs
-    c_H   = rgamma(n_sim, shape = 100, scale = 20)    ,       # cost of remaining one cycle in state H
-    c_S1  = rgamma(n_sim, shape = 177.8, scale = 22.5),       # cost of remaining one cycle in state S1
-    c_S2  = rgamma(n_sim, shape = 225, scale = 66.7)  ,       # cost of remaining one cycle in state S2
-    c_Trt = rgamma(n_sim, shape = 73.5, scale = 163.3),       # cost of treatment (per cycle)
-    c_D   = 0                                         ,       # cost of being in the death state
-    
-    # Utilities
-    u_H   = rtruncnorm(n_sim, mean =    1, sd = 0.01, b = 1), # utility when healthy
-    u_S1  = rtruncnorm(n_sim, mean = 0.75, sd = 0.02, b = 1), # utility when sick
-    u_S2  = rtruncnorm(n_sim, mean = 0.50, sd = 0.03, b = 1), # utility when sicker
-    u_D   = 0                                               , # utility when dead
-    u_Trt = rtruncnorm(n_sim, mean = 0.95, sd = 0.02, b = 1)  # utility when being treated
-  )
-  return(df_psa)
-}
-
-# Number of simulations
-n_sim <- 10000
-
-# Generate PSA input dataset
-df_psa_input <- generate_psa_params(n_sim = n_sim)
-# First six observations
-head(df_psa_input)
-
-# Histogram of parameters
-ggplot(melt(df_psa_input, variable.name = "Parameter"), aes(x = value)) +
-  facet_wrap(~Parameter, scales = "free") +
-  geom_histogram(aes(y = ..density..)) +
-  theme_bw(base_size = 16)
-
-# Initialize matrices with PSA output 
-# Dataframe of costs
-df_c <- as.data.frame(matrix(0, 
-                             nrow = n_sim,
-                             ncol = n_str))
-colnames(df_c) <- v_names_str
-# Dataframe of effectiveness
-df_e <- as.data.frame(matrix(0, 
-                             nrow = n_sim,
-                             ncol = n_str))
-colnames(df_e) <- v_names_str
-
-## Conduct probabilistic sensitivity analysis
-# Source functions that contain the model and CEA output
-source('functions/Functions STM_03.R')
-
-# Run Markov model on each parameter set of PSA input dataset
-for(i in 1:n_sim){
-  l_out_temp <- calculate_ce_out(df_psa_input[i, ])
-  df_c[i, ]  <- l_out_temp$Cost
-  df_e[i, ]  <- l_out_temp$Effect
-  # Display simulation progress
-  if(i/(n_sim/10) == round(i/(n_sim/10),0)) { # display progress every 10%
-    cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
-  }
-}
-
-# Create PSA object for dampack
-l_psa <- make_psa_obj(cost          = df_c, 
-                      effectiveness = df_e, 
-                      parameters    = df_psa_input, 
-                      strategies    = v_names_str)
-
-# Vector with willingness-to-pay (WTP) thresholds.
-v_wtp <- seq(0, 200000, by = 10000)
-
-# Cost-Effectiveness Scatter plot
-plot(l_psa)
-
-## Conduct CEA with probabilistic output
-# Compute expected costs and effects for each strategy from the PSA
-df_out_ce_psa <- summary(l_psa)
-
-# Calculate incremental cost-effectiveness ratios (ICERs)
-df_cea_psa <- calculate_icers(cost       = df_out_ce_psa$meanCost, 
-                              effect     = df_out_ce_psa$meanEffect,
-                              strategies = df_out_ce_psa$Strategy)
-df_cea_psa
-
-## Plot cost-effectiveness frontier
-plot(df_cea_psa)
-
-## Cost-effectiveness acceptability curves (CEACs) and frontier (CEAF)
-ceac_obj <- ceac(wtp = v_wtp, psa = l_psa)
-# Regions of highest probability of cost-effectiveness for each strategy
-summary(ceac_obj)
-# CEAC & CEAF plot
-plot(ceac_obj)
-
-##  Expected Loss Curves (ELCs)
-elc_obj <- calc_exp_loss(wtp = v_wtp, psa = l_psa)
-elc_obj
-# ELC plot
-plot(elc_obj, log_y = FALSE)
-
-## Expected value of perfect information (EVPI)
-evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)
-# EVPI plot
-plot(evpi, effect_units = "QALY")
-
-
-
-
-
-
-
-
+write.table(df_mem, 'model_sim.txt')
 
 
 

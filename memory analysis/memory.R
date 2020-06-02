@@ -58,8 +58,9 @@ n_t <- n_age_max - n_age_init # time horizon, number of cycles
 
 n_tuns <- seq(from=n_t, to=(n_t*2-2), by=20) # loop through number of tunnel states
 n_tuns[length(n_tuns)] <- 168
+n_tuns <- n_t
 
-n_sims <- c(1000, 5000, 10000)  # loop through number of PSA simulations
+n_sims <- c(1, 1000, 5000, 10000, 100000)  # loop through number of PSA simulations
 
 
 ############################### loop through number of tunnels and number of PSA simulations #########################################
@@ -174,9 +175,7 @@ memory_ussed <- c()
 
 # Run Markov model on each parameter set of PSA input dataset
 for(k in 1:n_sim){
-  l_out_temp_origin <- calculate_ce_out(df_psa_input[k, ])
-  memory_ussed <- c(memory_ussed, as.numeric(l_out_temp_origin[['memory']]))
-  l_out_temp <- l_out_temp_origin[['df_ce']]
+  l_out_temp <- calculate_ce_out(df_psa_input[k, ])
   df_c[k, ]  <- l_out_temp$Cost
   df_e[k, ]  <- l_out_temp$Effect
   # Display simulation progress
@@ -186,61 +185,16 @@ for(k in 1:n_sim){
 }
 
 #df_mem[i,j] <- sum(memory_ussed)
-df_mem[i,j] <- mem_used()/1000000000
+df_mem[i,j] <- mem_used()
 
 } # end sim loop
 } # end state loop
 
+# df_mem <- df_mem / 1000000000
 
-#####  post process
-# default objects
-storedd <- list(n_age_init = n_age_init,
-                n_age_max = n_age_max,
-                n_t = n_t,
-                n_tunnel_size = n_tunnel_size,
-                v_Sick_tunnel = v_Sick_tunnel,
-                n_states_tunnels = n_states_tunnels,
-                d_c = d_c,
-                d_e = d_e,
-                v_names_str = v_names_str,
-                n_str = n_str,
-                v_hcc = v_hcc,
-                p_HS1 = p_HS1,
-                p_S1H = p_S1H,
-                hr_S1 = hr_S1,
-                hr_S2 = hr_S2,
-                n_lambda = n_lambda,
-                n_gamma = n_gamma,
-                p_S1S2_tunnels = p_S1S2_tunnels,
-                lt_usa_2005 = lt_usa_2005,
-                v_r_mort_by_age = v_r_mort_by_age,
-                c_H = c_H,
-                c_S1 = c_S1,
-                c_S2 = c_S2,
-                c_D = c_D,
-                c_Trt = c_Trt,
-                u_H = u_H,
-                u_S1 = u_S1,
-                u_S2 = u_S2,
-                u_D = u_D,
-                u_Trt = u_Trt,
-                du_HS1 = du_HS1,
-                ic_HS1 = ic_HS1,
-                ic_D = ic_D,
-                v_dwc = v_dwc,
-                v_dwe = v_dwe,
-                v_p_HDage = v_p_HDage,
-                v_p_S1Dage = v_p_S1Dage,
-                v_p_S2Dage = v_p_S2Dage,
-                n_sim = n_sim,
-                df_psa_input = df_psa_input,
-                df_c = df_c,
-                df_e = df_e)
-mem_other <- as.numeric(object.size(storedd)/1000000000)
+write.table(df_mem, 'PSA_sim.txt')
 
-# df_mem <- df_mem + mem_other
-
-
+df_mem/1000000000
 
 
 
