@@ -279,7 +279,7 @@ df_cea <- calculate_icers(cost = v_ted_cost,
 
 df_mem[k,] <- mem_used()
 
-} # end state loop
+# } # end state loop
 
 
 df_mem <- df_mem / 1000000000
@@ -287,11 +287,31 @@ df_mem <- df_mem / 1000000000
 write.table(df_mem, 'model_sim.txt')
 
 
+##### EXTRAPOLATION
+df_mem <- read.csv('memory analysis/model_sim.txt', header=T)
+
+library(fitdistrplus)
+x <- as.numeric(df_mem$memory)
+descdist(x, discrete = FALSE)
 
 
+fit.exp <- fitdist(x, "exp")
+plot(fit.exp)
 
+fit.weibull <- fitdist(x, "weibull")
+plot(fit.weibull)
 
+fit.gamma <- fitdist(x, "gamma")
+plot(fit.gamma)
 
+fit.lognormal <- fitdist(x, "lnorm")
+plot(fit.lognormal)
+
+fit.logistic <- fitdist(x, "logis")
+plot(fit.logistic)
+
+fit.normal <- fitdist(x, "norm")
+plot(fit.normal)
 
 
 
