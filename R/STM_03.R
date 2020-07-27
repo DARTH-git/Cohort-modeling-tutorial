@@ -8,6 +8,7 @@
 # - Fernando Alarid-Escudero <fernando.alarid@cide.edu>
 # - Eline Krijkamp
 # - Eva A. Enns
+# - Alan Yang
 # - Myriam G.M. Hunink
 # - Petros Pechlivanoglou
 # - Hawre Jalal
@@ -20,10 +21,10 @@
 # RStudio: Version 1.1.453 2009-2018 RStudio, Inc
 
 ###############################################################################
-################# Code of Appendix A ##########################################
+################# Code of Appendix   ##########################################
 ###############################################################################
 # Implements an age- and history-dependent Sick-Sicker cSTM model                          
-
+# + include code for a probabilistic sensitivity analysis (PSA) 
 ##################################### Initial setup ###########################
 # rm(list = ls())  # remove any variables in R's memory 
 library(dplyr)    # to manipulate data
@@ -44,7 +45,7 @@ DARTHblue       <- '#006699'
 DARTHlightgreen <- '#00adad'
 DARTHgray       <- '#666666'
 
-##################################### Model input #########################################
+##################################### Model input ##############################
 ## General setup
 n_age_init <- 25 # age at baseline
 n_age_max <- 110 # maximum age of follow up
@@ -216,16 +217,16 @@ names(v_c_S1_UC) <- v_Sick_tunnel
 v_c_UC <- c(H = c_H, v_c_S1_UC, S2 = c_S2, D = c_D)
 
 ## Vector of utilities for S1 under New Treatment
-v_u_S1_Tr <- rep(u_Trt, n_tunnel_size)
-names(v_u_S1_Tr) <- v_Sick_tunnel
+v_u_S1_Trt <- rep(u_Trt, n_tunnel_size)
+names(v_u_S1_Trt) <- v_Sick_tunnel
 ## Vector of state utilities under New Treatment
-v_u_Tr <- c(H = u_H, v_u_S1_Tr, S2 = u_S2, D = u_D)
+v_u_Trt <- c(H = u_H, v_u_S1_Trt, S2 = u_S2, D = u_D)
 
 ## Vector of costs for S1 under Usual Care
-v_c_S1_Tr <- rep(c_S1 + c_Trt, n_tunnel_size)
-names(v_c_S1_Tr) <- v_Sick_tunnel
+v_c_S1_Trt <- rep(c_S1 + c_Trt, n_tunnel_size)
+names(v_c_S1_Trt) <- v_Sick_tunnel
 ## Vector of state costs under New Treatment
-v_c_Tr <- c(H = c_H, v_c_S1_Tr, S2 = c_S2 + c_Trt, D = c_D)
+v_c_Trt <- c(H = c_H, v_c_S1_Trt, S2 = c_S2 + c_Trt, D = c_D)
 
 ### Arrays of rewards
 ## Array of state and transition utilities under Usual Care
@@ -240,12 +241,12 @@ a_R_c_UC <- aperm(array(v_c_UC,
                   perm = c(2, 1, 3))
 
 ## Array of utilities under New Treatment
-a_R_u_Tr <- aperm(array(v_u_Tr,
+a_R_u_Trt <- aperm(array(v_u_Trt,
                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
                   perm = c(2, 1, 3))
 ## Array of costs under New Treatment
-a_R_c_Tr <- aperm(array(v_c_Tr,
+a_R_c_Trt <- aperm(array(v_c_Trt,
                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
                   perm = c(2, 1, 3))
@@ -261,19 +262,19 @@ a_R_c_UC[-n_states_tunnels, "D", ] <- a_R_c_UC[-n_states_tunnels, "D", ] + ic_D
 
 ## For New Treatment
 # Add disutility due to transition from Healthy to Sick
-a_R_u_Tr["H", "S1_1Yr", ] <- a_R_u_Tr["H", "S1_1Yr", ] - du_HS1
+a_R_u_Trt["H", "S1_1Yr", ] <- a_R_u_Tr["H", "S1_1Yr", ] - du_HS1
 # Add transition cost due to transition from Healthy to Sick
-a_R_c_Tr["H", "S1_1Yr", ] <- a_R_c_Tr["H", "S1_1Yr", ] + ic_HS1
+a_R_c_Trt["H", "S1_1Yr", ] <- a_R_c_Tr["H", "S1_1Yr", ] + ic_HS1
 # Add transition cost of dying from all non-dead states
-a_R_c_Tr[-n_states_tunnels, "D", ] <- a_R_c_Tr[-n_states_tunnels, "D", ] + ic_D
+a_R_c_Trt[-n_states_tunnels, "D", ] <- a_R_c_Trt[-n_states_tunnels, "D", ] + ic_D
 
 #### Expected QALYs and Costs for all transitions per cycle ####
 ### For Usual Care
 a_Y_c_UC <- a_A_tunnels * a_R_c_UC
 a_Y_u_UC <- a_A_tunnels * a_R_u_UC
 ### For New Treatment
-a_Y_c_Tr <- a_A_tunnels * a_R_c_Tr
-a_Y_u_Tr <- a_A_tunnels * a_R_u_Tr
+a_Y_c_Trt <- a_A_tunnels * a_R_c_Trt
+a_Y_u_Trt <- a_A_tunnels * a_R_u_Trt
 
 #### Expected QALYs and Costs per cycle ####
 ## Vector of qalys under Usual Care
@@ -281,9 +282,9 @@ v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
 ## Vector of costs under Usual Care
 v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
 ## Vector of qalys under New Treatment
-v_qaly_Tr <- rowSums(t(colSums(a_Y_u_Tr)))
+v_qaly_Trt <- rowSums(t(colSums(a_Y_u_Trt)))
 ## Vector of costs under New Treatment
-v_cost_Tr <- rowSums(t(colSums(a_Y_c_Tr)))
+v_cost_Trt <- rowSums(t(colSums(a_Y_c_Trt)))
 
 #### Discounted total expected QALYs and Costs per strategy ####
 ### For Usual Care
@@ -293,15 +294,15 @@ n_totqaly_UC <- sum(v_qaly_UC * v_dwe * v_hcc)
 n_totcost_UC <- sum(v_cost_UC * v_dwc * v_hcc)
 ### For New Treatment
 ## QALYs
-n_totqaly_Tr <- sum(v_qaly_Tr * v_dwe * v_hcc)
+n_totqaly_Trt <- sum(v_qaly_Trt * v_dwe * v_hcc)
 ## Costs
-n_totcost_Tr <- sum(v_cost_Tr * v_dwc * v_hcc)
+n_totcost_Trt <- sum(v_cost_Trt * v_dwc * v_hcc)
 
 ########################### Cost-effectiveness analysis #######################
 ### Vector of total costs for both strategies
-v_ted_cost <- c(n_totcost_UC, n_totcost_Tr)
+v_ted_cost <- c(n_totcost_UC, n_totcost_Trt)
 ### Vector of effectiveness for both strategies
-v_ted_qaly <- c(n_totqaly_UC, n_totqaly_Tr)
+v_ted_qaly <- c(n_totqaly_UC, n_totqaly_Trt)
 
 ### Calculate incremental cost-effectiveness ratios (ICERs)
 df_cea <- calculate_icers(cost = v_ted_cost,
@@ -341,10 +342,10 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     
     # State rewards
     # Costs
-    c_H   = rgamma(n_sim, shape = 100, scale = 20)    ,       # cost of remaining one cycle in state H
+    c_H   = rgamma(n_sim, shape = 100,   scale = 20),         # cost of remaining one cycle in state H
     c_S1  = rgamma(n_sim, shape = 177.8, scale = 22.5),       # cost of remaining one cycle in state S1
-    c_S2  = rgamma(n_sim, shape = 225, scale = 66.7)  ,       # cost of remaining one cycle in state S2
-    c_Trt = rgamma(n_sim, shape = 73.5, scale = 163.3),       # cost of treatment (per cycle)
+    c_S2  = rgamma(n_sim, shape = 225,   scale = 66.7),       # cost of remaining one cycle in state S2
+    c_Trt = rgamma(n_sim, shape = 73.5,  scale = 163.3),      # cost of treatment (per cycle)
     c_D   = 0                                         ,       # cost of being in the death state
     
     # Utilities

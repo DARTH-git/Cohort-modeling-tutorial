@@ -8,6 +8,7 @@
 # - Fernando Alarid-Escudero <fernando.alarid@cide.edu>
 # - Eline Krijkamp
 # - Eva A. Enns
+# - Alan Yang
 # - Myriam G.M. Hunink
 # - Petros Pechlivanoglou
 # - Hawre Jalal
@@ -20,7 +21,7 @@
 # RStudio: Version 1.1.453 2009-2018 RStudio, Inc
 
 ###############################################################################
-################# Code of Appendix A ##########################################
+################# Code of Appendix  ###########################################
 ###############################################################################
 # Implements an age-dependent Sick-Sicker cSTM model                          #
 
@@ -42,7 +43,7 @@ DARTHblue       <- '#006699'
 DARTHlightgreen <- '#00adad'
 DARTHgray       <- '#666666'
 
-##################################### Model input #########################################
+##################################### Model input ##############################
 ## General setup
 n_age_init <- 25 # age at baseline
 n_age_max <- 110 # maximum age of follow up
@@ -237,9 +238,9 @@ v_u_UC <- c(H = u_H, S1 = u_S1, S2 = u_S2, D = u_D)
 v_c_UC <- c(H = c_H, S1 = c_S1, S2 = c_S2, D = c_D)
 
 ## Vector of state utilities under New Treatment
-v_u_Tr <- c(H = u_H, S1 = u_Trt, S2 = u_S2, D = u_D)
+v_u_Trt <- c(H = u_H, S1 = u_Trt, S2 = u_S2, D = u_D)
 ## Vector of state costs under New Treatment
-v_c_Tr <- c(H = c_H, S1 = c_S1 + c_Trt, S2 = c_S2 + c_Trt, D = c_D)
+v_c_Trt <- c(H = c_H, S1 = c_S1 + c_Trt, S2 = c_S2 + c_Trt, D = c_D)
 
 ### Arrays of rewards
 ## Array of state and transition utilities under Usual Care
@@ -254,12 +255,12 @@ a_R_c_UC <- aperm(array(v_c_UC,
                   perm = c(2, 1, 3))
 
 ## Array of utilities under New Treatment
-a_R_u_Tr <- aperm(array(v_u_Tr,
+a_R_u_Trt<- aperm(array(v_u_Trt,
                         dim = c(n_states, n_states, n_t + 1),
                         dimnames = list(v_n, v_n, 0:n_t)),
                    perm = c(2, 1, 3))
 ## Array of costs under New Treatment
-a_R_c_Tr <- aperm(array(v_c_Tr,
+a_R_c_Trt <- aperm(array(v_c_Trt,
                         dim = c(n_states, n_states, n_t + 1),
                         dimnames = list(v_n, v_n, 0:n_t)),
                   perm = c(2, 1, 3))
@@ -274,20 +275,20 @@ a_R_c_UC[-n_states, "D", ] <- a_R_c_UC[-n_states, "D", ] + ic_D
 
 ## For New Treatment
 # Add disutility due to transition from Healthy to Sick
-a_R_u_Tr["H", "S1", ] <- a_R_u_Tr["H", "S1", ] - du_HS1
+a_R_u_Trt["H", "S1", ] <- a_R_u_Trt["H", "S1", ] - du_HS1
 
 # Add transition cost due to transition from Healthy to Sick
-a_R_c_Tr["H", "S1", ] <- a_R_c_Tr["H", "S1", ] + ic_HS1
+a_R_c_Trt["H", "S1", ] <- a_R_c_Trt["H", "S1", ] + ic_HS1
 # Add transition cost of dying from all non-dead states
-a_R_c_Tr[-n_states, "D", ] <- a_R_c_Tr[-n_states, "D", ] + ic_D
+a_R_c_Trt[-n_states, "D", ] <- a_R_c_Trt[-n_states, "D", ] + ic_D
 
 #### Expected QALYs and Costs for all transitions per cycle ####
 ### For Usual Care
 a_Y_c_UC <- a_A * a_R_c_UC
 a_Y_u_UC <- a_A * a_R_u_UC
 ### For New Treatment
-a_Y_c_Tr <- a_A * a_R_c_Tr
-a_Y_u_Tr <- a_A * a_R_u_Tr
+a_Y_c_Trt <- a_A * a_R_c_Trt
+a_Y_u_Trt <- a_A * a_R_u_Trt
 
 #### Expected QALYs and Costs per cycle ####
 ## Vector of qalys under Usual Care
@@ -295,9 +296,9 @@ v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
 ## Vector of costs under Usual Care
 v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
 ## Vector of qalys under New Treatment
-v_qaly_Tr <- rowSums(t(colSums(a_Y_u_Tr)))
+v_qaly_Trt <- rowSums(t(colSums(a_Y_u_Trt)))
 ## Vector of costs under New Treatment
-v_cost_Tr <- rowSums(t(colSums(a_Y_c_Tr)))
+v_cost_Trt <- rowSums(t(colSums(a_Y_c_Trt)))
 
 #### Discounted total expected QALYs and Costs per strategy ####
 ### For Usual Care
@@ -307,15 +308,15 @@ n_totqaly_UC <- sum(v_qaly_UC * v_dwe * v_hcc)
 n_totcost_UC <- sum(v_cost_UC * v_dwc * v_hcc)
 ### For New Treatment
 ## QALYs
-n_totqaly_Tr <- sum(v_qaly_Tr * v_dwe * v_hcc)
+n_totqaly_Trt <- sum(v_qaly_Trt * v_dwe * v_hcc)
 ## Costs
-n_totcost_Tr <- sum(v_cost_Tr * v_dwc * v_hcc)
+n_totcost_Trt <- sum(v_cost_Trt * v_dwc * v_hcc)
 
 ########################### Cost-effectiveness analysis #######################
 ### Vector of total costs for both strategies
-v_ted_cost <- c(n_totcost_UC, n_totcost_Tr)
+v_ted_cost <- c(n_totcost_UC, n_totcost_Trt)
 ### Vector of effectiveness for both strategies
-v_ted_qaly <- c(n_totqaly_UC, n_totqaly_Tr)
+v_ted_qaly <- c(n_totqaly_UC, n_totqaly_Trt)
 
 ### Calculate incremental cost-effectiveness ratios (ICERs)
 df_cea <- calculate_icers(cost = v_ted_cost, 
