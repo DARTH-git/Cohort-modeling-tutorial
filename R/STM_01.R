@@ -130,7 +130,7 @@ m_P["D", "D"]   <- 1
 
 ### Check if transition matrix is valid (i.e., each row should add up to 1)
 valid <- rowSums(m_P) # sum the rows 
-if (!isTRUE(all.equal(as.numeric((valid)), as.numeric(rep(1,n_states))))) { #check if the rows are all equal to one 
+if (!isTRUE(all.equal(as.numeric((valid)), as.numeric(rep(1, n_states))))) { #check if the rows are all equal to one 
   stop("This is not a valid transition Matrix")
 }
 

@@ -441,24 +441,3 @@ evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)
 # EVPI plot
 plot(evpi, effect_units = "QALY")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
