@@ -123,6 +123,12 @@ a_P["S2", "D", ]  <- p_S2Dage
 ## From D
 a_P["D", "D", ]   <- 1
 
+# ### Check if transition matrix is valid (i.e., each row should add up to 1)
+valid <- apply(a_P, 3, function(x) sum(rowSums(x))==n_states)
+if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
+  stop("This is not a valid transition Matrix")
+}
+
 #### Run Markov model ####
 ## Initial state vector
 # All starting healthy
