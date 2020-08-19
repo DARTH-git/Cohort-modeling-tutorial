@@ -50,6 +50,8 @@ DARTHgray       <- '#666666'
 n_age_init <- 25 # age at baseline
 n_age_max <- 110 # maximum age of follow up
 n_t <- n_age_max - n_age_init # time horizon, number of cycles
+n_cpy <- 1     # the number of cycles per year (n_cpy <- 0.25 refers to cycles of 3 months)
+
 
 ## Tunnel inputs
 # Number of tunnels
@@ -64,8 +66,9 @@ d_c <- 0.03 # discount rate for costs
 d_e <- 0.03 # discount rate for QALYs
 v_names_str <- c("Usual care", "New treatment") # store the strategy names
 n_str <- length(v_names_str) # number of strategies
-v_hcc    <- rep(1, n_t+1)      # vector of half-cycle correction 
-v_hcc[1] <- v_hcc[n_t+1] <- 0.5
+v_hcc    <- rep(1, n_t + 1)     # vector of half-cycle correction 
+v_hcc[1] <- v_hcc[n_t + 1] <- 0.5
+
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HS1   <- 0.15 # probability to become Sick when Healthy

@@ -20,11 +20,6 @@
 # Running under: macOS  10.14.5
 # RStudio: Version 1.1.453 2009-2018 RStudio, Inc
 
-# half-cycle correction: v_hcc <- c(0.5, 0, 0, ... , 0.5) # length = nrow(trace) (nt+1)
-# multiply vector of rewards by v_hcc (in same fashion as discount); do it before discounting
-# v_qaly_UC
-# p.26
-
 ###############################################################################
 ################# Code of Appendix   ##########################################
 ###############################################################################
@@ -53,6 +48,7 @@ DARTHgray       <- '#666666'
 n_age_init <- 25 # age at baseline
 n_age_max <- 110 # maximum age of follow up
 n_t <- n_age_max - n_age_init  # time horizon, number of cycles
+n_cpy <- 1     # the number of cycles per year (n_cpy <- 0.25 refers to cycles of 3 months)
 
 v_n <- c("H", "S1", "S2", "D") # the 4 health states of the model:
                                # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
