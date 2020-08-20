@@ -235,16 +235,16 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     
     #### Expected QALYs and Costs for all transitions per cycle ####
     ### For Usual care
-    a_Y_c_UC <- a_A_tunnels * a_R_c_UC
-    a_Y_u_UC <- a_A_tunnels * a_R_u_UC
+    a_Y_c_UC <- a_A_tunnels * a_R_c_UC 
+    a_Y_u_UC <- a_A_tunnels * a_R_u_UC * n_cpy
     
     ### For New treatment 1
     a_Y_c_Trt <- a_A_tunnels * a_R_c_Trt
-    a_Y_u_Trt <- a_A_tunnels * a_R_u_Trt
+    a_Y_u_Trt <- a_A_tunnels * a_R_u_Trt * n_cpy
     
     ### For New treatment 2
     a_Y_c_Trt2 <- a_A_tunnels_trt2 * a_R_c_Trt2
-    a_Y_u_Trt2 <- a_A_tunnels_trt2 * a_R_u_Trt2
+    a_Y_u_Trt2 <- a_A_tunnels_trt2 * a_R_u_Trt2 * n_cpy
     
     #### Expected QALYs and Costs per cycle ####
     ## Vector of qalys under Usual care
