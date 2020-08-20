@@ -50,7 +50,6 @@ DARTHgray       <- '#666666'
 n_age_init <- 25 # age at baseline
 n_age_max <- 110 # maximum age of follow up
 n_t <- n_age_max - n_age_init # time horizon, number of cycles
-n_cpy <- 1     # the number of cycles per year (n_cpy <- 0.25 refers to cycles of 3 months)
 
 
 ## Tunnel inputs
@@ -248,7 +247,7 @@ a_R_u_Trt <- aperm(array(v_u_Trt,
                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
                   perm = c(2, 1, 3))
-## Array of costs under New Treatment
+## Array of costs per cycle under New Treatment
 a_R_c_Trt <- aperm(array(v_c_Trt,
                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
@@ -272,12 +271,16 @@ a_R_c_Trt["H", "S1_1Yr", ] <- a_R_c_Tr["H", "S1_1Yr", ] + ic_HS1
 a_R_c_Trt[-n_states_tunnels, "D", ] <- a_R_c_Trt[-n_states_tunnels, "D", ] + ic_D
 
 #### Expected QALYs and Costs for all transitions per cycle ####
+# QALYs = life years x QoL
+# life years are markov trace * cycle length  
+n_cpy <- 1   # the number of cycles per year (n_cpy <- 0.25 refers to cycles of 3 months)
+
 ### For Usual Care
 a_Y_c_UC <- a_A_tunnels * a_R_c_UC
-a_Y_u_UC <- a_A_tunnels * a_R_u_UC
+a_Y_u_UC <- a_A_tunnels * a_R_u_UC * n_cpy
 ### For New Treatment
 a_Y_c_Trt <- a_A_tunnels * a_R_c_Trt
-a_Y_u_Trt <- a_A_tunnels * a_R_u_Trt
+a_Y_u_Trt <- a_A_tunnels * a_R_u_Trt * n_cpy
 
 #### Expected QALYs and Costs per cycle ####
 ## Vector of qalys under Usual Care

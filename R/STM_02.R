@@ -236,12 +236,12 @@ le_ad <- sum(v_S_ad)
 ### State rewards
 ## Vector of state utilities under Usual Care
 v_u_UC <- c(H = u_H, S1 = u_S1, S2 = u_S2, D = u_D)
-## Vector of state costs under Usual Care
+## Vector of state costs per cycle under Usual Care
 v_c_UC <- c(H = c_H, S1 = c_S1, S2 = c_S2, D = c_D)
 
 ## Vector of state utilities under New Treatment
 v_u_Trt <- c(H = u_H, S1 = u_Trt, S2 = u_S2, D = u_D)
-## Vector of state costs under New Treatment
+## Vector of state costs per cycle under New Treatment
 v_c_Trt <- c(H = c_H, S1 = c_S1 + c_Trt, S2 = c_S2 + c_Trt, D = c_D)
 
 ### Arrays of rewards
@@ -250,7 +250,7 @@ a_R_u_UC <- aperm(array(v_u_UC,
                         dim = c(n_states, n_states, n_t + 1),
                         dimnames = list(v_n, v_n, 0:n_t)),
                   perm = c(2, 1, 3))
-## Array of state and transition costs under Usual Care
+## Array of state and transition costs per cycle under Usual Care
 a_R_c_UC <- aperm(array(v_c_UC, 
                         dim = c(n_states, n_states, n_t + 1),
                         dimnames = list(v_n, v_n, 0:n_t)),
@@ -261,7 +261,7 @@ a_R_u_Trt<- aperm(array(v_u_Trt,
                         dim = c(n_states, n_states, n_t + 1),
                         dimnames = list(v_n, v_n, 0:n_t)),
                    perm = c(2, 1, 3))
-## Array of costs under New Treatment
+## Array of costs per cycle under New Treatment
 a_R_c_Trt <- aperm(array(v_c_Trt,
                         dim = c(n_states, n_states, n_t + 1),
                         dimnames = list(v_n, v_n, 0:n_t)),
@@ -270,27 +270,31 @@ a_R_c_Trt <- aperm(array(v_c_Trt,
 ## For Usual Care
 # Add disutility due to transition from H to S1
 a_R_u_UC["H", "S1", ] <- a_R_u_UC["H", "S1", ] - du_HS1
-# Add transition cost due to transition from H to S1
+# Add transition cost per cycle due to transition from H to S1
 a_R_c_UC["H", "S1", ] <- a_R_c_UC["H", "S1", ] + ic_HS1
-# Add transition cost of dying from all non-dead states
+# Add transition cost per cycle of dying from all non-dead states
 a_R_c_UC[-n_states, "D", ] <- a_R_c_UC[-n_states, "D", ] + ic_D
 
 ## For New Treatment
 # Add disutility due to transition from Healthy to Sick
 a_R_u_Trt["H", "S1", ] <- a_R_u_Trt["H", "S1", ] - du_HS1
 
-# Add transition cost due to transition from Healthy to Sick
+# Add transition cost per cycle due to transition from Healthy to Sick
 a_R_c_Trt["H", "S1", ] <- a_R_c_Trt["H", "S1", ] + ic_HS1
-# Add transition cost of dying from all non-dead states
+# Add transition cost pe cycle of dying from all non-dead states
 a_R_c_Trt[-n_states, "D", ] <- a_R_c_Trt[-n_states, "D", ] + ic_D
 
 #### Expected QALYs and Costs for all transitions per cycle ####
+# QALYs = life years x QoL
+# life years are markov trace * cycle length  
+n_cpy <- 1   # the number of cycles per year (n_cpy <- 0.25 refers to cycles of 3 months)
+
 ### For Usual Care
 a_Y_c_UC <- a_A * a_R_c_UC
-a_Y_u_UC <- a_A * a_R_u_UC
+a_Y_u_UC <- a_A * a_R_u_UC * n_cpy
 ### For New Treatment
 a_Y_c_Trt <- a_A * a_R_c_Trt
-a_Y_u_Trt <- a_A * a_R_u_Trt
+a_Y_u_Trt <- a_A * a_R_u_Trt * n_cpy
 
 #### Expected QALYs and Costs per cycle ####
 ## Vector of qalys under Usual Care
