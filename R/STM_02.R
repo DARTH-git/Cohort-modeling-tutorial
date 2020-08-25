@@ -35,6 +35,17 @@ library(logitnorm) # for using log odds
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
 library(dampack)   # for CEA and calculate ICERs
 
+# Define required functions
+calc_logit <- function(p) {
+  logit <- log(p/1-p)
+  return(logit)
+} 
+
+calc_invlogit <- function(x) {
+  invlogit <- exp(x)/(1+exp(x))
+  return(invlogit)
+}
+
 ################################## DARTH colors  ###############################
 
 # code for the DARTH colors for the figures
@@ -69,8 +80,8 @@ hr_S2   <- 10    # hazard ratio of death in Sicker vs Healthy
 # For New treatment 2
 or_S1S2  <- 0.8              # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2 <- log(or_S1S2)     # log-odd ratio of becoming Sicker when Sick
-logitp_S1S2 <- logit(p_S1S2) # log-odds of becoming Sicker when Sick
-p_S1S2_trt2 <- invlogit(logitp_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
+logitp_S1S2 <- calc_logit(p_S1S2) # log-odds of becoming Sicker when Sick
+p_S1S2_trt2 <- calc_invlogit(logitp_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
 
 ## Age-dependent mortality rates
 lt_usa_2005 <- read.csv("data/LifeTable_USA_Mx_2015.csv")

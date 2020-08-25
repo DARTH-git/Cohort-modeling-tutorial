@@ -36,6 +36,17 @@ library(pryr)
 library(logitnorm) # for using log odds
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
 library(dampack)   # for CEA and calculate ICERs
+
+# Define required functions
+calc_logit <- function(p) {
+  logit <- log(p/1-p)
+  return(logit)
+} 
+
+calc_invlogit <- function(x) {
+  invlogit <- exp(x)/(1+exp(x))
+  return(invlogit)
+}
  
 ################################## DARTH colors  ###############################
 
@@ -85,8 +96,8 @@ p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
 # For new treatment 2
 or_S1S2  <- 0.8              # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2 <- log(or_S1S2)     # log-odd ratio of becoming Sicker when Sick
-logitp_S1S2 <- logit(p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-p_S1S2_tunnels_trt2 <- invlogit(logitp_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
+logitp_S1S2 <- calc_logit(p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
+p_S1S2_tunnels_trt2 <- calc_invlogit(logitp_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
 
 ## Age-dependent mortality rates
 lt_usa_2005 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -436,7 +447,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     hr_S2    = rlnorm(n_sim, log(10), 0.02),                  # rate ratio of death in S2 vs healthy 
     n_lambda = rlnorm(n_sim, log(0.08), 0.01),                # transition from S1 to S2 - Weibull scale parameter
     n_gamma  = rlnorm(n_sim, log(1.1), 0.02),                 # transition from S1 to S2 - Weibull shape parameter
-    lor_S1S2 = rnorm(n_sim, log(0.8), 0.1),                   # log-odd ratio of becoming Sicker when Sick
+    lor_S1S2 = rnorm(n_sim, log(0.7), 0.1),                   # log-odd ratio of becoming Sicker when Sick
     
     # State rewards
     # Costs
