@@ -405,5 +405,5 @@ table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
 table_cea
 ### CEA frontier
 plot(df_cea, label="all") +
-     expand_limits(x = 23) # change this
+     expand_limits(x = max(table_cea$QALYs + 0.5)) # change this
 
