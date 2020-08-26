@@ -40,8 +40,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "H", ]  <- p_S1H
     a_P_tunnels[v_Sick_tunnel[n_tunnel_size],
                 v_Sick_tunnel[n_tunnel_size], ] <- 1 - (p_S1H +
-                                                        p_S1S2_tunnels[n_tunnel_size] + 
-                                                        v_p_S1Dage)
+                                                          p_S1S2_tunnels[n_tunnel_size] + 
+                                                          v_p_S1Dage)
     a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- p_S1S2_tunnels[n_tunnel_size]
     a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
     ## From S2
@@ -62,8 +62,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     }
     a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size],
                      v_Sick_tunnel[n_tunnel_size], ] <- 1 - (p_S1H +
-                                                             p_S1S2_tunnels_trt2[n_tunnel_size] + 
-                                                             v_p_S1Dage)
+                                                               p_S1S2_tunnels_trt2[n_tunnel_size] + 
+                                                               v_p_S1Dage)
     a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- p_S1S2_tunnels_trt2[n_tunnel_size]
     
     #### Run Markov model ####
@@ -146,33 +146,44 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     names(v_u_S1_UC) <- v_Sick_tunnel
     ## Vector of state utilities under Usual care
     v_u_UC <- c(H = u_H, v_u_S1_UC, S2 = u_S2, D = u_D)
-    ## Vector of costs for S1 under Usual care
+    ## Vector of costs per cycle for S1 under Usual care
     v_c_S1_UC <- rep(c_S1, n_tunnel_size)
     names(v_c_S1_UC) <- v_Sick_tunnel
-    ## Vector of state costs under Usual care
+    ## Vector of state costs per cycle under Usual care
     v_c_UC <- c(H = c_H, v_c_S1_UC, S2 = c_S2, D = c_D)
     
     ## Vector of utilities for S1 under New treatment 1
-    v_u_S1_Trt <- rep(u_Trt, n_tunnel_size)
-    names(v_u_S1_Trt) <- v_Sick_tunnel
+    v_u_S1_trt1 <- rep(u_trt1, n_tunnel_size)
+    names(v_u_S1_trt1) <- v_Sick_tunnel
     ## Vector of state utilities under New treatment 1
-    v_u_Trt <- c(H = u_H, v_u_S1_Trt, S2 = u_S2, D = u_D)
-    ## Vector of costs for S1 under New treatment 1
-    v_c_S1_Trt <- rep(c_S1 + c_Trt, n_tunnel_size)
-    names(v_c_S1_Trt) <- v_Sick_tunnel
-    ## Vector of state costs under New treatment 1
-    v_c_Trt <- c(H = c_H, v_c_S1_Trt, S2 = c_S2 + c_Trt, D = c_D)
+    v_u_trt1 <- c(H = u_H, v_u_S1_trt1, S2 = u_S2, D = u_D)
+    ## Vector of costs per cycle for S1 under New treatment 1
+    v_c_S1_trt1 <- rep(c_S1 + c_trt1, n_tunnel_size)
+    names(v_c_S1_trt1) <- v_Sick_tunnel
+    ## Vector of state costs per cycle under New treatment 1
+    v_c_trt1 <- c(H = c_H, v_c_S1_trt1, S2 = c_S2 + c_trt1, D = c_D)
     
     ## Vector of utilities for S1 under New treatment 2
-    v_u_S1_Trt2 <- rep(u_Trt, n_tunnel_size)
-    names(v_u_S1_Trt2) <- v_Sick_tunnel
+    v_u_S1_trt2 <- rep(u_S1, n_tunnel_size)
+    names(v_u_S1_trt2) <- v_Sick_tunnel
     ## Vector of state utilities under New treatment 2
-    v_u_Trt2 <- c(H = u_H, v_u_S1_Trt2, S2 = u_S2, D = u_D)
-    ## Vector of costs for S1 under New treatment 2
-    v_c_S1_Trt2 <- rep(c_S1 + c_Trt, n_tunnel_size)
-    names(v_c_S1_Trt2) <- v_Sick_tunnel
-    ## Vector of state costs under New treatment 2
-    v_c_Trt2 <- c(H = c_H, v_c_S1_Trt2, S2 = c_S2 + c_Trt, D = c_D)
+    v_u_trt2 <- c(H = u_H, v_u_S1_trt2, S2 = u_S2, D = u_D)
+    ## Vector of costs per cycle for S1 under New treatment 2
+    v_c_S1_trt2 <- rep(c_S1 + c_trt2, n_tunnel_size)
+    names(v_c_S1_trt2) <- v_Sick_tunnel
+    ## Vector of state costs per cycle under New treatment 2
+    v_c_trt2 <- c(H = c_H, v_c_S1_trt2, S2 = c_S2 + c_trt2, D = c_D)
+    
+    ## Vector of utilities for S1 under New treatments 1 & 2
+    v_u_S1_trt1_2 <- rep(u_trt1, n_tunnel_size)
+    names(v_u_S1_trt1_2) <- v_Sick_tunnel
+    ## Vector of state utilities under New treatment 2
+    v_u_trt1_2 <- c(H = u_H, v_u_S1_trt1_2, S2 = u_S2, D = u_D)
+    ## Vector of costs per cycle for S1 under New treatment 2
+    v_c_S1_trt1_2 <- rep(c_S1 + (c_trt1 + c_trt2), n_tunnel_size)
+    names(v_c_S1_trt1_2) <- v_Sick_tunnel
+    ## Vector of state costs per cycle under New treatment 2
+    v_c_trt1_2 <- c(H = c_H, v_c_S1_trt1_2, S2 = c_S2 + (c_trt1 + c_trt2), D = c_D)
     
     ### Arrays of rewards
     ## Array of state and transition utilities under Usual care
@@ -187,111 +198,149 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
                       perm = c(2, 1, 3))
     
     ## Array of utilities under New treatment 1
-    a_R_u_Trt <- aperm(array(v_u_Trt,
-                             dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                             dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                       perm = c(2, 1, 3))
-    ## Array of costs under New treatment 1
-    a_R_c_Trt <- aperm(array(v_c_Trt,
-                             dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                             dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                       perm = c(2, 1, 3))
+    a_R_u_trt1 <- aperm(array(v_u_trt1,
+                              dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                              dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                        perm = c(2, 1, 3))
+    ## Array of costs per cycle under New treatment 1
+    a_R_c_trt1 <- aperm(array(v_c_trt1,
+                              dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                              dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                        perm = c(2, 1, 3))
     
     ## Array of utilities under New treatment 2
-    a_R_u_Trt2 <- aperm(array(v_u_Trt2,
+    a_R_u_trt2 <- aperm(array(v_u_trt2,
                               dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                               dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
                         perm = c(2, 1, 3))
-    ## Array of costs under New treatment 2
-    a_R_c_Trt2 <- aperm(array(v_c_Trt2,
+    ## Array of costs per cycle under New treatment 2
+    a_R_c_trt2 <- aperm(array(v_c_trt2,
                               dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                               dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
                         perm = c(2, 1, 3))
+    
+    ## Array of utilities under New treatment 1 & 2
+    a_R_u_trt1_2 <- aperm(array(v_u_trt1_2,
+                                dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                                dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                          perm = c(2, 1, 3))
+    ## Array of costs per cycle under New treatment 1 & 2
+    a_R_c_trt1_2 <- aperm(array(v_c_trt1_2,
+                                dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                                dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                          perm = c(2, 1, 3))
     
     ### Transition rewards
     ## For Usual care
     # Add disutility due to transition from H to S1
     a_R_u_UC["H", "S1_1Yr", ] <- a_R_u_UC["H", "S1_1Yr", ] - du_HS1
-    # Add transition cost due to transition from H to S1
+    # Add transition cost per cycle due to transition from H to S1
     a_R_c_UC["H", "S1_1Yr", ] <- a_R_c_UC["H", "S1_1Yr", ] + ic_HS1
-    # Add transition cost of dying from all non-dead states
+    # Add transition cost per cycle of dying from all non-dead states
     a_R_c_UC[-n_states_tunnels, "D", ] <- a_R_c_UC[-n_states_tunnels, "D", ] + ic_D
     
     ## For New treatment 1
     # Add disutility due to transition from Healthy to Sick
-    a_R_u_Trt["H", "S1_1Yr", ] <- a_R_u_Trt["H", "S1_1Yr", ] - du_HS1
-    # Add transition cost due to transition from Healthy to Sick
-    a_R_c_Trt["H", "S1_1Yr", ] <- a_R_c_Trt["H", "S1_1Yr", ] + ic_HS1
-    # Add transition cost of dying from all non-dead states
-    a_R_c_Trt[-n_states_tunnels, "D", ] <- a_R_c_Trt[-n_states_tunnels, "D", ] + ic_D
+    a_R_u_trt1["H", "S1_1Yr", ] <- a_R_u_trt1["H", "S1_1Yr", ] - du_HS1
+    # Add transition cost per cycle due to transition from Healthy to Sick
+    a_R_c_trt1["H", "S1_1Yr", ] <- a_R_c_trt1["H", "S1_1Yr", ] + ic_HS1
+    # Add transition cost per cycle of dying from all non-dead states
+    a_R_c_trt1[-n_states_tunnels, "D", ] <- a_R_c_trt1[-n_states_tunnels, "D", ] + ic_D
     
     ## For New treatment 2
     # Add disutility due to transition from Healthy to Sick
-    a_R_u_Trt2["H", "S1_1Yr", ] <- a_R_u_Trt2["H", "S1_1Yr", ] - du_HS1
-    # Add transition cost due to transition from Healthy to Sick
-    a_R_c_Trt2["H", "S1_1Yr", ] <- a_R_c_Trt2["H", "S1_1Yr", ] + ic_HS1
-    # Add transition cost of dying from all non-dead states
-    a_R_c_Trt2[-n_states_tunnels, "D", ] <- a_R_c_Trt2[-n_states_tunnels, "D", ] + ic_D
+    a_R_u_trt2["H", "S1_1Yr", ] <- a_R_u_trt2["H", "S1_1Yr", ] - du_HS1
+    # Add transition cost per cycle due to transition from Healthy to Sick
+    a_R_c_trt2["H", "S1_1Yr", ] <- a_R_c_trt2["H", "S1_1Yr", ] + ic_HS1
+    # Add transition cost per cycle of dying from all non-dead states
+    a_R_c_trt2[-n_states_tunnels, "D", ] <- a_R_c_trt2[-n_states_tunnels, "D", ] + ic_D
+    
+    ## For New treatment 1 & 2
+    # Add disutility due to transition from Healthy to Sick
+    a_R_u_trt1_2["H", "S1_1Yr", ] <- a_R_u_trt1_2["H", "S1_1Yr", ] - du_HS1
+    # Add transition cost per cycle due to transition from Healthy to Sick
+    a_R_c_trt1_2["H", "S1_1Yr", ] <- a_R_c_trt1_2["H", "S1_1Yr", ] + ic_HS1
+    # Add transition cost per cycle of dying from all non-dead states
+    a_R_c_trt1_2[-n_states_tunnels, "D", ] <- a_R_c_trt1_2[-n_states_tunnels, "D", ] + ic_D
     
     #### Expected QALYs and Costs for all transitions per cycle ####
-    ### For Usual care
-    a_Y_c_UC <- a_A_tunnels * a_R_c_UC 
-    a_Y_u_UC <- a_A_tunnels * a_R_u_UC * n_cpy
+    # QALYs = life years x QoL
+    # NOTE: all parameters are annual
     
-    ### For New treatment 1
-    a_Y_c_Trt <- a_A_tunnels * a_R_c_Trt
-    a_Y_u_Trt <- a_A_tunnels * a_R_u_Trt * n_cpy
+    ### For Usual Care
+    a_Y_c_UC <- a_A_tunnels * a_R_c_UC
+    a_Y_u_UC <- a_A_tunnels * a_R_u_UC 
+    
+    ### For New treatment 1 
+    a_Y_c_trt1 <- a_A_tunnels * a_R_c_trt1
+    a_Y_u_trt1 <- a_A_tunnels * a_R_u_trt1 
     
     ### For New treatment 2
-    a_Y_c_Trt2 <- a_A_tunnels_trt2 * a_R_c_Trt2
-    a_Y_u_Trt2 <- a_A_tunnels_trt2 * a_R_u_Trt2 * n_cpy
+    a_Y_c_trt2 <- a_A_tunnels_trt2 * a_R_c_trt2
+    a_Y_u_trt2 <- a_A_tunnels_trt2 * a_R_u_trt2 
+    
+    ### For New treatment 1 & 2
+    a_Y_c_trt1_2 <- a_A_tunnels_trt2 * a_R_c_trt1_2
+    a_Y_u_trt1_2 <- a_A_tunnels_trt2 * a_R_u_trt1_2 
     
     #### Expected QALYs and Costs per cycle ####
-    ## Vector of qalys under Usual care
+    ## Vector of qalys under Usual Care
     v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
-    ## Vector of costs under Usual care
+    ## Vector of costs under Usual Care
     v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
     
-    ## Vector of qalys under New treatment 1
-    v_qaly_Trt <- rowSums(t(colSums(a_Y_u_Trt)))
-    ## Vector of costs under New treatment 1
-    v_cost_Trt <- rowSums(t(colSums(a_Y_c_Trt)))
+    ## Vector of qalys under New Treatment 1
+    v_qaly_trt1 <- rowSums(t(colSums(a_Y_u_trt1)))
+    ## Vector of costs under New Treatment 1
+    v_cost_trt1 <- rowSums(t(colSums(a_Y_c_trt1)))
     
-    ## Vector of qalys under New treatment 2
-    v_qaly_Trt2 <- rowSums(t(colSums(a_Y_u_Trt2)))
-    ## Vector of costs under New treatment 2
-    v_cost_Trt2 <- rowSums(t(colSums(a_Y_c_Trt2)))
+    ## Vector of qalys under New Treatment 2
+    v_qaly_trt2 <- rowSums(t(colSums(a_Y_u_trt2)))
+    ## Vector of costs under New Treatment 2
+    v_cost_trt2 <- rowSums(t(colSums(a_Y_c_trt2)))
+    
+    ## Vector of qalys under New Treatment 1 & 2
+    v_qaly_trt1_2 <- rowSums(t(colSums(a_Y_u_trt1_2)))
+    ## Vector of costs under New Treatment 1 & 2
+    v_cost_trt1_2 <- rowSums(t(colSums(a_Y_c_trt1_2)))
     
     #### Discounted total expected QALYs and Costs per strategy ####
-    ### For Usual care
+    ### For Usual Care
     ## QALYs
-    n_totqaly_UC <- sum(v_qaly_UC * v_dwe * v_hcc)
+    n_totqaly_UC <- t(v_qaly_UC) %*% (v_dwe * v_hcc)
     ## Costs
-    n_totcost_UC <- sum(v_cost_UC * v_dwc * v_hcc)
+    n_totcost_UC <- t(v_cost_UC) %*% (v_dwc * v_hcc)
     
     ### For New treatment 1
     ## QALYs
-    n_totqaly_Trt <- sum(v_qaly_Trt * v_dwe * v_hcc)
+    n_totqaly_trt1 <- t(v_qaly_trt1) %*% (v_dwe * v_hcc)
     ## Costs
-    n_totcost_Trt <- sum(v_cost_Trt * v_dwc * v_hcc)
+    n_totcost_trt1 <- t(v_cost_trt1) %*% (v_dwc * v_hcc)
     
     ### For New treatment 2
     ## QALYs
-    n_totqaly_Trt2 <- sum(v_qaly_Trt2 * v_dwe * v_hcc)
+    n_totqaly_trt2 <- t(v_qaly_trt2) %*% (v_dwe * v_hcc)
     ## Costs
-    n_totcost_Trt2 <- sum(v_cost_Trt2 * v_dwc * v_hcc)
+    n_totcost_trt2 <- t(v_cost_trt2) %*% (v_dwc * v_hcc)
+    
+    ### For New treatment 1 & 2
+    ## QALYs
+    n_totqaly_trt1_2 <- t(v_qaly_trt1_2) %*% (v_dwe * v_hcc)
+    ## Costs
+    n_totcost_trt1_2 <- t(v_cost_trt1_2) %*% (v_dwc * v_hcc)
     
     ########################### Cost-effectiveness analysis #######################
     ### Vector of total costs for all strategies
-    v_ted_cost <- c(n_totcost_UC, n_totcost_Trt, n_totcost_Trt2)
+    v_ted_cost <- c(n_totcost_UC, n_totcost_trt1, n_totcost_trt2, n_totcost_trt1_2)
     ### Vector of effectiveness for all strategies
-    v_ted_qaly <- c(n_totqaly_UC, n_totqaly_Trt, n_totqaly_Trt2)
+    v_ted_qaly <- c(n_totqaly_UC, n_totqaly_trt1, n_totqaly_trt2, n_totqaly_trt1_2)
     
     ### Calculate incremental cost-effectiveness ratios (ICERs)
-    df_ce <- data.frame(Cost       = v_ted_cost,
-                        Effect     = v_ted_qaly,
-                        Strategies = v_names_str)
-    return(df_ce)
+    df_cea <- calculate_icers(cost = v_ted_cost, 
+                              effect = v_ted_qaly,
+                              strategies = v_names_str)
+    df_cea
+    return(df_cea)
   }
   )
 }

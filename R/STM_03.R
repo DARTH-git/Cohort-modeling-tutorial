@@ -38,7 +38,7 @@ library(dampack)   # for CEA and calculate ICERs
 
 # Define required functions
 calc_logit <- function(p) {
-  logit <- log(p/1-p)
+  logit <- log(p/(1-p))
   return(logit)
 } 
 
@@ -475,7 +475,7 @@ table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
 table_cea
 ### CEA frontier
 plot(df_cea, label="all") +
-  expand_limits(x = max(table_cea$QALYs + 0.5)) # change this
+     expand_limits(x = max(table_cea$QALYs + 0.5)) # change this
 
 ########################### Probabalistic Sensitivty Analysis #######################
 
