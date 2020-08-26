@@ -378,7 +378,6 @@ n_totqaly_trt1_2 <- t(v_qaly_trt1_2) %*% (v_dwe * v_hcc)
 ## Costs
 n_totcost_trt1_2 <- t(v_cost_trt1_2) %*% (v_dwc * v_hcc)
 
-
 ########################### Cost-effectiveness analysis #######################
 ### Vector of total costs for all strategies
 v_ted_cost <- c(n_totcost_UC, n_totcost_trt1, n_totcost_trt2, n_totcost_trt1_2)
