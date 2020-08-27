@@ -28,7 +28,7 @@
 # New treatment 1: this new treatment is given to all sick patients, patients in sick and sicker, but does only improves the utility of those being sick.
 # New treatment 2: the new treatment reduces disease progression from sick to sicker. However, it is not possible to distinguish those sick from sicker and therefore all individuals in one of the two sick states get the treatment.  
 # New treatment 1 & new treatment 2”: This strategy combines the new treatment 1 and new treatment 2. The disease progression is reduced and Sick individuals has an improved utility. 
-# This is the base model.
+# This is the simplified version of the base model (without transition rewards)
 
 ##################################### Initial setup ###########################
 rm(list = ls())    # remove any variables in R's memory 
@@ -80,7 +80,7 @@ p_S2D   <- 1 - exp(log(1 - p_HD) * hr_S2) # probability of dying in Sicker
 # For New treatment 2
 or_S1S2  <- 0.7              # odds ratio of becoming Sicker when Sick under New treatment 2 compared to Usual care
 lor_S1S2 <- log(or_S1S2)     # log-odds ratio of becoming Sicker when Sick
-logit_S1S2 <- logit(p_S1S2)  # log-odds of becoming Sicker when Sick
+logit_S1S2  <- logit(p_S1S2) # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
 
 ## State rewards
@@ -97,11 +97,6 @@ u_S1   <- 0.75  # utility when Sick
 u_S2   <- 0.5   # utility when Sicker
 u_D    <- 0     # utility when Healthy 
 u_trt1 <- 0.95  # utility when being treated
-
-## Transition rewards
-du_HS1 <- 0.01 # disutility when transitioning from Healthy to Sick
-ic_HS1 <- 1000 # increase in cost when transitioning from Healthy to Sick
-ic_D   <- 2000 # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
 v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
@@ -149,8 +144,10 @@ m_P_trt2["S1", "S1"] <- 1 - (p_S1H + p_S1S2_trt2 + p_S1D)
 m_P_trt2["S1", "S2"] <- p_S1S2_trt2
 
 ### Check if transition matrix is valid (i.e., each row should add up to 1)
-check_transition(m_P)
-
+valid <- rowSums(m_P) # sum the rows 
+if (!isTRUE(all.equal(as.numeric((valid)), as.numeric(rep(1, n_states))))) { #check if the rows are all equal to one 
+  stop("This is not a valid transition Matrix")
+}
 valid2 <- rowSums(m_P_trt2) # sum the rows 
 if (!isTRUE(all.equal(as.numeric((valid2)), as.numeric(rep(1, n_states))))) { #check if the rows are all equal to one 
   stop("This is not a valid transition Matrix")
@@ -182,8 +179,7 @@ plot_trace(m_M)
 ## Plot the cohort trace for scenarios New treatment 2 and New treatments 1 & 2
 plot_trace(m_M_trt2)
 
-#### State and Transition Rewards ####
-### State rewards
+#### State Rewards ####
 ## Vector of state utilities under Usual Care
 v_u_UC <- c(H = u_H, S1 = u_S1, S2 = u_S2, D = u_D)
 ## Vector of state costs per cycle under Usual Care
@@ -204,125 +200,26 @@ v_u_trt1_2 <- c(H = u_H, S1 = u_trt1, S2 = u_S2, D = u_D)
 ## Vector of state costs per cycle under New treatment 1 & 2
 v_c_trt1_2 <- c(H = c_H, S1 = c_S1 + (c_trt1 + c_trt2), S2 = c_S2 + (c_trt1 + c_trt2), D = c_D)
 
-### Arrays of rewards
-### State rewards (transition rewards, below)
-## Array of state and transition utilities under Usual Care 
-a_R_u_UC <- aperm(array(v_u_UC, 
-                        dim = c(n_states, n_states, n_t + 1),
-                        dimnames = list(v_n, v_n, 0:n_t)),
-                  perm = c(2, 1, 3))
-## Array of state and transition costs per cycle under Usual Care
-a_R_c_UC <- aperm(array(v_c_UC, 
-                        dim = c(n_states, n_states, n_t + 1),
-                        dimnames = list(v_n, v_n, 0:n_t)),
-                  perm = c(2, 1, 3))
-
-## Array of utilities under New treatment 1 
-a_R_u_trt1 <- aperm(array(v_u_trt1,
-                         dim = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_n, v_n, 0:n_t)),
-                         perm = c(2, 1, 3))
-## Array of costs per cycle under New treatment 1 
-a_R_c_trt1 <- aperm(array(v_c_trt1,
-                         dim = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_n, v_n, 0:n_t)),
-                         perm = c(2, 1, 3))
-
-## Array of utilities under New treatment 2
-a_R_u_trt2 <- aperm(array(v_u_trt2,
-                         dim = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_n, v_n, 0:n_t)),
-                    perm = c(2, 1, 3))
-## Array of costs under New treatment 2 
-a_R_c_trt2 <- aperm(array(v_c_trt2,
-                         dim = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_n, v_n, 0:n_t)),
-                    perm = c(2, 1, 3))
-
-## Array of utilities under New treatment 1 & 2
-a_R_u_trt1_2 <- aperm(array(v_u_trt1_2,
-                          dim = c(n_states, n_states, n_t + 1),
-                          dimnames = list(v_n, v_n, 0:n_t)),
-                    perm = c(2, 1, 3))
-## Array of costs under New treatment 1 & 2 
-a_R_c_trt1_2 <- aperm(array(v_c_trt1_2,
-                          dim = c(n_states, n_states, n_t + 1),
-                          dimnames = list(v_n, v_n, 0:n_t)),
-                    perm = c(2, 1, 3))
-
-### Transition rewards (similar for all senarios’)
-## For Usual Care
-# Add disutility due to transition from H to S1
-a_R_u_UC["H", "S1", ] <- a_R_u_UC["H", "S1", ] - du_HS1
-# Add transition cost per cycle due to transition from H to S1
-a_R_c_UC["H", "S1", ] <- a_R_c_UC["H", "S1", ] + ic_HS1
-# Add transition cost  per cycle of dying from all non-dead states
-a_R_c_UC[-n_states, "D", ] <- a_R_c_UC[-n_states, "D", ] + ic_D
-
-## For New treatment 1
-# Add disutility due to transition from Healthy to Sick
-a_R_u_trt1["H", "S1", ] <- a_R_u_trt1["H", "S1", ] - du_HS1
-# Add transition cost per cycle due to transition from Healthy to Sick
-a_R_c_trt1["H", "S1", ] <- a_R_c_trt1["H", "S1", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_trt1[-n_states, "D", ] <- a_R_c_trt1[-n_states, "D", ] + ic_D
-
-# For New treatment 2
-# Add disutility due to transition from Healthy to Sick
-a_R_u_trt2["H", "S1", ] <- a_R_u_trt2["H", "S1", ] - du_HS1
-# Add transition cost per cycle due to transition from Healthy to Sick
-a_R_c_trt2["H", "S1", ] <- a_R_c_trt2["H", "S1", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_trt2[-n_states, "D", ] <- a_R_c_trt2[-n_states, "D", ] + ic_D
-
-# For New treatment 1 & 2
-# Add disutility due to transition from Healthy to Sick
-a_R_u_trt1_2["H", "S1", ] <- a_R_u_trt1_2["H", "S1", ] - du_HS1
-# Add transition cost per cycle due to transition from Healthy to Sick
-a_R_c_trt1_2["H", "S1", ] <- a_R_c_trt1_2["H", "S1", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_trt1_2[-n_states, "D", ] <- a_R_c_trt1_2[-n_states, "D", ] + ic_D
-
-#### Expected QALYs and Costs for all transitions per cycle ####
-# QALYs = life years x QoL
-# NOTE: all parameters are annual
-
-### For Usual Care
-a_Y_c_UC <- a_A * a_R_c_UC
-a_Y_u_UC <- a_A * a_R_u_UC 
-
-### For New treatment 1 
-a_Y_c_trt1 <- a_A * a_R_c_trt1
-a_Y_u_trt1 <- a_A * a_R_u_trt1 
-
-### For New treatment 2
-a_Y_c_trt2 <- a_A_trt2 * a_R_c_trt2
-a_Y_u_trt2 <- a_A_trt2 * a_R_u_trt2 
-
-### For New treatment 1 & 2
-a_Y_c_trt1_2 <- a_A_trt2 * a_R_c_trt1_2
-a_Y_u_trt1_2 <- a_A_trt2 * a_R_u_trt1_2 
-
 #### Expected QALYs and Costs per cycle ####
 ## Vector of qalys under Usual Care
-v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
+v_qaly_UC <- m_M %*% v_u_UC
 ## Vector of costs under Usual Care
-v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
+v_cost_UC <- m_M %*% v_c_UC
 
 ## Vector of qalys under New Treatment 1
-v_qaly_trt1 <- rowSums(t(colSums(a_Y_u_trt1)))
+v_qaly_trt1 <- m_M %*% v_u_trt1
 ## Vector of costs under New Treatment 1
-v_cost_trt1 <- rowSums(t(colSums(a_Y_c_trt1)))
+v_cost_trt1 <- m_M %*% v_c_trt1
 
 ## Vector of qalys under New Treatment 2
-v_qaly_trt2 <- rowSums(t(colSums(a_Y_u_trt2)))
+v_qaly_trt2 <- m_M_trt2 %*% v_u_trt2
 ## Vector of costs under New Treatment 2
-v_cost_trt2 <- rowSums(t(colSums(a_Y_c_trt2)))
+v_cost_trt2 <- m_M_trt2 %*% v_c_trt2
 
 ## Vector of qalys under New Treatment 1 & 2
-v_qaly_trt1_2 <- rowSums(t(colSums(a_Y_u_trt1_2)))
+v_qaly_trt1_2 <- m_M_trt2 %*% v_u_trt1_2
 ## Vector of costs under New Treatment 1 & 2
-v_cost_trt1_2 <- rowSums(t(colSums(a_Y_c_trt1_2)))
+v_cost_trt1_2 <- m_M_trt2 %*% v_c_trt1_2
 
 #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
 ### For Usual Care
@@ -356,8 +253,8 @@ v_ted_cost <- c(n_totcost_UC, n_totcost_trt1, n_totcost_trt2, n_totcost_trt1_2)
 v_ted_qaly <- c(n_totqaly_UC, n_totqaly_trt1, n_totqaly_trt2, n_totqaly_trt1_2)
 
 ### Calculate incremental cost-effectiveness ratios (ICERs)
-df_cea <- calculate_icers(cost       = v_ted_cost, 
-                          effect     = v_ted_qaly,
+df_cea <- calculate_icers(cost = v_ted_cost, 
+                          effect = v_ted_qaly,
                           strategies = v_names_str)
 df_cea
 ### Create CEA table with proper formatting
@@ -366,5 +263,5 @@ table_cea
 
 ### CEA frontier
 plot(df_cea, label = "all") +
-     expand_limits(x = max(df_cea$Effect) + 0.5) 
+  expand_limits(x = max(table_cea$QALYs + 0.5)) 
 

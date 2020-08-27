@@ -1,60 +1,57 @@
 ###############################################################################
-### Cohort state-transition models in R:                                     ##
-### From conceptualization to implementation 2019                            ##
+### Implementation of cohort state-transition models in R:                   ##
+### From conceptualization to implementation 2020                            ##
 ###############################################################################
 # This code forms the basis for the state-transition model of the article: 
-# 'Cohort state-transition models in R: From conceptualization to implementation' 
+# 'Implementation of cohort state-transition models in R' 
 # Authors: 
 # - Fernando Alarid-Escudero <fernando.alarid@cide.edu>
 # - Eline Krijkamp
 # - Eva A. Enns
 # - Alan Yang
-# - Myriam G.M. Hunink
+# - M.G. Myriam Hunink
 # - Petros Pechlivanoglou
 # - Hawre Jalal
 # Please cite the article when using this code
 #
 # To program this tutorial we made use of 
-# R version 3.5.0 (2018-04-23)
-# Platform: x86_64-apple-darwin15.6.0 (64-bit)
-# Running under: macOS  10.14.5
-# RStudio: Version 1.1.453 2009-2018 RStudio, Inc
+# R version 4.0.2 (2020-06-22)
+# Platform: 64-bit operating system, x64-based processor
+# Running under: Windows 10
+# RStudio: Version 1.3.1073 2009-2020 RStudio, Inc
 
 ###############################################################################
 ################# Code of Appendix   ##########################################
 ###############################################################################
-# Implements an age- and history-dependent Sick-Sicker cSTM model                          
-# + include code for a probabilistic sensitivity analysis (PSA) 
+# Implements a time-independent Sick-Sicker cSTM model                        #
+# Usual care: best available care for the patients with the disease. This scenario reflects the natural history of the disease progressions
+# New treatment 1: this new treatment is given to all sick patients, patients in sick and sicker, but does only improves the utility of those being sick.
+# New treatment 2: the new treatment reduces disease progression from sick to sicker. However, it is not possible to distinguish those sick from sicker and therefore all individuals in one of the two sick states get the treatment.  
+# New treatment 1 & new treatment 2”: This strategy combines the new treatment 1 and new treatment 2. The disease progression is reduced and Sick individuals has an improved utility. 
+# This model incorporates time-dependent and history- / state-dependent transition probabilities 
+
 ##################################### Initial setup ###########################
-rm(list = ls())   # remove any variables in R's memory 
-library(dplyr)     # to manipulate data
-library(reshape2)  # to transform data
-library(ggplot2)   # for nice looking plots
-library(scales)    # for dollar signs and commas
-library(truncnorm)
-library(pryr)
-# devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub
-library(dampack)   # for CEA and calculate ICERs
+rm(list = ls())    # remove any variables in R's memory 
 
-# Define required functions
-calc_logit <- function(p) {
-  logit <- log(p/(1-p))
-  return(logit)
-} 
+### Install packages
+# install.packages("dplyr")    # to manipulate data
+# install.packages("reshape2") # to transform data
+# install.packages("ggplot2")  # to visualize data
+# install.packages("scales")   # for dollar signs and commas
+# install.packages("boot")     # to handle log odds and log odds ratios
+# install.packages("devtools") # to ensure compatibility among packages
+# devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub, for CEA and calculate ICERs
 
-calc_invlogit <- function(x) {
-  invlogit <- exp(x)/(1+exp(x))
-  return(invlogit)
-}
- 
-################################## DARTH colors  ###############################
+### Load packages
+library(dplyr)    
+library(reshape2) 
+library(ggplot2)   
+library(scales)    
+library(boot)
+library(dampack) 
 
-# code for the DARTH colors for the figures
-DARTHgreen      <- '#009999'  
-DARTHyellow     <- '#FDAD1E'  
-DARTHblue       <- '#006699' 
-DARTHlightgreen <- '#00adad'
-DARTHgray       <- '#666666'
+### Load functions
+source("functions/Functions.R")
 
 ##################################### Model input ##############################
 ## General setup
@@ -92,10 +89,10 @@ n_gamma  <- 1.1  # shape
 # Weibull function
 p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
 # For new treatment 2
-or_S1S2  <- 0.7              # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2 <- log(or_S1S2)     # log-odd ratio of becoming Sicker when Sick
-logitp_S1S2 <- calc_logit(p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-p_S1S2_tunnels_trt2 <- calc_invlogit(logitp_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
+or_S1S2  <- 0.7                      # odds ratio of becoming Sicker when Sick under New treatment 2
+lor_S1S2 <- log(or_S1S2)             # log-odd ratio of becoming Sicker when Sick
+logit_S1S2 <- logit(p_S1S2_tunnels)  # log-odds of becoming Sicker when Sick
+p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
 
 ## Age-dependent mortality rates
 lt_usa_2005 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -225,39 +222,12 @@ m_M_tunnels_sum_trt2 <- cbind(H  = m_M_tunnels_trt2[, "H"],
                               S1 = rowSums(m_M_tunnels_trt2[, 2:(n_tunnel_size +1)]), 
                               S2 = m_M_tunnels_trt2[, "S2"],
                               D  = m_M_tunnels_trt2[, "D"])
-#### Plot Outputs ####
-### Cohort trace
-## Define colors and line types
-cols <- c("H"  = DARTHgreen, "S1" = DARTHblue, 
-          "S2" = DARTHyellow, "D" = DARTHgray)
-lty <-  c("H" = 1, "S1" = 2, "S2" = 4, "D" = 3)
-## Plot the cohort trace
-ggplot(melt(m_M_tunnels_sum), aes(x = Var1, y = value, 
-                                  color = Var2, linetype = Var2)) +
-  geom_line(size = 1) +
-  scale_colour_manual(name = "Health state", 
-                      values = cols) +
-  scale_linetype_manual(name = "Health state",
-                        values = lty) +
-  xlab("Cycle") +
-  ylab("Proportion of the cohort") +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom", 
-        legend.background = element_rect(fill = NA))
 
-# For New treatment 2 
-ggplot(melt(m_M_tunnels_sum_trt2), aes(x = Var1, y = value, 
-                                       color = Var2, linetype = Var2)) +
-  geom_line(size = 1) +
-  scale_colour_manual(name = "Health state", 
-                      values = cols) +
-  scale_linetype_manual(name = "Health state",
-                        values = lty) +
-  xlab("Cycle") +
-  ylab("Proportion of the cohort") +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom", 
-        legend.background = element_rect(fill = NA))
+#### Plot Outputs ####
+## Plot the cohort trace for scenarios Usual care and New treatment 1 
+plot_trace(m_M)
+## Plot the cohort trace for scenarios New treatment 2 and New treatments 1 & 2
+plot_trace(m_M_trt2)
 
 #### State and Transition Rewards ####
 ### State rewards
@@ -463,9 +433,8 @@ df_cea
 ### Create CEA table
 table_cea <- df_cea
 ## Format column names
-colnames(table_cea)[2:6] <- c("Costs ($)", "QALYs", 
-                              "Incremental Costs ($)", "Incremental QALYs", 
-                              "ICER ($/QALY)") # name the columns
+colnames(table_cea)[colnames(table_cea) %in% c("Cost", "Effect", "Inc_Cost", "Inc_Effect", "ICER")] <- 
+            c("Costs ($)", "QALYs", "Incremental Costs ($)", "Incremental QALYs", "ICER ($/QALY)") 
 ## Format rows
 table_cea$`Costs ($)` <- comma(round(table_cea$`Costs ($)`, 0))
 table_cea$`Incremental Costs ($)` <- comma(round(table_cea$`Incremental Costs ($)`, 0))
@@ -474,8 +443,8 @@ table_cea$`Incremental QALYs` <- round(table_cea$`Incremental QALYs`, 2)
 table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
 table_cea
 ### CEA frontier
-plot(df_cea, label="all") +
-     expand_limits(x = max(table_cea$QALYs + 0.5)) # change this
+plot(df_cea, label = "all") +
+     expand_limits(x = max(table_cea$QALYs + 0.5)) 
 
 ########################### Probabalistic Sensitivty Analysis #######################
 
@@ -500,7 +469,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     c_trt = rgamma(n_sim, shape = 73.5,  scale = 163.3),      # cost of treatment (per cycle)
     c_D   = 0,                                                # cost of being in the death state
     
-    # Utilities
+    # Utilities # NOTE: markov course mod - beta
     u_H   = rtruncnorm(n_sim, mean =    1, sd = 0.01, b = 1), # utility when healthy
     u_S1  = rtruncnorm(n_sim, mean = 0.75, sd = 0.02, b = 1), # utility when sick
     u_S2  = rtruncnorm(n_sim, mean = 0.50, sd = 0.03, b = 1), # utility when sicker
@@ -574,7 +543,7 @@ df_cea_psa <- calculate_icers(cost       = df_out_ce_psa$meanCost,
 df_cea_psa
 
 ## Plot cost-effectiveness frontier
-plot(df_cea_psa, label="all") +
+plot(df_cea_psa, label = "all") +
      expand_limits(x = 20.8)
 
 ## Cost-effectiveness acceptability curves (CEACs) and frontier (CEAF)

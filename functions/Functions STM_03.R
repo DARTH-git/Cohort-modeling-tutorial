@@ -15,8 +15,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## History-dependent transition from S1 to S2
     # Create tunnel states
     p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
-    logitp_S1S2 <- calc_logit(p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-    p_S1S2_tunnels_trt2 <- calc_invlogit(logitp_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
+    logit_S1S2 <- logit(p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
+    p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
     
     ######################## Construct state-transition models ####################
     #### Create transition matrix ####
