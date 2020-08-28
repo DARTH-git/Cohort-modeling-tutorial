@@ -55,40 +55,37 @@ source("functions/Functions.R")
 
 ############################ Model input ############################
 ## General setup
-n_age_init  <- 25                        # age at baseline
-n_age_max   <- 110                       # maximum age of follow up
-n_t         <- n_age_max - n_age_init    # time horizon, number of cycles
-v_n         <- c("H", "S1", "S2", "D")   # the 4 health states of the model:
-                                         # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
-v_hcc       <- rep(1, n_t + 1)           # vector of half-cycle correction 
-v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5     # half-cycle correction weight 
-n_states    <- length(v_n)               # number of health states 
-d_c         <- 0.03                      # discount rate for costs 
-d_e         <- 0.03                      # discount rate for QALYs
-v_names_str <- c("Usual care",           # store the strategy names
+n_age_init  <- 25                               # age at baseline
+n_age_max   <- 110                              # maximum age of follow up
+n_t         <- n_age_max - n_age_init           # time horizon, number of cycles
+v_n         <- c("H", "S1", "S2", "D")          # the 4 health states of the model:
+                                                # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+v_hcc       <- rep(1, n_t + 1)                  # vector of half-cycle correction 
+v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5            # half-cycle correction weight 
+n_states    <- length(v_n)                      # number of health states 
+d_c         <- 0.03                             # discount rate for costs 
+d_e         <- 0.03                             # discount rate for QALYs
+v_names_str <- c("Usual care",                  # store the strategy names
                  "New treatment 1", 
                  "New treatment 2", 
                  "New treatments 1 & 2") 
-n_str       <- length(v_names_str)       # number of strategies
+n_str       <- length(v_names_str)              # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
-p_HS1       <- 0.15                      # probability to become Sick when Healthy
-p_S1H       <- 0.5                       # probability to become Healthy when Sick
-p_S1S2      <- 0.105                     # probability to become Sicker when Sick
-hr_S1       <- 3                         # hazard ratio of death in Sick vs Healthy
-hr_S2       <- 10                        # hazard ratio of death in Sicker vs Healthy 
+p_HD        <- 0.002                            # constant probability of dying when Healthy (all-cause mortality)
+p_HS1       <- 0.15                             # probability to become Sick when Healthy
+p_S1H       <- 0.5                              # probability to become Healthy when Sick
+p_S1S2      <- 0.105                            # probability to become Sicker when Sick
+hr_S1       <- 3                                # hazard ratio of death in Sick vs Healthy
+hr_S2       <- 10                               # hazard ratio of death in Sicker vs Healthy 
+p_S1D       <- RateProb(-log(1 - p_HD) * hr_S1) # probability of dying in Sick
+p_S2D       <- RateProb(-log(1 - p_HD) * hr_S2) # probability of dying in Sicker
 # For New treatment 2
-or_S1S2     <- 0.7                       # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2    <- log(or_S1S2)              # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- logit(p_S1S2)             # log-odds of becoming Sicker when Sick
+or_S1S2     <- 0.7                              # odds ratio of becoming Sicker when Sick under New treatment 2
+lor_S1S2    <- log(or_S1S2)                     # log-odds ratio of becoming Sicker when Sick
+logit_S1S2  <- logit(p_S1S2)                    # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                           lor_S1S2)     # probability to become Sicker when Sick under New treatment 2
-
-## Age-dependent mortality rates
-lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
-v_r_mort_by_age <- lt_usa_2015 %>% 
-                   select(Total) %>%
-                   as.matrix()
+                           lor_S1S2)            # probability to become Sicker when Sick under New treatment 2
 
 ## State rewards
 # Costs
@@ -114,83 +111,76 @@ ic_D   <- 2000    # increase in cost when dying
 v_dwc  <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe  <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
-## Age-specific transition probabilities
-# extract age-specific all-cause mortality for ages in model time horizon
-v_mort    <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
-p_HDage   <- RateProb(v_mort)         # Age-specific mortality risk in the Healthy state 
-p_S1Dage  <- RateProb(v_mort * hr_S1) # Age-specific mortality risk in the Sick state
-p_S2Dage  <- RateProb(v_mort * hr_S2) # Age-specific mortality risk in the Sicker state
-
 ############################ Construct state-transition models ############################
-#### Create transition arrays ####
-# Initialize 3-D array
-a_P <- array(0, dim      = c(n_states, n_states, n_t),
-                dimnames = list(v_n, v_n, 0:(n_t - 1)))
-### Fill in array
-## From H
-a_P["H", "H", ]   <- 1 - (p_HS1 + p_HDage)
-a_P["H", "S1", ]  <- p_HS1
-a_P["H", "D", ]   <- p_HDage
-## From S1
-a_P["S1", "H", ]  <- p_S1H
-a_P["S1", "S1", ] <- 1 - (p_S1H + p_S1S2 + p_S1Dage)
-a_P["S1", "S2", ] <- p_S1S2
-a_P["S1", "D", ]  <- p_S1Dage
-## From S2
-a_P["S2", "S2", ] <- 1 - p_S2Dage
-a_P["S2", "D", ]  <- p_S2Dage
-## From D
-a_P["D", "D", ]   <- 1
-
-# For New treatment 2
-# Only need to update the probabilities involving the transition from Sick to Sicker, p_S1S2
-a_P_trt2 <- a_P
-a_P_trt2["S1", "S1", ] <- 1 - (p_S1H + p_S1S2_trt2 + p_S1Dage)
-a_P_trt2["S1", "S2", ] <- p_S1S2_trt2
-
-### Check if transition matrix is valid (i.e., each row should add up to 1) 
-check_transition(a_P,      array = T)
-check_transition(a_P_trt2, array = T)
-
-#### Run Markov model ####
 ## Initial state vector
 # All starting healthy
 v_s_init <- c(H = 1, S1 = 0, S2 = 0, D = 0) # initial state vector
 v_s_init
 
-## Initialize cohort trace for age-dependent cSTM
-m_M_ad <- matrix(0, 
-                 nrow = (n_t + 1), ncol = n_states, 
-                 dimnames = list(0:n_t, v_n))
-# use the initial state vector defined above to populate the first row of the cohort trace
-m_M_ad[1, ] <- v_s_init
-# For New treatment 2 the structure and initial states remain the same:
-m_M_ad_trt2 <- m_M_ad
+## Initialize cohort trace
+m_M <- matrix(0, 
+              nrow = (n_t + 1), ncol = n_states, 
+              dimnames = list(0:n_t, v_n))
+# Store the initial state vector in the first row of the cohort trace
+m_M[1, ] <- v_s_init
+# For treatment 2
+m_M_trt2 <- m_M
 
-## Initialize transition array which will capture transitions from each state to another over time 
+## Initialize transition probability matrix
+m_P <- matrix(0, 
+              nrow = n_states, ncol = n_states, 
+              dimnames = list(v_n, v_n)) # define row and column names
+## Fill in matrix
+# From H
+m_P["H", "H"]   <- 1 - (p_HS1 + p_HD)
+m_P["H", "S1"]  <- p_HS1
+m_P["H", "D"]   <- p_HD
+# From S1
+m_P["S1", "H"]  <- p_S1H
+m_P["S1", "S1"] <- 1 - (p_S1H + p_S1S2 + p_S1D)
+m_P["S1", "S2"] <- p_S1S2
+m_P["S1", "D"]  <- p_S1D
+# From S2
+m_P["S2", "S2"] <- 1 - p_S2D
+m_P["S2", "D"]  <- p_S2D
+# From D
+m_P["D", "D"]   <- 1
+
+# For New treatment 2
+# Only need to update the probabilities involving p_S1S2
+m_P_trt2 <- m_P
+m_P_trt2["S1", "S1"] <- 1 - (p_S1H + p_S1S2_trt2 + p_S1D)
+m_P_trt2["S1", "S2"] <- p_S1S2_trt2
+
+### Check if transition matrix is valid (i.e., each row should add up to 1) 
+check_transition(m_P)
+check_transition(m_P_trt2)
+
+## Initialize 3D transition dynamics array
 a_A <- array(0,
              dim = c(n_states, n_states, n_t + 1),
              dimnames = list(v_n, v_n, 0:n_t))
-
 # Set first slice of A with the initial state vector in its diagonal
 diag(a_A[, , 1]) <- v_s_init
-# For New treatment 2
+# For New treatment 2, the array structure and initial state is identical to Usual care and New treatment 1 
 a_A_trt2 <- a_A
 
-## Iterative solution of age-dependent cSTM
+#### Run Markov model ####
+# Iterative solution of time-independent cSTM
 for(t in 1:n_t){
   # Fill in cohort trace
-  m_M_ad[t + 1, ]      <- m_M_ad[t, ]      %*% a_P[, , t]
-  m_M_ad_trt2[t + 1, ] <- m_M_ad_trt2[t, ] %*% a_P_trt2[, , t]
+  m_M[t + 1, ] <- m_M[t, ] %*% m_P
+  m_M_trt2[t + 1, ] <- m_M_trt2[t, ] %*% m_P_trt2
   # Fill in transition dynamics array
-  a_A[, , t + 1]       <- m_M_ad[t, ]       * a_P[, , t]
-  a_A_trt2[, , t + 1]  <- m_M_ad_trt2[t, ]  * a_P_trt2[, , t]
+  a_A[, , t + 1]  <- m_M[t, ] * m_P
+  a_A_trt2[, , t + 1]  <- m_M_trt2[t, ] * m_P_trt2
 }
 
 #### Plot Outputs ####
-### Cohort trace 
-plot_trace(m_M_ad)      # Trace for scenarios Usual care and New treatment 1
-plot_trace(m_M_ad_trt2) # Trace for scenarios New treatment 2 and New treatments 1 & 2
+## Plot the cohort trace for scenarios Usual care and New treatment 1 
+plot_trace(m_M)
+## Plot the cohort trace for scenarios New treatment 2 and New treatments 1 & 2
+plot_trace(m_M_trt2)
 
 #### State Rewards ####
 ## Vector of state utilities under Usual care
