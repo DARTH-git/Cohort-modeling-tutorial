@@ -240,7 +240,7 @@ for (i in 1:n_str) {
   m_M <- l_m_M[[i]]  # select the cohort trace for the ith strategy
   
   #### Expected QALYs and Costs per cycle ####
-  ## Vector of qalys under Usual Care
+  ## Vector of QALYs under Usual Care
   v_qaly <- m_M %*% v_u
   ## Vector of costs under Usual Care
   v_cost <- m_M %*% v_c
