@@ -53,73 +53,77 @@ library(dampack)
 ### Load functions
 source("functions/Functions.R")
 
-##################################### Model input ##############################
+############################ Model input ############################
 ## General setup
-n_age_init <- 25  # age at baseline
-n_age_max  <- 110 # maximum age of follow up
-n_t <- n_age_max - n_age_init  # time horizon, number of cycles
-
-v_n <- c("H", "S1", "S2", "D") # the 4 health states of the model:
-                               # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
-v_hcc    <- rep(1, n_t+1)      # vector of half-cycle correction 
-v_hcc[1] <- v_hcc[n_t+1] <- 0.5 # half-cycle correction weight 
-n_states <- length(v_n) # number of health states 
-d_c <- 0.03 # discount rate for costs 
-d_e <- 0.03 # discount rate for QALYs
-v_names_str <- c("Usual care", "New treatment 1", "New treatment 2", "New treatments 1 & 2") # store the strategy names
-n_str <- length(v_names_str) # number of strategies
+n_age_init  <- 25                        # age at baseline
+n_age_max   <- 110                       # maximum age of follow up
+n_t         <- n_age_max - n_age_init    # time horizon, number of cycles
+v_n         <- c("H", "S1", "S2", "D")   # the 4 health states of the model:
+                                         # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+v_hcc       <- rep(1, n_t+1)             # vector of half-cycle correction 
+v_hcc[1]    <- v_hcc[n_t+1] <- 0.5       # half-cycle correction weight 
+n_states    <- length(v_n)               # number of health states 
+d_c         <- 0.03                      # discount rate for costs 
+d_e         <- 0.03                      # discount rate for QALYs
+v_names_str <- c("Usual care",           # store the strategy names
+                 "New treatment 1", 
+                 "New treatment 2", 
+                 "New treatments 1 & 2") 
+n_str       <- length(v_names_str)       # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
-p_HS1   <- 0.15  # probability to become Sick when Healthy
-p_S1H   <- 0.5   # probability to become Healthy when Sick
-p_S1S2  <- 0.105 # probability to become Sicker when Sick
-hr_S1   <- 3     # hazard ratio of death in Sick vs Healthy
-hr_S2   <- 10    # hazard ratio of death in Sicker vs Healthy 
+p_HS1       <- 0.15                      # probability to become Sick when Healthy
+p_S1H       <- 0.5                       # probability to become Healthy when Sick
+p_S1S2      <- 0.105                     # probability to become Sicker when Sick
+hr_S1       <- 3                         # hazard ratio of death in Sick vs Healthy
+hr_S2       <- 10                        # hazard ratio of death in Sicker vs Healthy 
 # For New treatment 2
-or_S1S2     <- 0.7              # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2    <- log(or_S1S2)     # log-odd ratio of becoming Sicker when Sick
-logit_S1S2  <- logit(p_S1S2)    # log-odds of becoming Sicker when Sick
+or_S1S2     <- 0.7                       # odds ratio of becoming Sicker when Sick under New treatment 2
+lor_S1S2    <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
+logit_S1S2  <- logit(p_S1S2)             # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
 
 ## Age-dependent mortality rates
 lt_usa_2005 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2005 %>% 
-  select(Total) %>%
-  as.matrix()
+                   select(Total) %>%
+                   as.matrix()
 
 ## State rewards
 # Costs
-c_H    <- 2000  # cost of remaining one cycle Healthy 
-c_S1   <- 4000  # cost of remaining one cycle Sick 
-c_S2   <- 15000 # cost of remaining one cycle Sicker 
-c_D    <- 0     # cost of being dead (per cycle)
-c_trt1 <- 12000 # cost of New treatment 1 (per cycle) 
-c_trt2 <- 13000 # cost of New treatment 2 (per cycle)
+c_H    <- 2000    # cost of remaining one cycle Healthy 
+c_S1   <- 4000    # cost of remaining one cycle Sick 
+c_S2   <- 15000   # cost of remaining one cycle Sicker 
+c_D    <- 0       # cost of being dead (per cycle)
+c_trt1 <- 12000   # cost of New treatment 1 (per cycle) 
+c_trt2 <- 13000   # cost of New treatment 2 (per cycle)
 # Utilities
-u_H    <- 1     # utility when Healthy 
-u_S1   <- 0.75  # utility when Sick 
-u_S2   <- 0.5   # utility when Sicker
-u_D    <- 0     # utility when Healthy 
-u_trt1 <- 0.95  # utility when being treated
+u_H    <- 1       # utility when Healthy 
+u_S1   <- 0.75    # utility when Sick 
+u_S2   <- 0.5     # utility when Sicker
+u_D    <- 0       # utility when Healthy 
+u_trt1 <- 0.95    # utility when being treated
 
 ## Transition rewards
-du_HS1 <- 0.01  # disutility when transitioning from Healthy to Sick
-ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
-ic_D   <- 2000  # increase in cost when dying
+du_HS1 <- 0.01    # disutility when transitioning from Healthy to Sick
+ic_HS1 <- 1000    # increase in cost when transitioning from Healthy to Sick
+ic_D   <- 2000    # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
-v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
-v_dwe <- 1 / ((1 + d_c) ^ (0:(n_t)))
+v_dwc  <- 1 / ((1 + d_e) ^ (0:(n_t)))
+v_dwe  <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
 ## Age-specific transition probabilities
-# Age-specific probability of dying when Healthy (all-cause mortality)
-p_HDage  <- 1 - exp(-v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)])  # NOTE two steps + rate prob function
+# extract age-specific all-cause mortality for ages in model time horizon
+v_mort    <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
+# Age-specific probability of dying when Healthy 
+p_HDage   <- RateProb(v_mort)
 # Age-specific mortality risk in the Sick state
-p_S1Dage <- 1 - exp(-v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)] * hr_S1)
+p_S1Dage  <- RateProb(v_mort * hr_S1)
 # Age-specific mortality risk in the Sicker state
-p_S2Dage <- 1 - exp(-v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)] * hr_S2)
+p_S2Dage  <- RateProb(v_mort * hr_S2)
 
-######################## Construct state-transition models ####################
+############################ Construct state-transition models ############################
 #### Create transition arrays ####
 # Initialize 3-D array
 a_P <- array(0, dim      = c(n_states, n_states, n_t),
@@ -146,7 +150,7 @@ a_P_trt2 <- a_P
 a_P_trt2["S1", "S1", ] <- 1 - (p_S1H + p_S1S2_trt2 + p_S1Dage)
 a_P_trt2["S1", "S2", ] <- p_S1S2_trt2
 
-#### Check if transition matrix is valid (i.e., each row should add up to 1) 
+### Check if transition matrix is valid (i.e., each row should add up to 1) 
 check_transition(a_P,      array = T)
 check_transition(a_P_trt2, array = T)
 
@@ -191,8 +195,7 @@ plot_trace(m_M_ad)
 ## Plot the cohort trace for scenarios New treatment 2 and New treatments 1 & 2
 plot_trace(m_M_ad_trt2)
 
-#### State and Transition Rewards ####
-### State rewards
+#### State Rewards ####
 ## Vector of state utilities under Usual care
 v_u_UC     <- c(H  = u_H, 
                 S1 = u_S1, 
@@ -234,60 +237,66 @@ v_c_trt1_2 <- c(H  = c_H,
                 S2 = c_S2 + (c_trt1 + c_trt2), 
                 D  = c_D)
 
-### Arrays of rewards
-## Array of state and transition utilities under Usual Care
+## Store the vectors of state utilities for each strategy in a list 
 l_u   <- list(v_u_UC     = v_u_UC,
               v_u_trt1   = v_u_trt1,
               v_u_trt2   = v_u_trt2,
               v_u_trt1_2 = v_u_trt1_2)
-
+## Store the vectors of state cost for each strategy in a list 
 l_c   <- list(v_c_UC     = v_c_UC,
               v_c_trt1   = v_c_trt1,
               v_c_trt2   = v_c_trt2,
               v_c_trt1_2 = v_c_trt1_2)
-
+## Store the transition arrays for each strategy in a list
 l_a_A <- list(a_A_UC     = a_A,
               a_A_trt1   = a_A,
               a_A_trt2   = a_A_trt2,
               a_A_trt1_2 = a_A_trt2)
 
+## create empty vectors to store total utilities and costs 
 v_totqaly <- v_totcost <- vector(mode = "numeric", length = n_str)
 names(v_totqaly) <- names(v_totcost) <- v_names_str
 
+#### Loop through each strategy and calculate total utilities and costs ####
 for (i in 1:n_str) {
   v_u <- l_u[[i]]
   v_c <- l_c[[i]]
   a_A <- l_a_A[[i]]
   
-  m_u <- matrix(v_u, nrow=n_states, ncol=n_states, byrow = T)
-  m_c <- matrix(v_c, nrow=n_states, ncol=n_states, byrow = T)
+  #### Array of state utilities and costs ####  
+  m_u   <- matrix(v_u, nrow = n_states, ncol = n_states, byrow = T)
+  m_c   <- matrix(v_c, nrow = n_states, ncol = n_states, byrow = T)
   a_R_u <- array(m_u, 
-                    dim = c(n_states, n_states, n_t + 1),
-                    dimnames = list(v_n, v_n, 0:n_t))
+                 dim      = c(n_states, n_states, n_t + 1),
+                 dimnames = list(v_n, v_n, 0:n_t))
   a_R_c <- array(m_c, 
-                    dim = c(n_states, n_states, n_t + 1),
-                    dimnames = list(v_n, v_n, 0:n_t))
+                 dim      = c(n_states, n_states, n_t + 1),
+                 dimnames = list(v_n, v_n, 0:n_t))
   
+  #### Apply transition utilities and costs ####  
   # Add disutility due to transition from H to S1
-  a_R_u["H", "S1", ] <- a_R_u["H", "S1", ] - du_HS1
+  a_R_u["H", "S1", ]      <- a_R_u["H", "S1", ]      - du_HS1
   # Add transition cost per cycle due to transition from H to S1
-  a_R_c["H", "S1", ] <- a_R_c["H", "S1", ] + ic_HS1
+  a_R_c["H", "S1", ]      <- a_R_c["H", "S1", ]      + ic_HS1
   # Add transition cost  per cycle of dying from all non-dead states
   a_R_c[-n_states, "D", ] <- a_R_c[-n_states, "D", ] + ic_D
   
-  
+  #### Expected QALYs and Costs for all transitions per cycle ####
+  # QALYs = life years x QoL
+  # NOTE: all parameters are annual
   a_Y_c <- a_A * a_R_c
   a_Y_u <- a_A * a_R_u 
+  
+  #### Expected QALYs and Costs per cycle ####
+  ## Vector of qalys under Usual Care
   v_qaly <- apply(a_Y_u, 3, sum)
   v_cost <- apply(a_Y_c, 3, sum)
   
-  
+  #### Discounted total expected QALYs and Costs per strategy ####
   ## QALYs
   v_totqaly[i] <- t(v_qaly) %*% (v_dwe * v_hcc)
   ## Costs
   v_totcost[i] <- t(v_cost) %*% (v_dwc * v_hcc)
-  
-  # NOTE: vector of epi outcomes in vectors, no need to plot
 }
 
 ########################### Cost-effectiveness analysis #######################
@@ -297,15 +306,12 @@ df_cea <- calculate_icers(cost       = v_totcost,
                           strategies = v_names_str)
 df_cea
 
-### Create CEA table
-table_cea <- df_cea
-
 ### Create CEA table with proper formatting
 table_cea <- format_table_cea(df_cea)
 table_cea
 
 ### CEA frontier
 plot(df_cea, label = "all") +
-     expand_limits(x = max(table_cea$QALYs) + 0.5) # change this
+     expand_limits(x = max(table_cea$QALYs) + 0.5) 
 
 

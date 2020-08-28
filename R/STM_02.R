@@ -84,7 +84,7 @@ p_S1S2_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker w
 ## Age-dependent mortality rates
 lt_usa_2005 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2005 %>% 
-  # filter(Age >= age & Age <= n_age_max) %>%
+  # filter(Age >= age & Age <= n_age_max) %>%  # WE DONT NEED THIS RIGHT?
   select(Total) %>%
   as.matrix()
 
@@ -323,68 +323,7 @@ v_u_trt1_2 <- c(H = u_H, S1 = u_trt1, S2 = u_S2, D = u_D)
 ## Vector of state costs per cycle under New treatment 1 & 2
 v_c_trt1_2 <- c(H = c_H, S1 = c_S1 + (c_trt1 + c_trt2), S2 = c_S2 + (c_trt1 + c_trt2), D = c_D)
 
-####
 ### Arrays of rewards
-## Array of state and transition utilities under Usual Care
-l_u <- list(v_u_UC     = v_u_UC,
-            v_u_trt1   = v_u_trt1,
-            v_u_trt2   = v_u_trt2,
-            v_u_trt1_2 = v_u_trt1_2)
-
-l_c <- list(v_c_UC     = v_c_UC,
-            v_c_trt1   = v_c_trt1,
-            v_c_trt2   = v_c_trt2,
-            v_c_trt1_2 = v_c_trt1_2)
-
-l_a_A <- list(a_A_UC     = a_A,
-              a_A_trt1   = a_A,
-              a_A_trt2   = a_A_trt2,
-              a_A_trt1_2 = a_A_trt2)
-
-v_totqaly <- v_totcost <- vector(mode = "numeric", length = n_str)
-names(v_totqaly) <- names(v_totcost) <- v_names_str
-
-for (i in 1:n_str) {
-  v_u <- l_u[[i]]
-  v_c <- l_c[[i]]
-  a_A <- l_a_A[[i]]
-  
-  m_u <- matrix(v_u, nrow=n_states, ncol=n_states, byrow = T)
-  m_c <- matrix(v_c, nrow=n_states, ncol=n_states, byrow = T)
-  a_R_u <- array(m_u, 
-                    dim = c(n_states, n_states, n_t + 1),
-                    dimnames = list(v_n, v_n, 0:n_t))
-  a_R_c <- array(m_c, 
-                    dim = c(n_states, n_states, n_t + 1),
-                    dimnames = list(v_n, v_n, 0:n_t))
-  # Add disutility due to transition from H to S1
-  a_R_u["H", "S1", ] <- a_R_u["H", "S1", ] - du_HS1
-  # Add transition cost per cycle due to transition from H to S1
-  a_R_c["H", "S1", ] <- a_R_c["H", "S1", ] + ic_HS1
-  # Add transition cost  per cycle of dying from all non-dead states
-  a_R_c[-n_states, "D", ] <- a_R_c[-n_states, "D", ] + ic_D
-  ### For Usual Care
-  a_Y_c <- a_A * a_R_c
-  a_Y_u <- a_A * a_R_u 
-  v_qaly <- apply(a_Y_u, 3, sum)
-  v_cost <- apply(a_Y_c, 3, sum)
-  ### For Usual Care
-  ## QALYs
-  v_totqaly[i] <- t(v_qaly) %*% (v_dwe * v_hcc)
-  ## Costs
-  v_totcost[i] <- t(v_cost) %*% (v_dwc * v_hcc)
-  
-  # NOTE: vector of epi outcomes in vectors, no need to plot
-}
-
-
-######
-
-# this step is 'prep' step, meaningless on its own (that's why we got CONFUSED!)
-v_u_UC
-a_R_u_UC[,,1]
-# add interpretation
-
 ## Array of state and transition costs per cycle under Usual Care
 a_R_c_UC <- aperm(array(v_c_UC, 
                         dim = c(n_states, n_states, n_t + 1),
@@ -433,8 +372,6 @@ a_R_c_UC["H", "S1", ] <- a_R_c_UC["H", "S1", ] + ic_HS1
 # Add transition cost  per cycle of dying from all non-dead states
 a_R_c_UC[-n_states, "D", ] <- a_R_c_UC[-n_states, "D", ] + ic_D
 
-a_R_u_UC[,,1] # this step is also not super meaningful on its own, still part of the 'prep' step
-
 ## For New treatment 1
 # Add disutility due to transition from Healthy to Sick
 a_R_u_trt1["H", "S1", ] <- a_R_u_trt1["H", "S1", ] - du_HS1
@@ -467,17 +404,6 @@ a_R_c_trt1_2[-n_states, "D", ] <- a_R_c_trt1_2[-n_states, "D", ] + ic_D
 a_Y_c_UC <- a_A * a_R_c_UC
 a_Y_u_UC <- a_A * a_R_u_UC 
 
-m_M_ad[3,] # cycle 2, we know total of 0.79579 in H
-a_A[,,3]   # this tells us how they got to H and proportions
-a_R_u_UC[,,3] # reward matrix we got
-a_Y_u_UC[,,3] # this is the reason we did those 2 previous PREP steps, we want to apply the disutility only to those who went from
-# H to S1 not S1 to S1 or the rest to S1 (cohort trace matrix does not allow for this)
-
-# GOAL:
-# let S1_overall = H_to_S1 + S1_to_S1 + S2_to_S1 + D_to_S1
-# cohort matrix: 0.75 x S1_overall
-# array: (0.74 x H_to_S1) + (0.75 x S1_to_S1) + (0.75 x S2_to_S1) + (0.75 x D_to_S1)
-
 ### For New treatment 1 
 a_Y_c_trt1 <- a_A * a_R_c_trt1
 a_Y_u_trt1 <- a_A * a_R_u_trt1 
@@ -497,18 +423,6 @@ v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
 v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
 
 v_qaly_UC1 <- apply(a_Y_u_UC, 3, sum) # use this
-
-# GOAL: realize this goal!
-a_Y_u_UC[,,3] # 2nd cycle
-t(colSums(a_Y_u_UC))[1:4,] # by time now, broken up by states using colsums (0.72079+0.07500=0.7957908)
-v_qaly_UC[1:4] # sum all states for each time cycle (still by time) (0.942=0.79579+0.138338+0.007875+0)
-# after that we do discounting/ half-cycle correction ... same stuff as usual
-
-## SUMMARY:
-# this is a very elegant way. The complexity allows for max flexibility
-# You can essentially have any transition reward applied to any state reward for a particular transtion to that state, IMPLICITY (like the -0.01 disutility applied to state utlity of S1 = 0.75)
-# so if disutility is only applied to H to S1, only and exactly those going through this transition (sub-proportion) would get this disutility
-# my thoughts: we either go with matrix only or we have to do full arrays since we need the flexibliity to account for ALL transitions
 
 ## Vector of qalys under New Treatment 1
 v_qaly_trt1 <- rowSums(t(colSums(a_Y_u_trt1)))
