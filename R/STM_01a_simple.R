@@ -78,8 +78,28 @@ p_S1H       <- 0.5                              # probability to become Healthy 
 p_S1S2      <- 0.105                            # probability to become Sicker when Sick
 hr_S1       <- 3                                # hazard ratio of death in Sick vs Healthy
 hr_S2       <- 10                               # hazard ratio of death in Sicker vs Healthy 
+
+# book way
+p_S1D       <- 1 - exp(log(1 - p_HD) * hr_S1)   # probability of dying in Sick
+p_S2D       <- 1 - exp(log(1 - p_HD) * hr_S2)   # probability of dying in Sicker
+
+# new way 1
 p_S1D       <- RateProb(-log(1 - p_HD) * hr_S1) # probability of dying in Sick
 p_S2D       <- RateProb(-log(1 - p_HD) * hr_S2) # probability of dying in Sicker
+
+# new way 2
+r_HD        <- ProbRate(p_HD)                   # hazard rate of dying when Healthy
+r_S1        <- r_HD * hr_S1                     # hazard rate of dying when Sick
+r_S2        <- r_HD * hr_S2                     # hazard rate of dying when Sicker
+p_S1D       <- RateProb(r_S1)                   # probability of dying in Sick
+p_S2D       <- RateProb(r_S2)                   # probability of dying in Sicker
+
+# new way 3
+p_S1D      <- ProbProb1(p_HD, hr = hr_S1)       # probability of dying in Sick
+p_S2D      <- ProbProb1(p_HD, hr = hr_S2)       # probability of dying in Sicker
+
+
+
 # For New treatment 2
 or_S1S2     <- 0.7                              # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2    <- log(or_S1S2)                     # log-odds ratio of becoming Sicker when Sick
@@ -148,14 +168,8 @@ m_P_trt2["S1", "S1"] <- 1 - (p_S1H + p_S1S2_trt2 + p_S1D)
 m_P_trt2["S1", "S2"] <- p_S1S2_trt2
 
 ### Check if transition matrix is valid (i.e., each row should add up to 1)
-valid <- rowSums(m_P) # sum the rows 
-if (!isTRUE(all.equal(as.numeric((valid)), as.numeric(rep(1, n_states))))) { #check if the rows are all equal to one 
-  stop("This is not a valid transition Matrix")
-}
-valid2 <- rowSums(m_P_trt2) # sum the rows 
-if (!isTRUE(all.equal(as.numeric((valid2)), as.numeric(rep(1, n_states))))) { #check if the rows are all equal to one 
-  stop("This is not a valid transition Matrix")
-}
+check_transition(m_P)
+check_transition(m_P_trt2)
 
 #### Run Markov model ####
 # Iterative solution of time-independent cSTM

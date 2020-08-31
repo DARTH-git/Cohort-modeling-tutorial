@@ -143,3 +143,18 @@ ProbProb <- function(p, t = 1){
   return(p_new)
 }
 
+#-------------------------------------------------------------------------------------------------#
+####         Function to convert probabilities and probabilities - different frequency         ####
+#-------------------------------------------------------------------------------------------------#
+#' Convert a probability to a probability with a different frequency
+#'
+#' \code{ProbRate} convert a probability to a probability with a different frequency.
+#'
+#' @param p probability
+#' @param t time/ frequency
+#' @return a number - converted probability
+#' 
+ProbProb1 <- function(p, t = 1, hr = 1){
+  p_new <- RateProb(ProbRate(p, t) * hr)
+  return(p_new)
+}
