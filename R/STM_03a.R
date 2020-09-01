@@ -353,19 +353,19 @@ for (i in 1:n_str) {
                  dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                  dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
   
-  #### Apply transition utilities and costs ####  
-  # Apply disutility due to transition from H to S1
-  a_R_u["H", "S1", ]      <- a_R_u["H", "S1", ]       - du_HS1
+  #### Apply transition rewards ####  
+  # Add disutility due to transition from H to S1
+  a_R_u["H", "S1_1Yr", ]          <- a_R_u["H", "S1_1Yr", ]          - du_HS1
   # Add transition cost per cycle due to transition from H to S1
-  a_R_c["H", "S1", ]      <- a_R_c["H", "S1", ]       + ic_HS1
-  # Add transition cost  per cycle of dying from all non-dead states
-  a_R_c[-n_states, "D", ] <- a_R_c[- n_states, "D", ] + ic_D
+  a_R_c["H", "S1_1Yr", ]          <- a_R_c["H", "S1_1Yr", ]          + ic_HS1
+  # Add transition cost per cycle of dying from all non-dead states
+  a_R_c[-n_states_tunnels, "D", ] <- a_R_c[-n_states_tunnels, "D", ] + ic_D
   
   #### Expected QALYs and Costs for all transitions per cycle ####
   # QALYs = life years x QoL
   # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-  a_Y_c <- a_A * a_R_c
-  a_Y_u <- a_A * a_R_u 
+  a_Y_c <- a_A_tunnels * a_R_c
+  a_Y_u <- a_A_tunnels * a_R_u 
   
   #### Expected QALYs and Costs per cycle ####
   ## Vector of QALYs under Usual Care
@@ -379,183 +379,20 @@ for (i in 1:n_str) {
   v_totcost[i] <- t(v_cost) %*% (v_dwc * v_hcc)
 }
 
-
-
-
-
-
-
-
-
-## Array of state and transition utilities under Usual care
-a_R_u_UC <- aperm(array(v_u_UC,
-                        dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                        dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                  perm = c(2, 1, 3))
-## Array of state and transition costs under Usual care
-a_R_c_UC <- aperm(array(v_c_UC,
-                        dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                        dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                  perm = c(2, 1, 3))
-
-## Array of utilities under New treatment 1
-a_R_u_trt1 <- aperm(array(v_u_trt1,
-                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                    perm = c(2, 1, 3))
-## Array of costs per cycle under New treatment 1
-a_R_c_trt1 <- aperm(array(v_c_trt1,
-                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                    perm = c(2, 1, 3))
-
-## Array of utilities under New treatment 2
-a_R_u_trt2 <- aperm(array(v_u_trt2,
-                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                    perm = c(2, 1, 3))
-## Array of costs per cycle under New treatment 2
-a_R_c_trt2 <- aperm(array(v_c_trt2,
-                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                    perm = c(2, 1, 3))
-
-## Array of utilities under New treatment 1 & 2
-a_R_u_trt1_2 <- aperm(array(v_u_trt1_2,
-                          dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                          dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                      perm = c(2, 1, 3))
-## Array of costs per cycle under New treatment 1 & 2
-a_R_c_trt1_2 <- aperm(array(v_c_trt1_2,
-                          dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                          dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
-                      perm = c(2, 1, 3))
-
-### Transition rewards
-## For Usual care
-# Add disutility due to transition from H to S1
-a_R_u_UC["H", "S1_1Yr", ] <- a_R_u_UC["H", "S1_1Yr", ] - du_HS1
-# Add transition cost per cycle due to transition from H to S1
-a_R_c_UC["H", "S1_1Yr", ] <- a_R_c_UC["H", "S1_1Yr", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_UC[-n_states_tunnels, "D", ] <- a_R_c_UC[-n_states_tunnels, "D", ] + ic_D
-
-## For New treatment 1
-# Add disutility due to transition from Healthy to Sick
-a_R_u_trt1["H", "S1_1Yr", ] <- a_R_u_trt1["H", "S1_1Yr", ] - du_HS1
-# Add transition cost per cycle due to transition from Healthy to Sick
-a_R_c_trt1["H", "S1_1Yr", ] <- a_R_c_trt1["H", "S1_1Yr", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_trt1[-n_states_tunnels, "D", ] <- a_R_c_trt1[-n_states_tunnels, "D", ] + ic_D
-
-## For New treatment 2
-# Add disutility due to transition from Healthy to Sick
-a_R_u_trt2["H", "S1_1Yr", ] <- a_R_u_trt2["H", "S1_1Yr", ] - du_HS1
-# Add transition cost per cycle due to transition from Healthy to Sick
-a_R_c_trt2["H", "S1_1Yr", ] <- a_R_c_trt2["H", "S1_1Yr", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_trt2[-n_states_tunnels, "D", ] <- a_R_c_trt2[-n_states_tunnels, "D", ] + ic_D
-
-## For New treatment 1 & 2
-# Add disutility due to transition from Healthy to Sick
-a_R_u_trt1_2["H", "S1_1Yr", ] <- a_R_u_trt1_2["H", "S1_1Yr", ] - du_HS1
-# Add transition cost per cycle due to transition from Healthy to Sick
-a_R_c_trt1_2["H", "S1_1Yr", ] <- a_R_c_trt1_2["H", "S1_1Yr", ] + ic_HS1
-# Add transition cost per cycle of dying from all non-dead states
-a_R_c_trt1_2[-n_states_tunnels, "D", ] <- a_R_c_trt1_2[-n_states_tunnels, "D", ] + ic_D
-
-#### Expected QALYs and Costs for all transitions per cycle ####
-# QALYs = life years x QoL
-# NOTE: all parameters are annual
-
-### For Usual Care
-a_Y_c_UC <- a_A_tunnels * a_R_c_UC
-a_Y_u_UC <- a_A_tunnels * a_R_u_UC 
-
-### For New treatment 1 
-a_Y_c_trt1 <- a_A_tunnels * a_R_c_trt1
-a_Y_u_trt1 <- a_A_tunnels * a_R_u_trt1 
-
-### For New treatment 2
-a_Y_c_trt2 <- a_A_tunnels_trt2 * a_R_c_trt2
-a_Y_u_trt2 <- a_A_tunnels_trt2 * a_R_u_trt2 
-
-### For New treatment 1 & 2
-a_Y_c_trt1_2 <- a_A_tunnels_trt2 * a_R_c_trt1_2
-a_Y_u_trt1_2 <- a_A_tunnels_trt2 * a_R_u_trt1_2 
-
-#### Expected QALYs and Costs per cycle ####
-## Vector of qalys under Usual Care
-v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
-## Vector of costs under Usual Care
-v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
-
-## Vector of qalys under New Treatment 1
-v_qaly_trt1 <- rowSums(t(colSums(a_Y_u_trt1)))
-## Vector of costs under New Treatment 1
-v_cost_trt1 <- rowSums(t(colSums(a_Y_c_trt1)))
-
-## Vector of qalys under New Treatment 2
-v_qaly_trt2 <- rowSums(t(colSums(a_Y_u_trt2)))
-## Vector of costs under New Treatment 2
-v_cost_trt2 <- rowSums(t(colSums(a_Y_c_trt2)))
-
-## Vector of qalys under New Treatment 1 & 2
-v_qaly_trt1_2 <- rowSums(t(colSums(a_Y_u_trt1_2)))
-## Vector of costs under New Treatment 1 & 2
-v_cost_trt1_2 <- rowSums(t(colSums(a_Y_c_trt1_2)))
-
-#### Discounted total expected QALYs and Costs per strategy ####
-### For Usual Care
-## QALYs
-n_totqaly_UC <- t(v_qaly_UC) %*% (v_dwe * v_hcc)
-## Costs
-n_totcost_UC <- t(v_cost_UC) %*% (v_dwc * v_hcc)
-
-### For New treatment 1
-## QALYs
-n_totqaly_trt1 <- t(v_qaly_trt1) %*% (v_dwe * v_hcc)
-## Costs
-n_totcost_trt1 <- t(v_cost_trt1) %*% (v_dwc * v_hcc)
-
-### For New treatment 2
-## QALYs
-n_totqaly_trt2 <- t(v_qaly_trt2) %*% (v_dwe * v_hcc)
-## Costs
-n_totcost_trt2 <- t(v_cost_trt2) %*% (v_dwc * v_hcc)
-
-### For New treatment 1 & 2
-## QALYs
-n_totqaly_trt1_2 <- t(v_qaly_trt1_2) %*% (v_dwe * v_hcc)
-## Costs
-n_totcost_trt1_2 <- t(v_cost_trt1_2) %*% (v_dwc * v_hcc)
-
 ########################## Cost-effectiveness analysis #######################
-### Vector of total costs for all strategies
-v_ted_cost <- c(n_totcost_UC, n_totcost_trt1, n_totcost_trt2, n_totcost_trt1_2)
-### Vector of effectiveness for all strategies
-v_ted_qaly <- c(n_totqaly_UC, n_totqaly_trt1, n_totqaly_trt2, n_totqaly_trt1_2)
-
 ### Calculate incremental cost-effectiveness ratios (ICERs)
-df_cea <- calculate_icers(cost = v_ted_cost, 
-                          effect = v_ted_qaly,
+df_cea <- calculate_icers(cost       = v_totcost, 
+                          effect     = v_totqaly,
                           strategies = v_names_str)
 df_cea
-### Create CEA table
-table_cea <- df_cea
-## Format column names
-colnames(table_cea)[colnames(table_cea) %in% c("Cost", "Effect", "Inc_Cost", "Inc_Effect", "ICER")] <- 
-            c("Costs ($)", "QALYs", "Incremental Costs ($)", "Incremental QALYs", "ICER ($/QALY)") 
-## Format rows
-table_cea$`Costs ($)` <- comma(round(table_cea$`Costs ($)`, 0))
-table_cea$`Incremental Costs ($)` <- comma(round(table_cea$`Incremental Costs ($)`, 0))
-table_cea$QALYs <- round(table_cea$QALYs, 2)
-table_cea$`Incremental QALYs` <- round(table_cea$`Incremental QALYs`, 2)
-table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
+
+### Create CEA table in proper format
+table_cea <- format_table_cea(df_cea)
 table_cea
+
 ### CEA frontier
 plot(df_cea, label = "all") +
-     expand_limits(x = max(table_cea$QALYs + 0.5)) 
+     expand_limits(x = max(table_cea$QALYs) + 0.5) 
 
 ###################### Probabalistic Sensitivty Analysis #####################
 

@@ -34,18 +34,20 @@
 rm(list = ls())    # remove any variables in R's memory 
 
 ### Install packages
-# install.packages("dplyr")    # to manipulate data
-# install.packages("reshape2") # to transform data
-# install.packages("ggplot2")  # to visualize data
-# install.packages("scales")   # for dollar signs and commas
-# install.packages("boot")     # to handle log odds and log odds ratios
-# install.packages("devtools") # to ensure compatibility among packages
+# install.packages("dplyr")     # to manipulate data
+# install.packages("reshape2")  # to transform data
+# install.packages("ggplot2")   # to visualize data
+# install.packages("gridExtra") # to visualize data
+# install.packages("scales")    # for dollar signs and commas
+# install.packages("boot")      # to handle log odds and log odds ratios
+# install.packages("devtools")  # to ensure compatibility among packages
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub, for CEA and calculate ICERs
 
 ### Load packages
 library(dplyr)    
 library(reshape2) 
-library(ggplot2)   
+library(ggplot2) 
+library(gridExtra)
 library(scales)    
 library(boot)
 library(dampack) 
@@ -301,6 +303,10 @@ ggplot(data.frame(Cycle = 1:n_t,
 le_ad <- sum(v_S_ad)
 le_ad_trt2 <- sum(v_S_ad_trt2)
 
+# facet_wrap (both by horizontal/vertical) for trace, wrap by strategy, free scale y (past list of traces to a plot_trace function, rbindlist, keep list names), same with plot surv function
+# col/type by strategy for epi, facet by outcome (3x1 or 1x3)
+# for each outcome, create a plot function 
+
 #### State and Transition Rewards ####
 ### State rewards
 ## Vector of state utilities under Usual care
@@ -324,6 +330,11 @@ v_u_trt1_2 <- c(H = u_H, S1 = u_trt1, S2 = u_S2, D = u_D)
 v_c_trt1_2 <- c(H = c_H, S1 = c_S1 + (c_trt1 + c_trt2), S2 = c_S2 + (c_trt1 + c_trt2), D = c_D)
 
 ### Arrays of rewards
+## Array of utilities under New treatment 1 
+a_R_u_UC <- aperm(array(v_u_UC,
+                          dim = c(n_states, n_states, n_t + 1),
+                          dimnames = list(v_n, v_n, 0:n_t)),
+                    perm = c(2, 1, 3))
 ## Array of state and transition costs per cycle under Usual Care
 a_R_c_UC <- aperm(array(v_c_UC, 
                         dim = c(n_states, n_states, n_t + 1),
@@ -471,8 +482,8 @@ v_ted_cost <- c(n_totcost_UC, n_totcost_trt1, n_totcost_trt2, n_totcost_trt1_2)
 v_ted_qaly <- c(n_totqaly_UC, n_totqaly_trt1, n_totqaly_trt2, n_totqaly_trt1_2)
 
 ### Calculate incremental cost-effectiveness ratios (ICERs)
-df_cea <- calculate_icers(cost = v_totcost, 
-                          effect = v_totqaly,
+df_cea <- calculate_icers(cost = v_ted_cost, 
+                          effect = v_ted_qaly,
                           strategies = v_names_str)
 df_cea
 ### Create CEA table
