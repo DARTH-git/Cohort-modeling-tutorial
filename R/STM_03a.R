@@ -58,7 +58,7 @@ source("functions/Functions.R")
 n_age_init <- 25                      # age at baseline
 n_age_max  <- 110                     # maximum age of follow up
 n_t        <- n_age_max - n_age_init  # time horizon, number of cycles
-v_n        <- c("H", "S1", "S2", "D") # the 4 health states of the model:
+v_n        <- c("H", "S1", "S2", "D") # the 4 health states of the model: # change to v_names_states
 
 ## Tunnel inputs
 # Number of tunnels

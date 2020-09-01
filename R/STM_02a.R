@@ -205,7 +205,8 @@ names(l_m_M) <- v_names_str
 
 #### Plot Outputs ####
 ## Plot the cohort traces 
-plot_trace(l_m_M)
+plot_trace(m_M_ad)
+plot_trace_stratgey(l_m_M)
 
 ### Plot the epidemiological outcomes 
 ## Plot survival probabilities and proportion of Sicker among sick individuals

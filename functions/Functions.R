@@ -54,7 +54,8 @@ check_transition_probability <- function(a_P,
                                          array = TRUE, 
                                          err_stop = FALSE, 
                                          verbose = FALSE) {
-  ### If it is a transition probability array
+  ### If it is a transition probability array   # 1) is_array or check dim
+                                                # 2) if not an array make it an array (don't repeat code)
   if (array) {
     m_indices_notvalid <- arrayInd(which(a_P < 0 | a_P > 1), 
                                    dim(a_P))
@@ -141,8 +142,7 @@ check_sum_of_transition_array <- function(a_P,
         warning("This is not a valid transition probability array")
       } 
     }
-    
-    ### If it is a transition probability matrix  
+  ### If it is a transition probability matrix  
   } else {
     a_P <- as.array(a_P)
     valid <- (apply(a_P, 1, function(x) sum(x) == 1))
@@ -168,16 +168,7 @@ check_sum_of_transition_array <- function(a_P,
 #' @param l_m_M a list containing cohort trace matrices
 #' @return a ggplot object - plot of the cohort trace
 #' 
-plot_trace <- function(l_m_M) {
-  library(data.table)
-  library(tidyr)
-  
-  ## Define colors and line types
-  cols      <- c("H"  = "green",   "S1" = "orange", 
-                 "S2" = "red",     "D"  = "blue")
-  line_type <- c("H"  = "solid",   "S1" = "dashed", 
-                 "S2" = "dotdash", "D"  = "dotted")
-  
+get_DARTH_cols <- function() {
   # DARTH colors
   DARTHgreen      <- '#009999'  
   DARTHyellow     <- '#FDAD1E'  
@@ -187,36 +178,167 @@ plot_trace <- function(l_m_M) {
   DARTHcols <- c("H"  = DARTHgreen,  "S1" = DARTHblue, 
                  "S2" = DARTHyellow, "D"  = DARTHgray)
   
-  ## Pre-process the list of cohort traces for plotting
-  # append column indicating which strategy the each trace was constructed under
-  l_m_M <- lapply(seq_along(l_m_M), 
-                  function(y, n, i) {cbind(as.data.frame(y[[i]]), 
-                                           cycle = 0:n_t,
-                                           strategy = rep(n[[i]], nrow(y[[i]]))
-                  )}, y = l_m_M, n = names(l_m_M))
-  # combine the list of traces into one
-  m_M_plot <- do.call(rbind, l_m_M)
-  m_M_plot <- gather(m_M_plot, key = state, value, H, S1, S2, D)
-  # order the strategy and the states
-  m_M_plot$state    <- factor(m_M_plot$state, levels = v_n)
-  m_M_plot$strategy <- factor(m_M_plot$strategy, levels = v_names_str)
-  
+  return(DARTHcols) 
+}
+
+#----------------------------------------------------------------------------#
+####                    Function to plot cohort trace                     ####
+#----------------------------------------------------------------------------#
+#' Plot cohort trace
+#'
+#' \code{plot_trace} plots the cohort trace.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the cohort trace
+#' 
+plot_trace <- function(m_M) {
+  df_M <- data.frame(Cycle = 0:n_t, m_M, check.names = F)
+  df_M_long <- tidyr::gather(df_M, key = `Health State`, value, 2:ncol(df_M))
+
   ## Plot the cohort trace for scenarios Usual care and New treatment 1 
-  p <- ggplot(m_M_plot, aes(x = cycle, y = value, 
-                            color = state, linetype = state)) +
+  p <- ggplot(df_M_long, aes(x = Cycle, y = value, 
+                            color = `Health State`, linetype = `Health State`)) +
        geom_line(size = 1) +
-       scale_colour_manual(name = "Health state", 
-                           values = cols) +
-       scale_linetype_manual(name = "Health state",
-                             values = line_type) +
        xlab("Cycle") +
        ylab("Proportion of the cohort") +
        theme_bw(base_size = 14) +
        theme(legend.position  = "bottom", 
-             legend.background = element_rect(fill = NA)) +
-       facet_wrap(~strategy)
+             legend.background = element_rect(fill = NA)) 
+       # just one trace udner one strategy, 
  
-   return(p) 
+  return(p) 
+}
+
+#----------------------------------------------------------------------------#
+####                    Function to plot cohort trace per strategy        ####
+#----------------------------------------------------------------------------#
+#' Plot cohort trace
+#'
+#' \code{plot_trace} plots the cohort trace.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the cohort trace
+#' 
+plot_trace_strategy <- function(l_m_M) {
+  ## Pre-process the list of cohort traces for plotting
+  n_str <- length(l_m_M) 
+  l_df_M <- lapply(l_m_M, as.data.frame)
+  df_M_strategies <- data.table::rbindlist(l_df_M, use.names = T, 
+                                           idcol = "Strategy")
+  df_M_strategies$Cycle <- rep(0:n_t, n_str)
+  
+  m_M_plot <- tidyr::gather(df_M_strategies, key = `Health State`, value, 
+                            2:(ncol(df_M_strategies)-1))
+  # order the strategy and the states
+  m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_n)
+  m_M_plot$Strategy <- factor(m_M_plot$Strategy, levels = v_names_str)
+  
+  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
+  p <- ggplot(m_M_plot, aes(x = Cycle, y = value, 
+                            color = Strategy, linetype = Strategy)) +
+    geom_line(size = 1) +
+    xlab("Cycle") +
+    ylab("Proportion of the cohort") +
+    theme_bw(base_size = 14) +
+    theme(legend.position  = "bottom", 
+          legend.background = element_rect(fill = NA)) +
+    facet_wrap(~ state)
+  
+  return(p) 
+}
+
+#----------------------------------------------------------------------------#
+####                   Function to calculate survival curve                    ####
+#----------------------------------------------------------------------------#
+#' Plot survival curve
+#'
+#' \code{calc_surv} plots the survival probability curve.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the survival curve
+#' 
+calc_surv <- function(l_m_M, v_names_death_states) {
+  df_surv <- as.data.frame(lapply(l_m_M, 
+                                  function(x) {
+                                    rowSums(x[, !colnames(x) %in% v_names_death_states])
+                                    }
+                                  ))
+  colnames(df_surv) <- v_names_str
+  df_surv$Cycle     <- 0:n_t
+  df_surv_long      <- tidyr::gather(df_surv, key = Strategy, Survival, 1:n_str)
+  # order the strategy and the states
+  df_surv_long$Strategy <- ordered(df_surv_long$Strategy, levels = v_names_str)
+  df_surv_long <- df_surv_long %>% 
+    select(Strategy, Cycle, Survival)
+  
+  return(df_surv_long)
+}
+
+#----------------------------------------------------------------------------#
+####                   Function to calculate sick                    ####
+#----------------------------------------------------------------------------#
+#' Plot survival curve
+#'
+#' \code{calc_surv} plots the survival probability curve.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the survival curve
+#' 
+calc_sick <- function(l_m_M, v_names_sick_states) {
+  df_sick <- as.data.frame(lapply(l_m_M, 
+                                  function(x) {
+                                    rowSums(x[, colnames(x) %in% v_names_sick_states])
+                                  }
+  ))
+  colnames(df_sick) <- v_names_str
+  df_sick$Cycle     <- 0:n_t
+  df_sick_long      <- tidyr::gather(df_sick, key = Strategy, Sick, 1:n_str)
+  # order the strategy and the states
+  df_sick_long$Strategy <- ordered(df_surv_long$Strategy, levels = v_names_str)
+  df_sick_long <- df_sick_long %>% 
+    select(Strategy, Cycle, Sick)
+  
+  return(df_sick_long)
+}
+
+#----------------------------------------------------------------------------#
+####                   Function to calculate prevalence curve             ####
+#----------------------------------------------------------------------------#
+#' Calculate prevalence curve
+#'
+#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the prevalence curve
+#' 
+calc_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
+  df_alive      <- calc_surv(l_m_M, v_names_dead_states)
+  df_prop_sick  <- calc_sick(l_m_M, v_names_sick_states)
+  df_prevalence <- data.frame(Strategy   = df_alive$Strategy, 
+                              Cycle      = df_alive$Cycle,
+                              Prevalence = df_prop_sick$Sick / df_alive$Survival)
+  return(df_prevalence) 
+}
+
+#----------------------------------------------------------------------------#
+####                   Function to calculate prevalence curve                   ####
+#----------------------------------------------------------------------------#
+#' Calculate prevalence curve
+#'
+#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the prevalence curve
+#' 
+calc_prop_sicker <- function(l_m_M, v_names_sick_states, v_names_sicker_states) {
+  df_prop_sick   <- calc_sick(l_m_M, v_names_sick_states)
+  df_prop_sicker <- calc_sick(l_m_M, v_names_sicker_states)
+  df_prop_sick_sicker <- data.frame(Strategy   = df_M_strategies$Strategy, 
+                                    Cycle      = df_M_strategies$Cycle,
+                                    `Proporiton Sicker` = 
+                                      df_prop_sicker$Sick / (df_prop_sick$Sick + df_prop_sicker$Sick))
+  
+  return(df_prop_sick_sicker) 
 }
 
 #----------------------------------------------------------------------------#
@@ -229,77 +351,19 @@ plot_trace <- function(l_m_M) {
 #' @param l_m_M a list containing cohort trace matrices
 #' @return a ggplot object - plot of the survival curve
 #' 
-plot_surv <- function(l_m_M) {
-
-  ## Define colors and line types
-  cols      <- c("orange", "blue", "red", "green")
-  line_type <- c("solid", "dashed", "dotdash", "dotted")
-  
-  ## Calculate survival probabilities 
-  surv <- as.data.frame(lapply(l_m_M, function(x) {rowSums(x[, !colnames(x) == "D"])}))
-  colnames(surv) <- v_names_str
-  surv$Cycle <- 0:n_t
-  surv <- gather(surv, Strategy, Survival, 1:4)
-  
-  # order the strategy and the states
-  surv$Strategy <- factor(surv$Strategy, levels = v_names_str)
+plot_surv <- function(l_m_M, v_names_death_states) {
+  # Calculate survival probabilities
+  df_surv <- calc_surv(l_m_M, v_names_death_states)
+  # Order the strategy and the states
+  df_surv$Strategy <- factor(df_surv$Strategy, levels = v_names_str)
   
   ## Plot the cohort trace for scenarios Usual care and New treatment 1 
-  p <- ggplot(surv, 
+  p <- ggplot(df_surv, 
               aes(x = Cycle, y = Survival, group = Strategy)) +
-              geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
-              xlab("Cycle") +
-              ylab("Proportion alive") +
-              scale_color_manual(values = as.character(cols)) +
-              scale_linetype_manual(values = as.character(line_type)) +
-              ggtitle("Survival probabilities") + 
-              theme_bw(base_size = 14) +
-              theme()
-  
-  return(p) 
-}
-
-#----------------------------------------------------------------------------#
-####     Function to plot proportion of Sicker among sick individuals     ####
-#----------------------------------------------------------------------------#
-#' Plot proportion of Sicker among Sick individuals
-#'
-#' \code{plot_surv} plots the proportion of individuals in the Sicker state 
-#' among those in the Sick or the Sicker state.
-#'
-#' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the proportion of Sicker among sick
-#' 
-plot_sicker <- function(l_m_M) {
-  
-  ## Define colors and line types
-  cols      <- c("orange", "blue", "red", "green")
-  line_type <- c("solid", "dashed", "dotdash", "dotted")
-  
-  ## Calculate proportion of Sicker among the sick
-  prop_S2 <- data.frame(Cycle = 1:n_t)
-  for (i in 1:n_str) {
-    m_M <- l_m_M[[i]]
-    v_S_ad      <- rowSums(m_M[, !colnames(m_M) == "D"])  # vector with survival curve
-    v_prev_S1S2 <- rowSums(m_M[, c("S1", "S2")]) / v_S_ad # vector with prevalence of Sick and Sicker
-    v_prop_S2   <- m_M[-1, "S2"] / v_prev_S1S2[-1] 
-    prop_S2 <- cbind(prop_S2, v_prop_S2)
-  }
-  colnames(prop_S2) <- c("Cycle", v_names_str)
-  prop_S2 <- gather(prop_S2, Strategy, Proportion, 2:5)
-  
-  # order the strategy and the states
-  prop_S2$Strategy <- factor(prop_S2$Strategy, levels = v_names_str)
-  
-  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
-  p <- ggplot(prop_S2, 
-              aes(x = Cycle, y = Proportion, group = Strategy)) +
     geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
     xlab("Cycle") +
-    ylab("Proportion in Sicker") +
-    scale_color_manual(values = as.character(cols)) +
-    scale_linetype_manual(values = as.character(line_type)) +
-    ggtitle("Proportion of Sicker among sick individuals") + 
+    ylab("Proportion alive") +
+    ggtitle("Survival probabilities") + 
     theme_bw(base_size = 14) +
     theme()
   
@@ -316,48 +380,47 @@ plot_sicker <- function(l_m_M) {
 #' @param l_m_M a list containing cohort trace matrices
 #' @return a ggplot object - plot of the prevalence curve
 #' 
-plot_prevalence <- function(l_m_M) {
-  
-  ## Define colors and line types
-  cols      <- c("H"  = "green",   "S1" = "orange", 
-                 "S2" = "red",     "D"  = "blue")
-  line_type <- c("H"  = "solid",   "S1" = "dashed", 
-                 "S2" = "dotdash", "D"  = "dotted")
-  
-  ## Calculate the prevalences
-  for (i in 1:n_str) {
-    m_M <- l_m_M[[i]]
-    v_S_ad <- rowSums(m_M[, !colnames(m_M) == "D"])
-    v_prev_S1   <- m_M[, "S1"] / v_S_ad # vector with prevalence of Sick
-    v_prev_S2   <- m_M[, "S2"] / v_S_ad # vector with prevalence of Sicker
-    v_prev_S1S2 <- rowSums(m_M[, c("S1", "S2")]) / v_S_ad # vector with prevalence of Sick and Sicker
-    ## Data.frame with all prevalence
-    df_prev_states <- data.frame(Cycle = 0:n_t, 
-                                 States = ordered(rep(c("S1", "S2", "S1 and S2"),
-                                                  each = (n_t + 1)), 
-                                                  levels = c("S1", "S2", "S1 and S2")), 
-                                 Prevalence = c(v_prev_S1, 
-                                                v_prev_S2, 
-                                                v_prev_S1S2))
-  }
-  
-  colnames(prev) <- v_names_str
-  
-  
-  surv$cycle <- 0:n_t
-  surv <- gather(surv, strategy, survival, 1:4)
-  
+plot_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
+  # Calculate prevalence
+  df_prevalence <- calc_prevalence(l_m_M, v_names_sick_states, v_names_dead_states)
   # order the strategy and the states
-  surv$strategy <- factor(surv$strategy, levels = v_names_str)
+  df_prevalence$Strategy <- factor(df_prevalence$Strategy, levels = v_names_str)
   
   ## Plot the cohort trace for scenarios Usual care and New treatment 1 
-  p <- ggplot(surv, 
-              aes(x = cycle, y = survival, group = strategy)) +
-    geom_line(aes(linetype = strategy, col = strategy), size = 1.2) +
+  p <- ggplot(df_prevalence, 
+              aes(x = Cycle, y = Prevalence, group = Strategy)) +
+    geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
     xlab("Cycle") +
-    ylab("Proportion alive") +
-    scale_color_manual(values = as.character(cols)) +
-    scale_linetype_manual(values = as.character(line_type)) +
+    ylab("Prevalence") +
+    ggtitle("Prevalence") + 
+    theme_bw(base_size = 14) +
+    theme()
+  
+  return(p) 
+}
+
+#----------------------------------------------------------------------------#
+####                   Function to plot proportion Sicker curve                   ####
+#----------------------------------------------------------------------------#
+#' Plot proportion Sicker curve
+#'
+#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#'
+#' @param l_m_M a list containing cohort trace matrices
+#' @return a ggplot object - plot of the prevalence curve
+#' 
+plot_proportion_sicker <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
+  # order the strategy and the states
+  df_prevalence <- calc_prop_sicker(l_m_M, v_names_sick_states, v_names_sicker_states)
+  df_prevalence$Strategy <- factor(df_prevalence$Strategy, levels = v_names_str)
+  
+  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
+  p <- ggplot(df_prevalence, 
+              aes(x = Cycle, y = Prevalence, group = Strategy)) +
+    geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
+    xlab("Cycle") +
+    ylab("Proportion sicker") +
+    ggtitle("Proportion of sicker among sick") + 
     theme_bw(base_size = 14) +
     theme()
   
