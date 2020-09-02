@@ -35,74 +35,50 @@ rate_to_prob <- function(r, t = 1){
 }
 
 #----------------------------------------------------------------------------#
-#### Function to check if transition probability matrix or array is valid ####
+####   Function to check if transition probability array/matrix  is valid ####
 #----------------------------------------------------------------------------#
 #' Check if transition array is valid
 #'
 #' \code{check_transition_probability} checks if transition probabilities are in \[0, 1\].
 #'
 #' @param a_P A transition probability array.
-#' @param array Logical variable to specify if it is a transition probability array instead of a matrix. Default = TRUE
 #' @param err_stop Logical variable to stop model run if set up as TRUE. Default = FALSE.
-#' @param verbose Logical variable to indicate print out of messages. Default = FALSE
+#' @param verbose Logical variable to indicate print out of messages. 
+#' Default = FALSE
+#'
 #' @return
-#' This function stops if transition probability array/matrix is not valid and shows 
+#' This function stops if transition probability array is not valid and shows 
 #' what are the entries that are not valid
 #' @import utils
 #' @export
-check_transition_probability <- function(a_P, 
-                                         array = TRUE, 
+check_transition_probability <- function(a_P,
                                          err_stop = FALSE, 
                                          verbose = FALSE) {
-  ### If it is a transition probability array   # 1) is_array or check dim
-                                                # 2) if not an array make it an array (don't repeat code)
-  if (array) {
-    m_indices_notvalid <- arrayInd(which(a_P < 0 | a_P > 1), 
-                                   dim(a_P))
-    if(dim(m_indices_notvalid)[1] != 0){
-      v_rows_notval   <- rownames(a_P)[m_indices_notvalid[, 1]]
-      v_cols_notval   <- colnames(a_P)[m_indices_notvalid[, 2]]
-      v_cycles_notval <- dimnames(a_P)[[3]][m_indices_notvalid[, 3]]
-      
-      df_notvalid <- data.frame(`Transition probabilities not valid:` = 
-                                  matrix(paste0(paste(v_rows_notval, v_cols_notval, sep = "->"),
-                                                "; at cycle ",
-                                                v_cycles_notval), ncol = 1), 
-                                check.names = FALSE)
-      if(err_stop) {
-        stop("Not valid transition probabilities\n",
-             paste(capture.output(df_notvalid), collapse = "\n"))
-      }
-      if(verbose){
-        warning("Not valid transition probabilities\n",
-                paste(capture.output(df_notvalid), collapse = "\n"))
-      } 
+  
+  a_P <- as.array(a_P)
+  m_indices_notvalid <- arrayInd(which(a_P < 0 | a_P > 1), 
+                                 dim(a_P))
+  
+  if(dim(m_indices_notvalid)[1] != 0){
+    v_rows_notval   <- rownames(a_P)[m_indices_notvalid[, 1]]
+    v_cols_notval   <- colnames(a_P)[m_indices_notvalid[, 2]]
+    v_cycles_notval <- dimnames(a_P)[[3]][m_indices_notvalid[, 3]]
+    
+    df_notvalid <- data.frame(`Transition probabilities not valid:` = 
+                                matrix(paste0(paste(v_rows_notval, v_cols_notval, sep = "->"),
+                                              "; at cycle ",
+                                              v_cycles_notval), ncol = 1), 
+                              check.names = FALSE)
+    
+    if(err_stop) {
+      stop("Not valid transition probabilities\n",
+           paste(capture.output(df_notvalid), collapse = "\n"))
     }
     
-    ### If it is a transition probability matrix
-  } else { 
-    a_P <- as.array(a_P)
-    m_indices_notvalid <- arrayInd(which(a_P < 0 | a_P > 1), 
-                                   dim(a_P))
-    if(dim(m_indices_notvalid)[1] != 0){
-      v_rows_notval   <- rownames(a_P)[m_indices_notvalid[, 1]]
-      v_cols_notval   <- colnames(a_P)[m_indices_notvalid[, 2]]
-      
-      df_notvalid <- data.frame(`Transition probabilities not valid:` = 
-                                  matrix(paste0(paste(v_rows_notval, v_cols_notval, sep = "->")),
-                                         ncol = 1), 
-                                check.names = FALSE)
-      
-      if(err_stop) {
-        stop("Not valid transition probabilities\n",
-             paste(capture.output(df_notvalid), collapse = "\n"))
-      }
-      
-      if(verbose){
-        warning("Not valid transition probabilities\n",
-                paste(capture.output(df_notvalid), collapse = "\n"))
-      } 
-    }
+    if(verbose){
+      warning("Not valid transition probabilities\n",
+              paste(capture.output(df_notvalid), collapse = "\n"))
+    } 
   }
 }
 
@@ -112,61 +88,45 @@ check_transition_probability <- function(a_P,
 #' Check if the sum of transition probabilities equal to one. 
 #'
 #' \code{check_sum_of_transition_array} checks if each of the rows of the 
-#' transition probability array/matrix sum to one. 
+#' transition matrices sum to one. 
 #' 
-#' @param a_P A transition probability array
-#' @param array Logical variable to specify if it is a transition probability array instead of a matrix. Default = TRUE 
-#' @param n_states Number of health states
-#' @param n_t Number of cycles
-#' @param err_stop Logical variable to stop model run if set up as TRUE. Default = FALSE
-#' @param verbose Logical variable to indicate print out of messages. Default = FALSE
+#' @param a_P A transition probability array.
+#' @param n_states Number of health states.
+#' @param n_t Number of cycles.
+#' @param err_stop Logical variable to stop model run if set up as TRUE. Default = FALSE.
+#' @param verbose Logical variable to indicate print out of messages. 
+#' Default = FALSE
 #' @return 
-#' The transition probability array/matrix
+#' The transition probability array and the cohort trace matrix.
 #' @import dplyr
 #' @export
 check_sum_of_transition_array <- function(a_P,
-                                          array = TRUE, 
                                           n_states,
                                           n_t,  
                                           err_stop = FALSE, 
-                                          verbose = FALSE) {
-  ### If it is a transition probability array
-  if (array) {
-    valid <- (apply(a_P, 3, function(x) sum(rowSums(x))) == n_states)
-    if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
-      if(err_stop) {
-        stop("This is not a valid transition probability array")
-      }
-      
-      if(verbose){
-        warning("This is not a valid transition probability array")
-      } 
+                                          verbose  = FALSE) {
+  
+  a_P <- as.array(a_P)
+  valid <- (apply(a_P, 3, function(x) sum(rowSums(x))) == n_states)
+  if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
+    if(err_stop) {
+      stop("This is not a valid transition Matrix")
     }
-  ### If it is a transition probability matrix  
-  } else {
-    a_P <- as.array(a_P)
-    valid <- (apply(a_P, 1, function(x) sum(x) == 1))
-    if (!isTRUE(all.equal(as.numeric(sum(valid)), n_states))) {
-      if(err_stop) {
-        stop("This is not a valid transition probability matrix")
-      }
-      
-      if(verbose){
-        warning("This is not a valid transition probability matrix")
-      } 
-    }
+    
+    if(verbose){
+      warning("This is not a valid transition Matrix")
+    } 
   }
-} 
+}
 
 #----------------------------------------------------------------------------#
-####                    Function to plot cohort trace                     ####
+####                    Function to get DARTH colors                      ####
 #----------------------------------------------------------------------------#
-#' Plot cohort trace
+#' Get DARTH colors
 #'
-#' \code{plot_trace} plots the cohort trace.
+#' \code{get_DARTH_cols} retrieves the color codes for DARTH colors.
 #'
-#' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the cohort trace
+#' @return a string containing DARTH color codes
 #' 
 get_DARTH_cols <- function() {
   # DARTH colors
@@ -188,14 +148,13 @@ get_DARTH_cols <- function() {
 #'
 #' \code{plot_trace} plots the cohort trace.
 #'
-#' @param l_m_M a list containing cohort trace matrices
+#' @param m_M a cohort trace matrix
 #' @return a ggplot object - plot of the cohort trace
 #' 
 plot_trace <- function(m_M) {
-  df_M <- data.frame(Cycle = 0:n_t, m_M, check.names = F)
+  df_M      <- data.frame(Cycle = 0:n_t, m_M, check.names = F)
   df_M_long <- tidyr::gather(df_M, key = `Health State`, value, 2:ncol(df_M))
-
-  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
+  df_M_long$`Health State` <- factor(df_M_long$`Health State`, levels = v_n)
   p <- ggplot(df_M_long, aes(x = Cycle, y = value, 
                             color = `Health State`, linetype = `Health State`)) +
        geom_line(size = 1) +
@@ -204,58 +163,54 @@ plot_trace <- function(m_M) {
        theme_bw(base_size = 14) +
        theme(legend.position  = "bottom", 
              legend.background = element_rect(fill = NA)) 
-       # just one trace udner one strategy, 
- 
+
   return(p) 
 }
 
 #----------------------------------------------------------------------------#
 ####                    Function to plot cohort trace per strategy        ####
 #----------------------------------------------------------------------------#
-#' Plot cohort trace
+#' Plot cohort trace per strategy
 #'
-#' \code{plot_trace} plots the cohort trace.
+#' \code{plot_trace} plots the cohort trace for each strategy, split by health state.
 #'
 #' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the cohort trace
+#' @return a ggplot object - plot of the cohort trace for each strategy split by health state.
 #' 
 plot_trace_strategy <- function(l_m_M) {
-  ## Pre-process the list of cohort traces for plotting
   n_str <- length(l_m_M) 
   l_df_M <- lapply(l_m_M, as.data.frame)
   df_M_strategies <- data.table::rbindlist(l_df_M, use.names = T, 
                                            idcol = "Strategy")
   df_M_strategies$Cycle <- rep(0:n_t, n_str)
-  
   m_M_plot <- tidyr::gather(df_M_strategies, key = `Health State`, value, 
                             2:(ncol(df_M_strategies)-1))
-  # order the strategy and the states
   m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_n)
   m_M_plot$Strategy <- factor(m_M_plot$Strategy, levels = v_names_str)
-  
-  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
+
   p <- ggplot(m_M_plot, aes(x = Cycle, y = value, 
                             color = Strategy, linetype = Strategy)) +
     geom_line(size = 1) +
+    scale_color_brewer(palette="RdBu") +
     xlab("Cycle") +
     ylab("Proportion of the cohort") +
     theme_bw(base_size = 14) +
     theme(legend.position  = "bottom", 
           legend.background = element_rect(fill = NA)) +
-    facet_wrap(~ state)
+    facet_wrap(~ `Health State`)
   
   return(p) 
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to calculate survival curve                    ####
+####             Function to calculate survival probabilities             ####
 #----------------------------------------------------------------------------#
-#' Plot survival curve
+#' Calculate survival probabilities
 #'
-#' \code{calc_surv} plots the survival probability curve.
+#' \code{calc_surv} calculates the survival probabilities.
 #'
 #' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the survival curve
+#' @return a dataframe containing survival probabilities for each strategy
 #' 
 calc_surv <- function(l_m_M, v_names_death_states) {
   df_surv <- as.data.frame(lapply(l_m_M, 
@@ -266,7 +221,6 @@ calc_surv <- function(l_m_M, v_names_death_states) {
   colnames(df_surv) <- v_names_str
   df_surv$Cycle     <- 0:n_t
   df_surv_long      <- tidyr::gather(df_surv, key = Strategy, Survival, 1:n_str)
-  # order the strategy and the states
   df_surv_long$Strategy <- ordered(df_surv_long$Strategy, levels = v_names_str)
   df_surv_long <- df_surv_long %>% 
     select(Strategy, Cycle, Survival)
@@ -275,26 +229,30 @@ calc_surv <- function(l_m_M, v_names_death_states) {
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to calculate sick                    ####
+####                Function to calculate state proportions               ####
 #----------------------------------------------------------------------------#
-#' Plot survival curve
+#' Calculate state proportions
 #'
-#' \code{calc_surv} plots the survival probability curve.
+#' \code{calc_surv} calculates the proportions of the cohort in specified states
 #'
 #' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the survival curve
+#' @return a dataframe containing proportions in specified states for each strategy
 #' 
 calc_sick <- function(l_m_M, v_names_sick_states) {
-  df_sick <- as.data.frame(lapply(l_m_M, 
+  n_sick_states <- length(v_names_sick_states)
+  df_sick <- as.data.frame(lapply(l_m_M,
                                   function(x) {
-                                    rowSums(x[, colnames(x) %in% v_names_sick_states])
+                                    if (n_sick_states == 1) {
+                                      x[, colnames(x) %in% v_names_sick_states]
+                                    } else {
+                                      rowSums(x[, colnames(x) %in% v_names_sick_states])
+                                    }
                                   }
   ))
   colnames(df_sick) <- v_names_str
   df_sick$Cycle     <- 0:n_t
   df_sick_long      <- tidyr::gather(df_sick, key = Strategy, Sick, 1:n_str)
-  # order the strategy and the states
-  df_sick_long$Strategy <- ordered(df_surv_long$Strategy, levels = v_names_str)
+  df_sick_long$Strategy <- ordered(df_sick_long$Strategy, levels = v_names_str)
   df_sick_long <- df_sick_long %>% 
     select(Strategy, Cycle, Sick)
   
@@ -302,14 +260,14 @@ calc_sick <- function(l_m_M, v_names_sick_states) {
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to calculate prevalence curve             ####
+####                   Function to calculate prevalence                   ####
 #----------------------------------------------------------------------------#
-#' Calculate prevalence curve
+#' Calculate prevalence
 #'
-#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#' \code{plot_prevalence} calculate the prevalence for different health states.
 #'
 #' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the prevalence curve
+#' @return a dataframe containing prevalence of specified health states for each strategy
 #' 
 calc_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
   df_alive      <- calc_surv(l_m_M, v_names_dead_states)
@@ -321,22 +279,23 @@ calc_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to calculate prevalence curve                   ####
+####           Function to calculate state-in-state proportions           ####
 #----------------------------------------------------------------------------#
-#' Calculate prevalence curve
+#' Calculate state-in-state proportions
 #'
-#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#' \code{plot_prevalence} calculates the proportion of a speciefied subset of states among a set of specified states
 #'
 #' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the prevalence curve
+#' @return a dataframe containing state-in-state proportions of specified health states for each strategy
 #' 
 calc_prop_sicker <- function(l_m_M, v_names_sick_states, v_names_sicker_states) {
   df_prop_sick   <- calc_sick(l_m_M, v_names_sick_states)
   df_prop_sicker <- calc_sick(l_m_M, v_names_sicker_states)
-  df_prop_sick_sicker <- data.frame(Strategy   = df_M_strategies$Strategy, 
-                                    Cycle      = df_M_strategies$Cycle,
-                                    `Proporiton Sicker` = 
-                                      df_prop_sicker$Sick / (df_prop_sick$Sick + df_prop_sicker$Sick))
+  df_prop_sick_sicker <- data.frame(Strategy   = df_prop_sick$Strategy, 
+                                    Cycle      = df_prop_sick$Cycle,
+                                    `Proportion Sicker` = 
+                                     df_prop_sicker$Sick / 
+                                    (df_prop_sick$Sick + df_prop_sicker$Sick))
   
   return(df_prop_sick_sicker) 
 }
@@ -352,18 +311,17 @@ calc_prop_sicker <- function(l_m_M, v_names_sick_states, v_names_sicker_states) 
 #' @return a ggplot object - plot of the survival curve
 #' 
 plot_surv <- function(l_m_M, v_names_death_states) {
-  # Calculate survival probabilities
   df_surv <- calc_surv(l_m_M, v_names_death_states)
-  # Order the strategy and the states
   df_surv$Strategy <- factor(df_surv$Strategy, levels = v_names_str)
+  df_surv$Survival <- round(df_surv$Survival, 2)
   
-  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
   p <- ggplot(df_surv, 
               aes(x = Cycle, y = Survival, group = Strategy)) +
     geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
+    scale_color_brewer(palette="RdBu") +
     xlab("Cycle") +
-    ylab("Proportion alive") +
-    ggtitle("Survival probabilities") + 
+    ylab("Proportion") +
+    ggtitle("Survival probabilities") +
     theme_bw(base_size = 14) +
     theme()
   
@@ -375,24 +333,23 @@ plot_surv <- function(l_m_M, v_names_death_states) {
 #----------------------------------------------------------------------------#
 #' Plot prevalence curve
 #'
-#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#' \code{plot_prevalence} plots the prevalence curve for specified health states.
 #'
 #' @param l_m_M a list containing cohort trace matrices
 #' @return a ggplot object - plot of the prevalence curve
 #' 
 plot_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
-  # Calculate prevalence
   df_prevalence <- calc_prevalence(l_m_M, v_names_sick_states, v_names_dead_states)
-  # order the strategy and the states
   df_prevalence$Strategy <- factor(df_prevalence$Strategy, levels = v_names_str)
+  df_prevalence$Proportion.Sicker <- round(df_prevalence$Prevalence, 2)
   
-  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
   p <- ggplot(df_prevalence, 
               aes(x = Cycle, y = Prevalence, group = Strategy)) +
     geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
+    scale_color_brewer(palette = "RdBu") +
     xlab("Cycle") +
-    ylab("Prevalence") +
-    ggtitle("Prevalence") + 
+    ylab("Proportion") + 
+    ggtitle(paste("Prevalence", "of", paste(v_names_sick_states, collapse = " "))) + 
     theme_bw(base_size = 14) +
     theme()
   
@@ -400,27 +357,28 @@ plot_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to plot proportion Sicker curve                   ####
+####           Function to plot state-in-state proportion curve           ####
 #----------------------------------------------------------------------------#
-#' Plot proportion Sicker curve
+#' Plot proportion state-in-state proportion curve
 #'
-#' \code{plot_prevalence} plots the prevalence curve for Sick/Sicker states.
+#' \code{plot_prevalence} plots the 
 #'
 #' @param l_m_M a list containing cohort trace matrices
-#' @return a ggplot object - plot of the prevalence curve
+#' @return a ggplot object - plot of state-in-state proportion curve
 #' 
-plot_proportion_sicker <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
-  # order the strategy and the states
-  df_prevalence <- calc_prop_sicker(l_m_M, v_names_sick_states, v_names_sicker_states)
-  df_prevalence$Strategy <- factor(df_prevalence$Strategy, levels = v_names_str)
+plot_proportion_sicker <- function(l_m_M, v_names_sick_states, v_names_sicker_states) {
+  df_proportion_sicker <- calc_prop_sicker(l_m_M, v_names_sick_states, v_names_sicker_states)
+  df_proportion_sicker$Strategy <- factor(df_proportion_sicker$Strategy, levels = v_names_str)
+  df_proportion_sicker$Proportion.Sicker <- round(df_proportion_sicker$Proportion.Sicker, 2)
   
-  ## Plot the cohort trace for scenarios Usual care and New treatment 1 
-  p <- ggplot(df_prevalence, 
-              aes(x = Cycle, y = Prevalence, group = Strategy)) +
+  p <- ggplot(df_proportion_sicker, 
+              aes(x = Cycle, y = Proportion.Sicker, group = Strategy)) +
     geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
+    scale_color_brewer(palette = "RdBu") +
     xlab("Cycle") +
-    ylab("Proportion sicker") +
-    ggtitle("Proportion of sicker among sick") + 
+    ylab("Proportion") +
+    ggtitle(paste(paste("Proportion of", v_names_sicker_states), 
+                  paste(c("among", v_names_sick_states), collapse = " "))) + 
     theme_bw(base_size = 14) +
     theme()
   
@@ -438,11 +396,19 @@ plot_proportion_sicker <- function(l_m_M, v_names_sick_states, v_names_dead_stat
 #' @return a dataframe object - formatted CEA table
 #' 
 format_table_cea <- function(table_cea) {
-  ## Format column names
-  colnames(table_cea)[colnames(table_cea) %in% c("Cost", "Effect", "Inc_Cost", "Inc_Effect", "ICER")] <- 
-    c("Costs ($)", "QALYs", "Incremental Costs ($)", "Incremental QALYs", "ICER ($/QALY)") 
+  colnames(table_cea)[colnames(table_cea) 
+                      %in% c("Cost", 
+                             "Effect", 
+                             "Inc_Cost", 
+                             "Inc_Effect",
+                             "ICER")] <- 
+                                               
+                           c("Costs ($)", 
+                             "QALYs", 
+                             "Incremental Costs ($)", 
+                             "Incremental QALYs", 
+                             "ICER ($/QALY)") 
   
-  ## Format rows
   table_cea$`Costs ($)` <- comma(round(table_cea$`Costs ($)`, 0))
   table_cea$`Incremental Costs ($)` <- comma(round(table_cea$`Incremental Costs ($)`, 0))
   table_cea$QALYs <- round(table_cea$QALYs, 2)

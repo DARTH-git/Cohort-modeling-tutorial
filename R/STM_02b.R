@@ -79,9 +79,9 @@ n_str       <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HS1       <- 0.15                   # probability to become Sick when Healthy
-p_S1H       <- 0.2    # 0.5               # probability to become Healthy when Sick
+p_S1H       <- 0.5    # 0.5               # probability to become Healthy when Sick
 p_S1S2      <- 0.105                  # probability to become Sicker when Sick
-hr_S1       <- 2       # 3                # hazard ratio of death in Sick vs Healthy # UNREALISTIC? heart disease? has to decrease enough in PSA
+hr_S1       <- 3       # 3                # hazard ratio of death in Sick vs Healthy
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
 # For New treatment 2
 or_S1S2     <- 0.7                    # odds ratio of becoming Sicker when Sick under New treatment 2
@@ -90,15 +90,11 @@ logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
                            lor_S1S2)  # probability to become Sicker when Sick under New treatment 2
 
-# 1) conditional
-# 2) tweak input params + truncate life table
-# 3) reduce cycle length
-
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2015 %>% 
                    select(Total) %>%
-                   as.matrix() # anyone above 100 have the same mortality, ALTERNATIVELY: conditional probs
+                   as.matrix()
 
 ## Age-specific transition probabilities
 # extract age-specific all-cause mortality for ages in model time horizon
@@ -140,8 +136,8 @@ a_P <- array(0, dim      = c(n_states, n_states, n_t),
                 dimnames = list(v_n, v_n, 0:(n_t - 1)))
 ### Fill in array
 ## From H
-a_P["H", "H", ]   <- 1 - (p_HS1 + v_p_HDage)
-a_P["H", "S1", ]  <- p_HS1
+a_P["H", "H", ]   <- (1 - v_p_HDage) * (1 - p_HS1)
+a_P["H", "S1", ]  <- (1 - v_p_HDage) * p_HS1
 a_P["H", "D", ]   <- v_p_HDage
 ## From S1
 a_P["S1", "H", ]  <- p_S1H
