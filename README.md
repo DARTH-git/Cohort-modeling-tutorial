@@ -5,7 +5,7 @@ This GitHub repository provides the code of the three different implementations 
 
 We recommend to first read the manuscript before using the code. Understanding of the use of the multidimensional dynamics array described in 
 
-- Krijkamp EM, Alarid-Escudero F, Enns EA, Pechlivanoglou P, Hunink MGM, Yang A, Jalal HJ. A multidimensional array representation of state-transition model dynamics. Medical Decision Making, 2020 (Forthcoming)
+- Krijkamp EM, Alarid-Escudero F, Enns EA, Pechlivanoglou P, Hunink MGM, Yang A, Jalal HJ. A multidimensional array representation of state-transition model dynamics. Medical Decision Making, 2020;40(2):242-248. https://doi.org/10.1177/0272989X19893973
 
 is recommended.
 
@@ -29,5 +29,7 @@ To run the cost-effectiveness analysis, you require The Decision Analytic Modeli
   * [Myriam Hunink](http://www.erasmus-epidemiology.nl/people/profile.php?id=45)
   
   * [Petros Pechlivanoglou](https://github.com/ppehli)
+
+  * [Alan Yang](https://github.com/alanyang0924)
   
   * [Hawre Jalal](https://github.com/hjalal)
