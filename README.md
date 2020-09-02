@@ -29,5 +29,7 @@ To run the cost-effectiveness analysis, you require The Decision Analytic Modeli
   * [Myriam Hunink](http://www.erasmus-epidemiology.nl/people/profile.php?id=45)
   
   * [Petros Pechlivanoglou](https://github.com/ppehli)
+
+  * [Alan Yang](https://github.com/alanyang0924)
   
   * [Hawre Jalal](https://github.com/hjalal)
