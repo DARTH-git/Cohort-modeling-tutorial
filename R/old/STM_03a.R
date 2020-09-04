@@ -27,7 +27,7 @@
 # Usual care: best available care for the patients with the disease. This scenario reflects the natural history of the disease progressions
 # New treatment 1: this new treatment is given to all sick patients, patients in sick and sicker, but does only improves the utility of those being sick.
 # New treatment 2: the new treatment reduces disease progression from sick to sicker. However, it is not possible to distinguish those sick from sicker and therefore all individuals in one of the two sick states get the treatment.  
-# New treatment 1 & new treatment 2”: This strategy combines the new treatment 1 and new treatment 2. The disease progression is reduced and Sick individuals has an improved utility. 
+# New treatment 1 & new treatment 2: This strategy combines the new treatment 1 and new treatment 2. The disease progression is reduced and Sick individuals has an improved utility. 
 # This model incorporates time-dependent and history- / state-dependent transition probabilities 
 
 ################################ Initial setup ############################### 
@@ -56,7 +56,7 @@ source("functions/Functions.R")
 ################################ Model input ################################# 
 ## General setup
 n_age_init <- 25                      # age at baseline
-n_age_max  <- 110                     # maximum age of follow up
+n_age_max  <- 100                     # maximum age of follow up
 n_t        <- n_age_max - n_age_init  # time horizon, number of cycles
 v_n        <- c("H", "S1", "S2", "D") # the 4 health states of the model: # change to v_names_states
 
@@ -81,8 +81,8 @@ n_str <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HS1 <- 0.15  # probability to become Sick when Healthy
-p_S1H <- 0.5   # probability to become Healthy when Sick
-hr_S1 <- 3     # hazard ratio of death in Sick vs Healthy
+p_S1H <- 0.35  # probability to become Healthy when Sick (# was 0.5)
+hr_S1 <- 2     # hazard ratio of death in Sick vs Healthy (# was 3)
 hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy 
 
 ## History-dependent transition from S1 to S2
@@ -406,26 +406,27 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
     p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy
-    p_S1H    = rbeta(n_sim, 60, 60) ,          # probability to become healthy when sick
-    hr_S1    = rlnorm(n_sim, log(3),  0.01),   # rate ratio of death in S1 vs healthy
-    hr_S2    = rlnorm(n_sim, log(10), 0.02),   # rate ratio of death in S2 vs healthy 
-    n_lambda = rlnorm(n_sim, log(0.08), 0.01), # transition from S1 to S2 - Weibull scale parameter
-    n_gamma  = rlnorm(n_sim, log(1.1), 0.02),  # transition from S1 to S2 - Weibull shape parameter
-    lor_S1S2 = rnorm(n_sim, log(0.7), 0.1),    # log-odd ratio of becoming Sicker whe 
+    p_S1H    = rbeta(n_sim, 200, 370) ,        # probability to become healthy when sick
+    hr_S1    = rlnorm(n_sim, log(3),  1),      # rate ratio of death in S1 vs healthy
+    hr_S2    = rlnorm(n_sim, log(10), 1),      # rate ratio of death in S2 vs healthy 
+    n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
+    n_gamma  = rlnorm(n_sim, log(1.1), 0.05),  # transition from S1 to S2 - Weibull shape parameter
+    lor_S1S2 = rnorm(n_sim, log(0.7), 0.1),    # log-odds ratio of becoming Sicker whe 
     # State rewards
     # Costs
-    c_H   = rgamma(n_sim, shape = 100,   scale = 20),    # cost of remaining one cycle in state H
-    c_S1  = rgamma(n_sim, shape = 177.8, scale = 22.5),  # cost of remaining one cycle in state S1
-    c_S2  = rgamma(n_sim, shape = 225,   scale = 66.7),  # cost of remaining one cycle in state S2
-    c_trt = rgamma(n_sim, shape = 73.5,  scale = 163.3), # cost of treatment (per cycle)
-    c_D   = 0,                                           # cost of being in the death state
+    c_H    = rgamma(n_sim, shape = 100,   scale = 20),    # cost of remaining one cycle in state H
+    c_S1   = rgamma(n_sim, shape = 177.8, scale = 22.5),  # cost of remaining one cycle in state S1
+    c_S2   = rgamma(n_sim, shape = 225,   scale = 66.7),  # cost of remaining one cycle in state S2
+    c_trt1 = rgamma(n_sim, shape = 576,   scale = 21),    # cost of treatment (per cycle)
+    c_trt2 = rgamma(n_sim, shape = 676,   scale = 19),    # cost of treatment (per cycle)
+    c_D    = 0,                                           # cost of being in the death state
     
     # Utilities
     u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
     u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
-    u_S2   = rbeta(n_sim, shape1 = 230, shape2 = 23), # utility when sicker
+    u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
     u_D    = 0,                                       # utility when dead
-    u_trt1 = rbeta(n_sim, shape1 = 300, shape2 = 15) # utility when being treated
+    u_trt1 = rbeta(n_sim, shape1 = 300, shape2 = 15)  # utility when being treated
   )
   return(df_psa)
 }
@@ -463,7 +464,7 @@ source('functions/Functions STM_03a.R')
 # Run Markov model on each parameter set of PSA input dataset
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
-  df_c[i, ]  <- l_out_temp$Cost
+  df_c[i, ]  <- l_out_temp$Cost  # HUGE PROBLEM HERE
   df_e[i, ]  <- l_out_temp$Effect
   # Display simulation progress
   if(i/(n_sim/10) == round(i/(n_sim/10),0)) { # display progress every 10%

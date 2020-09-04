@@ -62,7 +62,7 @@ source("functions/Functions.R")
 ################################ Model input ################################# 
 ## General setup
 n_age_init  <- 25                      # age at baseline
-n_age_max   <- 110                     # maximum age of follow up
+n_age_max   <- 100                     # maximum age of follow up
 n_t         <- n_age_max - n_age_init  # time horizon, number of cycles
 v_n         <- c("H", "S1", "S2", "D") # the 4 health states of the model:
                                        # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
@@ -79,7 +79,7 @@ n_str       <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HS1       <- 0.15                   # probability to become Sick when Healthy
-p_S1H       <- 0.2    # 0.5               # probability to become Healthy when Sick
+p_S1H       <- 0.3    # 0.5               # probability to become Healthy when Sick
 p_S1S2      <- 0.105                  # probability to become Sicker when Sick
 hr_S1       <- 2       # 3                # hazard ratio of death in Sick vs Healthy # UNREALISTIC? heart disease? has to decrease enough in PSA
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
@@ -89,10 +89,6 @@ lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when S
 logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
                            lor_S1S2)  # probability to become Sicker when Sick under New treatment 2
-
-# 1) conditional
-# 2) tweak input params + truncate life table
-# 3) reduce cycle length
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")

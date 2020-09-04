@@ -27,7 +27,7 @@
 # Usual care: best available care for the patients with the disease. This scenario reflects the natural history of the disease progressions
 # New treatment 1: this new treatment is given to all sick patients, patients in sick and sicker, but does only improves the utility of those being sick.
 # New treatment 2: the new treatment reduces disease progression from sick to sicker. However, it is not possible to distinguish those sick from sicker and therefore all individuals in one of the two sick states get the treatment.  
-# New treatment 1 & new treatment 2: This strategy combines the new treatment 1 and new treatment 2. The disease progression is reduced and Sick individuals has an improved utility. 
+# New treatment 1 & new treatment 2”: This strategy combines the new treatment 1 and new treatment 2. The disease progression is reduced and Sick individuals has an improved utility. 
 # This model incorporates time-dependent and history- / state-dependent transition probabilities 
 
 ################################ Initial setup ############################### 
@@ -56,9 +56,9 @@ source("functions/Functions.R")
 ################################ Model input ################################# 
 ## General setup
 n_age_init <- 25                      # age at baseline
-n_age_max  <- 100                     # maximum age of follow up
+n_age_max  <- 110                     # maximum age of follow up
 n_t        <- n_age_max - n_age_init  # time horizon, number of cycles
-v_n        <- c("H", "S1", "S2", "D") # the 4 health states of the model: # change to v_names_states
+v_n        <- c("H", "S1", "S2", "D") # the 4 health states of the model:
 
 ## Tunnel inputs
 # Number of tunnels
@@ -81,8 +81,8 @@ n_str <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HS1 <- 0.15  # probability to become Sick when Healthy
-p_S1H <- 0.35  # probability to become Healthy when Sick (# was 0.5)
-hr_S1 <- 2     # hazard ratio of death in Sick vs Healthy (# was 3)
+p_S1H <- 0.5   # probability to become Healthy when Sick
+hr_S1 <- 3     # hazard ratio of death in Sick vs Healthy
 hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy 
 
 ## History-dependent transition from S1 to S2
@@ -90,13 +90,13 @@ hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy
 n_lambda <- 0.08 # scale
 n_gamma  <- 1.1  # shape
 # Weibull function
-v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
+p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
 # For new treatment 2
-or_S1S2  <- 0.7                       # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2 <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
-logit_S1S2 <- logit(v_p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-# probability to become Sicker when Sick under New treatment 2
-v_p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) 
+or_S1S2  <- 0.7                      # odds ratio of becoming Sicker when Sick under New treatment 2
+lor_S1S2 <- log(or_S1S2)             # log-odd ratio of becoming Sicker when Sick
+logit_S1S2 <- logit(p_S1S2_tunnels)  # log-odds of becoming Sicker when Sick
+p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + 
+                                   lor_S1S2) # probability to become Sicker when Sick under New treatment 2
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -151,17 +151,17 @@ a_P_tunnels["H", "D", ]              <- v_p_HDage
 for(i in 1:(n_tunnel_size - 1)){
   a_P_tunnels[v_Sick_tunnel[i], "H", ]  <- p_S1H
   a_P_tunnels[v_Sick_tunnel[i], 
-              v_Sick_tunnel[i + 1], ]   <- 1 - (p_S1H + v_p_S1S2_tunnels[i] + v_p_S1Dage)
-  a_P_tunnels[v_Sick_tunnel[i], "S2", ] <- v_p_S1S2_tunnels[i]
+              v_Sick_tunnel[i + 1], ]   <- 1 - (p_S1H + p_S1S2_tunnels[i] + v_p_S1Dage)
+  a_P_tunnels[v_Sick_tunnel[i], "S2", ] <- p_S1S2_tunnels[i]
   a_P_tunnels[v_Sick_tunnel[i], "D", ]  <- v_p_S1Dage
 }
 # repeat code for the last cycle to force the cohort stay in the last tunnel state of Sick
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "H", ]  <- p_S1H
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size],
             v_Sick_tunnel[n_tunnel_size], ] <- 1 - (p_S1H +
-                                                    v_p_S1S2_tunnels[n_tunnel_size] + 
-                                                    v_p_S1Dage)
-a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- v_p_S1S2_tunnels[n_tunnel_size]
+                                                      p_S1S2_tunnels[n_tunnel_size] + 
+                                                      v_p_S1Dage)
+a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- p_S1S2_tunnels[n_tunnel_size]
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
 ## From S2
 a_P_tunnels["S2", "S2", ] <- 1 - v_p_S2Dage
@@ -175,15 +175,15 @@ a_P_tunnels_trt2 <- a_P_tunnels
 for(i in 1:(n_tunnel_size - 1)){
   a_P_tunnels_trt2[v_Sick_tunnel[i], "H", ]  <- p_S1H
   a_P_tunnels_trt2[v_Sick_tunnel[i], 
-              v_Sick_tunnel[i + 1], ]   <- 1 - (p_S1H + v_p_S1S2_tunnels_trt2[i] + v_p_S1Dage)
-  a_P_tunnels_trt2[v_Sick_tunnel[i], "S2", ] <- v_p_S1S2_tunnels_trt2[i]
+              v_Sick_tunnel[i + 1], ]   <- 1 - (p_S1H + p_S1S2_tunnels_trt2[i] + v_p_S1Dage)
+  a_P_tunnels_trt2[v_Sick_tunnel[i], "S2", ] <- p_S1S2_tunnels_trt2[i]
   a_P_tunnels_trt2[v_Sick_tunnel[i], "D", ]  <- v_p_S1Dage
 }
 a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size],
             v_Sick_tunnel[n_tunnel_size], ] <- 1 - (p_S1H +
-                                                    v_p_S1S2_tunnels_trt2[n_tunnel_size] + 
-                                                    v_p_S1Dage)
-a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- v_p_S1S2_tunnels_trt2[n_tunnel_size]
+                                                      p_S1S2_tunnels_trt2[n_tunnel_size] + 
+                                                      v_p_S1Dage)
+a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- p_S1S2_tunnels_trt2[n_tunnel_size]
 
 ### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1) 
 check_transition_probability(a_P_tunnels,      verbose = TRUE)
@@ -243,8 +243,7 @@ names(l_m_M) <- v_names_str
 
 #### Plot Outputs ####
 ## Plot the cohort traces 
-plot_trace(m_M_tunnels_sum)
-plot_trace_strategy(l_m_M)
+plot_trace(l_m_M)
 
 #### State Rewards ####
 ## Vector of utilities for S1 under Usual care
@@ -316,23 +315,20 @@ v_c_trt1_2 <- c(H  = c_H,
                 D  = c_D)
 
 ## Store the vectors of state utilities for each strategy in a list 
-l_u   <- list(v_u_UC,
-              v_u_trt1,
-              v_u_trt2,
-              v_u_trt1_2)
+l_u   <- list(v_u_UC     = v_u_UC,
+              v_u_trt1   = v_u_trt1,
+              v_u_trt2   = v_u_trt2,
+              v_u_trt1_2 = v_u_trt1_2)
 ## Store the vectors of state cost for each strategy in a list 
-l_c   <- list(v_c_UC,
-              v_c_trt1,
-              v_c_trt2,
-              v_c_trt1_2)
+l_c   <- list(v_c_UC     = v_c_UC,
+              v_c_trt1   = v_c_trt1,
+              v_c_trt2   = v_c_trt2,
+              v_c_trt1_2 = v_c_trt1_2)
 ## Store the transition array for each strategy in a list
-l_a_A <- list(a_A_tunnels,
-              a_A_tunnels,
-              a_A_tunnels_trt2,
-              a_A_tunnels_trt2)
-
-# assign strategy names to matching items in the lists
-names(l_u) <- names(l_c) <- names(l_a_A) <- v_names_str
+l_a_A <- list(a_A_UC     = a_A_tunnels,
+              a_A_trt1   = a_A_tunnels,
+              a_A_trt2   = a_A_tunnels_trt2,
+              a_A_trt1_2 = a_A_tunnels_trt2)
 
 ## create empty vectors to store total utilities and costs 
 v_totqaly <- v_totcost <- vector(mode = "numeric", length = n_str)
@@ -357,19 +353,19 @@ for (i in 1:n_str) {
                  dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
                  dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
   
-  #### Apply transition rewards ####  
-  # Add disutility due to transition from H to S1
-  a_R_u["H", "S1_1Yr", ]          <- a_R_u["H", "S1_1Yr", ]          - du_HS1
+  #### Apply transition utilities and costs ####  
+  # Apply disutility due to transition from H to S1
+  a_R_u["H", "S1", ]      <- a_R_u["H", "S1", ]       - du_HS1
   # Add transition cost per cycle due to transition from H to S1
-  a_R_c["H", "S1_1Yr", ]          <- a_R_c["H", "S1_1Yr", ]          + ic_HS1
-  # Add transition cost per cycle of dying from all non-dead states
-  a_R_c[-n_states_tunnels, "D", ] <- a_R_c[-n_states_tunnels, "D", ] + ic_D
+  a_R_c["H", "S1", ]      <- a_R_c["H", "S1", ]       + ic_HS1
+  # Add transition cost  per cycle of dying from all non-dead states
+  a_R_c[-n_states, "D", ] <- a_R_c[- n_states, "D", ] + ic_D
   
   #### Expected QALYs and Costs for all transitions per cycle ####
   # QALYs = life years x QoL
   # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-  a_Y_c <- a_A_tunnels * a_R_c
-  a_Y_u <- a_A_tunnels * a_R_u 
+  a_Y_c <- a_A * a_R_c
+  a_Y_u <- a_A * a_R_u 
   
   #### Expected QALYs and Costs per cycle ####
   ## Vector of QALYs under Usual Care
@@ -383,20 +379,183 @@ for (i in 1:n_str) {
   v_totcost[i] <- t(v_cost) %*% (v_dwc * v_hcc)
 }
 
+
+
+
+
+
+
+
+
+## Array of state and transition utilities under Usual care
+a_R_u_UC <- aperm(array(v_u_UC,
+                        dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                        dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                  perm = c(2, 1, 3))
+## Array of state and transition costs under Usual care
+a_R_c_UC <- aperm(array(v_c_UC,
+                        dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                        dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                  perm = c(2, 1, 3))
+
+## Array of utilities under New treatment 1
+a_R_u_trt1 <- aperm(array(v_u_trt1,
+                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                    perm = c(2, 1, 3))
+## Array of costs per cycle under New treatment 1
+a_R_c_trt1 <- aperm(array(v_c_trt1,
+                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                    perm = c(2, 1, 3))
+
+## Array of utilities under New treatment 2
+a_R_u_trt2 <- aperm(array(v_u_trt2,
+                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                    perm = c(2, 1, 3))
+## Array of costs per cycle under New treatment 2
+a_R_c_trt2 <- aperm(array(v_c_trt2,
+                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                    perm = c(2, 1, 3))
+
+## Array of utilities under New treatment 1 & 2
+a_R_u_trt1_2 <- aperm(array(v_u_trt1_2,
+                          dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                          dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                      perm = c(2, 1, 3))
+## Array of costs per cycle under New treatment 1 & 2
+a_R_c_trt1_2 <- aperm(array(v_c_trt1_2,
+                          dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
+                          dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t)),
+                      perm = c(2, 1, 3))
+
+### Transition rewards
+## For Usual care
+# Add disutility due to transition from H to S1
+a_R_u_UC["H", "S1_1Yr", ] <- a_R_u_UC["H", "S1_1Yr", ] - du_HS1
+# Add transition cost per cycle due to transition from H to S1
+a_R_c_UC["H", "S1_1Yr", ] <- a_R_c_UC["H", "S1_1Yr", ] + ic_HS1
+# Add transition cost per cycle of dying from all non-dead states
+a_R_c_UC[-n_states_tunnels, "D", ] <- a_R_c_UC[-n_states_tunnels, "D", ] + ic_D
+
+## For New treatment 1
+# Add disutility due to transition from Healthy to Sick
+a_R_u_trt1["H", "S1_1Yr", ] <- a_R_u_trt1["H", "S1_1Yr", ] - du_HS1
+# Add transition cost per cycle due to transition from Healthy to Sick
+a_R_c_trt1["H", "S1_1Yr", ] <- a_R_c_trt1["H", "S1_1Yr", ] + ic_HS1
+# Add transition cost per cycle of dying from all non-dead states
+a_R_c_trt1[-n_states_tunnels, "D", ] <- a_R_c_trt1[-n_states_tunnels, "D", ] + ic_D
+
+## For New treatment 2
+# Add disutility due to transition from Healthy to Sick
+a_R_u_trt2["H", "S1_1Yr", ] <- a_R_u_trt2["H", "S1_1Yr", ] - du_HS1
+# Add transition cost per cycle due to transition from Healthy to Sick
+a_R_c_trt2["H", "S1_1Yr", ] <- a_R_c_trt2["H", "S1_1Yr", ] + ic_HS1
+# Add transition cost per cycle of dying from all non-dead states
+a_R_c_trt2[-n_states_tunnels, "D", ] <- a_R_c_trt2[-n_states_tunnels, "D", ] + ic_D
+
+## For New treatment 1 & 2
+# Add disutility due to transition from Healthy to Sick
+a_R_u_trt1_2["H", "S1_1Yr", ] <- a_R_u_trt1_2["H", "S1_1Yr", ] - du_HS1
+# Add transition cost per cycle due to transition from Healthy to Sick
+a_R_c_trt1_2["H", "S1_1Yr", ] <- a_R_c_trt1_2["H", "S1_1Yr", ] + ic_HS1
+# Add transition cost per cycle of dying from all non-dead states
+a_R_c_trt1_2[-n_states_tunnels, "D", ] <- a_R_c_trt1_2[-n_states_tunnels, "D", ] + ic_D
+
+#### Expected QALYs and Costs for all transitions per cycle ####
+# QALYs = life years x QoL
+# NOTE: all parameters are annual
+
+### For Usual Care
+a_Y_c_UC <- a_A_tunnels * a_R_c_UC
+a_Y_u_UC <- a_A_tunnels * a_R_u_UC 
+
+### For New treatment 1 
+a_Y_c_trt1 <- a_A_tunnels * a_R_c_trt1
+a_Y_u_trt1 <- a_A_tunnels * a_R_u_trt1 
+
+### For New treatment 2
+a_Y_c_trt2 <- a_A_tunnels_trt2 * a_R_c_trt2
+a_Y_u_trt2 <- a_A_tunnels_trt2 * a_R_u_trt2 
+
+### For New treatment 1 & 2
+a_Y_c_trt1_2 <- a_A_tunnels_trt2 * a_R_c_trt1_2
+a_Y_u_trt1_2 <- a_A_tunnels_trt2 * a_R_u_trt1_2 
+
+#### Expected QALYs and Costs per cycle ####
+## Vector of qalys under Usual Care
+v_qaly_UC <- rowSums(t(colSums(a_Y_u_UC)))
+## Vector of costs under Usual Care
+v_cost_UC <- rowSums(t(colSums(a_Y_c_UC)))
+
+## Vector of qalys under New Treatment 1
+v_qaly_trt1 <- rowSums(t(colSums(a_Y_u_trt1)))
+## Vector of costs under New Treatment 1
+v_cost_trt1 <- rowSums(t(colSums(a_Y_c_trt1)))
+
+## Vector of qalys under New Treatment 2
+v_qaly_trt2 <- rowSums(t(colSums(a_Y_u_trt2)))
+## Vector of costs under New Treatment 2
+v_cost_trt2 <- rowSums(t(colSums(a_Y_c_trt2)))
+
+## Vector of qalys under New Treatment 1 & 2
+v_qaly_trt1_2 <- rowSums(t(colSums(a_Y_u_trt1_2)))
+## Vector of costs under New Treatment 1 & 2
+v_cost_trt1_2 <- rowSums(t(colSums(a_Y_c_trt1_2)))
+
+#### Discounted total expected QALYs and Costs per strategy ####
+### For Usual Care
+## QALYs
+n_totqaly_UC <- t(v_qaly_UC) %*% (v_dwe * v_hcc)
+## Costs
+n_totcost_UC <- t(v_cost_UC) %*% (v_dwc * v_hcc)
+
+### For New treatment 1
+## QALYs
+n_totqaly_trt1 <- t(v_qaly_trt1) %*% (v_dwe * v_hcc)
+## Costs
+n_totcost_trt1 <- t(v_cost_trt1) %*% (v_dwc * v_hcc)
+
+### For New treatment 2
+## QALYs
+n_totqaly_trt2 <- t(v_qaly_trt2) %*% (v_dwe * v_hcc)
+## Costs
+n_totcost_trt2 <- t(v_cost_trt2) %*% (v_dwc * v_hcc)
+
+### For New treatment 1 & 2
+## QALYs
+n_totqaly_trt1_2 <- t(v_qaly_trt1_2) %*% (v_dwe * v_hcc)
+## Costs
+n_totcost_trt1_2 <- t(v_cost_trt1_2) %*% (v_dwc * v_hcc)
+
 ########################## Cost-effectiveness analysis #######################
+### Vector of total costs for all strategies
+v_ted_cost <- c(n_totcost_UC, n_totcost_trt1, n_totcost_trt2, n_totcost_trt1_2)
+### Vector of effectiveness for all strategies
+v_ted_qaly <- c(n_totqaly_UC, n_totqaly_trt1, n_totqaly_trt2, n_totqaly_trt1_2)
+
 ### Calculate incremental cost-effectiveness ratios (ICERs)
-df_cea <- calculate_icers(cost       = v_totcost, 
-                          effect     = v_totqaly,
+df_cea <- calculate_icers(cost = v_ted_cost, 
+                          effect = v_ted_qaly,
                           strategies = v_names_str)
 df_cea
-
-### Create CEA table in proper format
-table_cea <- format_table_cea(df_cea)
+### Create CEA table
+table_cea <- df_cea
+## Format column names
+colnames(table_cea)[colnames(table_cea) %in% c("Cost", "Effect", "Inc_Cost", "Inc_Effect", "ICER")] <- 
+            c("Costs ($)", "QALYs", "Incremental Costs ($)", "Incremental QALYs", "ICER ($/QALY)") 
+## Format rows
+table_cea$`Costs ($)` <- comma(round(table_cea$`Costs ($)`, 0))
+table_cea$`Incremental Costs ($)` <- comma(round(table_cea$`Incremental Costs ($)`, 0))
+table_cea$QALYs <- round(table_cea$QALYs, 2)
+table_cea$`Incremental QALYs` <- round(table_cea$`Incremental QALYs`, 2)
+table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
 table_cea
-
 ### CEA frontier
 plot(df_cea, label = "all") +
-     expand_limits(x = max(table_cea$QALYs) + 0.5) 
+     expand_limits(x = max(table_cea$QALYs + 0.5)) 
 
 ###################### Probabalistic Sensitivty Analysis #####################
 
@@ -405,28 +564,28 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   set.seed(seed) # set a seed to be able to reproduce the same results
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
-    p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy
-    p_S1H    = rbeta(n_sim, 200, 370) ,        # probability to become healthy when sick
-    hr_S1    = rlnorm(n_sim, log(3),  1),      # rate ratio of death in S1 vs healthy
-    hr_S2    = rlnorm(n_sim, log(10), 1),      # rate ratio of death in S2 vs healthy 
-    n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
-    n_gamma  = rlnorm(n_sim, log(1.1), 0.05),  # transition from S1 to S2 - Weibull shape parameter
-    lor_S1S2 = rnorm(n_sim, log(0.7), 0.1),    # log-odds ratio of becoming Sicker whe 
+    p_HS1    = rbeta(n_sim, 30, 170),                         # probability to become sick when healthy
+    p_S1H    = rbeta(n_sim, 60, 60) ,                         # probability to become healthy when sick
+    hr_S1    = rlnorm(n_sim, log(3),  0.01),                  # rate ratio of death in S1 vs healthy
+    hr_S2    = rlnorm(n_sim, log(10), 0.02),                  # rate ratio of death in S2 vs healthy 
+    n_lambda = rlnorm(n_sim, log(0.08), 0.01),                # transition from S1 to S2 - Weibull scale parameter
+    n_gamma  = rlnorm(n_sim, log(1.1), 0.02),                 # transition from S1 to S2 - Weibull shape parameter
+    lor_S1S2 = rnorm(n_sim, log(0.7), 0.1),                   # log-odd ratio of becoming Sicker when Sick
+    
     # State rewards
     # Costs
-    c_H    = rgamma(n_sim, shape = 100,   scale = 20),    # cost of remaining one cycle in state H
-    c_S1   = rgamma(n_sim, shape = 177.8, scale = 22.5),  # cost of remaining one cycle in state S1
-    c_S2   = rgamma(n_sim, shape = 225,   scale = 66.7),  # cost of remaining one cycle in state S2
-    c_trt1 = rgamma(n_sim, shape = 576,   scale = 21),    # cost of treatment (per cycle)
-    c_trt2 = rgamma(n_sim, shape = 676,   scale = 19),    # cost of treatment (per cycle)
-    c_D    = 0,                                           # cost of being in the death state
+    c_H   = rgamma(n_sim, shape = 100,   scale = 20),         # cost of remaining one cycle in state H
+    c_S1  = rgamma(n_sim, shape = 177.8, scale = 22.5),       # cost of remaining one cycle in state S1
+    c_S2  = rgamma(n_sim, shape = 225,   scale = 66.7),       # cost of remaining one cycle in state S2
+    c_trt = rgamma(n_sim, shape = 73.5,  scale = 163.3),      # cost of treatment (per cycle)
+    c_D   = 0,                                                # cost of being in the death state
     
-    # Utilities
-    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
-    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
-    u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
-    u_D    = 0,                                       # utility when dead
-    u_trt1 = rbeta(n_sim, shape1 = 300, shape2 = 15)  # utility when being treated
+    # Utilities # NOTE: markov course mod - beta
+    u_H   = rtruncnorm(n_sim, mean =    1, sd = 0.01, b = 1), # utility when healthy
+    u_S1  = rtruncnorm(n_sim, mean = 0.75, sd = 0.02, b = 1), # utility when sick
+    u_S2  = rtruncnorm(n_sim, mean = 0.50, sd = 0.03, b = 1), # utility when sicker
+    u_D   = 0,                                                # utility when dead
+    u_trt = rtruncnorm(n_sim, mean = 0.95, sd = 0.02, b = 1)  # utility when being treated
   )
   return(df_psa)
 }
@@ -459,12 +618,12 @@ colnames(df_e) <- v_names_str
 
 ## Conduct probabilistic sensitivity analysis
 # Source functions that contain the model and CEA output
-source('functions/Functions STM_03a.R')
+source('functions/Functions STM_03.R')
 
 # Run Markov model on each parameter set of PSA input dataset
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
-  df_c[i, ]  <- l_out_temp$Cost  # HUGE PROBLEM HERE
+  df_c[i, ]  <- l_out_temp$Cost
   df_e[i, ]  <- l_out_temp$Effect
   # Display simulation progress
   if(i/(n_sim/10) == round(i/(n_sim/10),0)) { # display progress every 10%

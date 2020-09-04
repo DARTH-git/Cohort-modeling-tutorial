@@ -16,7 +16,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     # Create tunnel states
     v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
     logit_S1S2 <- logit(v_p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-    v_p_S1S2_tunnels <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
+    v_p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
     
     ###################### Construct state-transition models #####################
     #### Create transition matrix ####
@@ -66,7 +66,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
                                                                v_p_S1Dage)
     a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- v_p_S1S2_tunnels_trt2[n_tunnel_size]
     
-    ### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1)
+    ## Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1)
     check_transition_probability(a_P_tunnels,      verbose = TRUE)
     check_transition_probability(a_P_tunnels_trt2, verbose = TRUE)
     ### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
@@ -120,6 +120,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
                   m_M_tunnels_sum,
                   m_M_tunnels_sum_trt2,
                   m_M_tunnels_sum_trt2)
+    names(l_m_M) <- v_names_str
     
     ## Store the transition array for each strategy in a list
     l_a_A <- list(a_A_tunnels,
@@ -291,6 +292,7 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     df_cea <- calculate_icers(cost       = v_totcost, 
                               effect     = v_totqaly,
                               strategies = v_names_str)
+    df_cea <- df_cea[match(v_names_str, df_cea$Strategy), ]
     return(df_cea)
   }
   )
