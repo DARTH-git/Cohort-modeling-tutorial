@@ -235,10 +235,10 @@ m_M_tunnels_sum_trt2 <- cbind(H  = m_M_tunnels_trt2[, "H"],
                               D  = m_M_tunnels_trt2[, "D"])
 
 ## Store the cohort traces in a list
-l_m_M <- list(m_M_tunnels_sum,
-              m_M_tunnels_sum,
-              m_M_tunnels_sum_trt2,
-              m_M_tunnels_sum_trt2)
+l_m_M <- list(m_M_tunnels_sum,      # Cohort trace for Usual Care
+              m_M_tunnels_sum,      # Cohort trace for New Treatment 1, same as Usual Care
+              m_M_tunnels_sum_trt2, # Cohort trace for New Treatment 2
+              m_M_tunnels_sum_trt2) # Cohort trace for New Treatment 1 & 2, same as New Treatment 1
 names(l_m_M) <- v_names_str
 
 #### Plot Outputs ####
@@ -399,6 +399,8 @@ plot(df_cea, label = "all") +
      expand_limits(x = max(table_cea$QALYs) + 0.5) 
 
 ###################### Probabalistic Sensitivty Analysis #####################
+# Source functions that contain the model and CEA output
+source('R/Functions STM_03a.R')
 
 # Function to generate PSA input dataset
 generate_psa_params <- function(n_sim = 1000, seed = 071818){
@@ -435,7 +437,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   return(df_psa)
 }
 
-# Number of simulations
+# Number of PSA samples
 n_sim <- 1000
 
 # Generate PSA input dataset
@@ -444,7 +446,8 @@ df_psa_input <- generate_psa_params(n_sim = n_sim)
 head(df_psa_input)
 
 # Histogram of parameters
-ggplot(melt(df_psa_input, variable.name = "Parameter"), aes(x = value)) +
+ggplot(melt(df_psa_input, variable.name = "Parameter"), 
+       aes(x = value)) +
   facet_wrap(~Parameter, scales = "free") +
   geom_histogram(aes(y = ..density..)) +
   theme_bw(base_size = 16)
@@ -462,16 +465,13 @@ df_e <- as.data.frame(matrix(0,
 colnames(df_e) <- v_names_str
 
 ## Conduct probabilistic sensitivity analysis
-# Source functions that contain the model and CEA output
-source('functions/Functions STM_03a.R')
-
 # Run Markov model on each parameter set of PSA input dataset
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
   df_c[i, ]  <- l_out_temp$Cost  # HUGE PROBLEM HERE
   df_e[i, ]  <- l_out_temp$Effect
   # Display simulation progress
-  if(i/(n_sim/10) == round(i/(n_sim/10),0)) { # display progress every 10%
+  if(i/(n_sim/100) == round(i/(n_sim/100), 0)) { # display progress every 5%
     cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
   }
 }
@@ -481,6 +481,9 @@ l_psa <- make_psa_obj(cost          = df_c,
                       effectiveness = df_e, 
                       parameters    = df_psa_input, 
                       strategies    = v_names_str)
+l_psa$strategies <- v_names_str
+colnames(l_psa$effectiveness)<- v_names_str
+colnames(l_psa$cost)<- v_names_str
 
 # Vector with willingness-to-pay (WTP) thresholds.
 v_wtp <- seq(0, 200000, by = 10000)
@@ -506,14 +509,19 @@ plot(df_cea_psa, label = "all") +
 ceac_obj <- ceac(wtp = v_wtp, psa = l_psa)
 # Regions of highest probability of cost-effectiveness for each strategy
 summary(ceac_obj)
+# ceac_obj$Strategy <- ordered(ceac_obj$Strategy, levels = v_names_str)
+
 # CEAC & CEAF plot
-plot(ceac_obj)
+plot(ceac_obj, txtsize = 16, xlim = c(0, NA)) +
+  theme(legend.position = "bottom")
 
 ##  Expected Loss Curves (ELCs)
 elc_obj <- calc_exp_loss(wtp = v_wtp, psa = l_psa)
 elc_obj
+
 # ELC plot
-plot(elc_obj, log_y = FALSE)
+plot(elc_obj, log_y = FALSE, txtsize = 16, xlim = c(0, NA)) +
+  theme(legend.position = "bottom")
 
 ## Expected value of perfect information (EVPI)
 evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)
