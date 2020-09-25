@@ -92,7 +92,7 @@ n_gamma  <- 1.1  # shape
 # Weibull hazard
 v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
 # For new treatment 2
-or_S1S2  <- 0.7                       # odds ratio of becoming Sicker when Sick under New treatment 2
+or_S1S2  <- 0.6                       # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2 <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
 logit_S1S2 <- logit(v_p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
 # probability to become Sicker when Sick under New treatment 2 conditional on surviving
@@ -401,7 +401,8 @@ table_cea
 
 ### CEA frontier
 plot(df_cea, label = "all") +
-     expand_limits(x = max(table_cea$QALYs) + 0.5) 
+     expand_limits(x = max(table_cea$QALYs) + 0.3, 
+                   y = 250000) 
 
 ###################### Probabalistic Sensitivty Analysis #####################
 # Source functions that contain the model and CEA output
@@ -418,7 +419,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     hr_S2    = rlnorm(n_sim, log(10), 1),      # rate ratio of death in S2 vs healthy 
     n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
     n_gamma  = rlnorm(n_sim, log(1.1), 0.05),  # transition from S1 to S2 - Weibull shape parameter
-    lor_S1S2 = rnorm(n_sim, log(0.7), 0.1),    # log-odds ratio of becoming Sicker whe 
+    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe 
     # State rewards
     # Costs
     c_H    = rgamma(n_sim, shape = 100,   scale = 20),    # cost of remaining one cycle in state H
