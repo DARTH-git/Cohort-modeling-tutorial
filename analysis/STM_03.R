@@ -81,8 +81,8 @@ n_str <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HS1 <- 0.15  # probability to become Sick when Healthy
-p_S1H <- 0.35  # probability to become Healthy when Sick (# was 0.5)
-hr_S1 <- 2     # hazard ratio of death in Sick vs Healthy (# was 3)
+p_S1H <- 0.50  # probability to become Healthy when Sick
+hr_S1 <- 3     # hazard ratio of death in Sick vs Healthy
 hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy 
 
 ## History-dependent transition from S1 to S2
@@ -144,24 +144,25 @@ a_P_tunnels <- array(0, dim   = c(n_states_tunnels, n_states_tunnels, n_t),
                      dimnames = list(v_n_tunnels, v_n_tunnels, 0:(n_t - 1)))
 ### Fill in array
 ## From H
-a_P_tunnels["H", "H", ]              <- 1 - (p_HS1 + v_p_HDage)
-a_P_tunnels["H", v_Sick_tunnel[1], ] <- p_HS1
+a_P_tunnels["H", "H", ]              <- (1 - v_p_HDage) * (1 - p_HS1)
+a_P_tunnels["H", v_Sick_tunnel[1], ] <- (1 - v_p_HDage) * p_HS1
 a_P_tunnels["H", "D", ]              <- v_p_HDage
 ## From S1
 for(i in 1:(n_tunnel_size - 1)){
-  a_P_tunnels[v_Sick_tunnel[i], "H", ]  <- p_S1H
+  a_P_tunnels[v_Sick_tunnel[i], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
   a_P_tunnels[v_Sick_tunnel[i], 
-              v_Sick_tunnel[i + 1], ]   <- 1 - (p_S1H + v_p_S1S2_tunnels[i] + v_p_S1Dage)
-  a_P_tunnels[v_Sick_tunnel[i], "S2", ] <- v_p_S1S2_tunnels[i]
+              v_Sick_tunnel[i + 1], ]   <- (1 - v_p_S1Dage) * 
+                                           (1 - (p_S1H + v_p_S1S2_tunnels[i]))
+  a_P_tunnels[v_Sick_tunnel[i], "S2", ] <- (1 - v_p_S1Dage) * v_p_S1S2_tunnels[i]
   a_P_tunnels[v_Sick_tunnel[i], "D", ]  <- v_p_S1Dage
 }
 # repeat code for the last cycle to force the cohort stay in the last tunnel state of Sick
-a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "H", ]  <- p_S1H
+a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size],
-            v_Sick_tunnel[n_tunnel_size], ] <- 1 - (p_S1H +
-                                                    v_p_S1S2_tunnels[n_tunnel_size] + 
-                                                    v_p_S1Dage)
-a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- v_p_S1S2_tunnels[n_tunnel_size]
+            v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) * (1 - (p_S1H +
+                                                    v_p_S1S2_tunnels[n_tunnel_size]))
+a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- (1 - v_p_S1Dage) * 
+                                                     v_p_S1S2_tunnels[n_tunnel_size]
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
 ## From S2
 a_P_tunnels["S2", "S2", ] <- 1 - v_p_S2Dage
@@ -170,20 +171,24 @@ a_P_tunnels["S2", "D", ]  <- v_p_S2Dage
 a_P_tunnels["D", "D", ] <- 1
 
 # For New treatment 2
-# Only need to update the probabilities involving p_S1S2
+# Only need to update the transition probabilities from S1 involving p_S1S2
 a_P_tunnels_trt2 <- a_P_tunnels
 for(i in 1:(n_tunnel_size - 1)){
-  a_P_tunnels_trt2[v_Sick_tunnel[i], "H", ]  <- p_S1H
+  a_P_tunnels_trt2[v_Sick_tunnel[i], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
   a_P_tunnels_trt2[v_Sick_tunnel[i], 
-              v_Sick_tunnel[i + 1], ]   <- 1 - (p_S1H + v_p_S1S2_tunnels_trt2[i] + v_p_S1Dage)
-  a_P_tunnels_trt2[v_Sick_tunnel[i], "S2", ] <- v_p_S1S2_tunnels_trt2[i]
+              v_Sick_tunnel[i + 1], ]        <- (1 - v_p_S1Dage) * 
+                                                (1 - (p_S1H + v_p_S1S2_tunnels_trt2[i]))
+  a_P_tunnels_trt2[v_Sick_tunnel[i], "S2", ] <- (1 - v_p_S1Dage) * v_p_S1S2_tunnels_trt2[i]
   a_P_tunnels_trt2[v_Sick_tunnel[i], "D", ]  <- v_p_S1Dage
 }
+# repeat code for the last cycle to force the cohort stay in the last tunnel state of Sick
+a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
 a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size],
-            v_Sick_tunnel[n_tunnel_size], ] <- 1 - (p_S1H +
-                                                    v_p_S1S2_tunnels_trt2[n_tunnel_size] + 
-                                                    v_p_S1Dage)
-a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- v_p_S1S2_tunnels_trt2[n_tunnel_size]
+            v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) * (1 - (p_S1H +
+                                                    v_p_S1S2_tunnels_trt2[n_tunnel_size]))
+a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- (1 - v_p_S1Dage) *
+                                                          v_p_S1S2_tunnels_trt2[n_tunnel_size]
+a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
 
 ### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1) 
 check_transition_probability(a_P_tunnels,      verbose = TRUE)
