@@ -80,22 +80,22 @@ v_names_str <- c("Usual care",       # store the strategy names
 n_str <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
-p_HS1 <- 0.15  # probability to become Sick when Healthy
-p_S1H <- 0.50  # probability to become Healthy when Sick
+p_HS1 <- 0.15  # probability to become Sick when Healthy conditional on surviving
+p_S1H <- 0.50  # probability to become Healthy when Sick conditional on surviving
 hr_S1 <- 3     # hazard ratio of death in Sick vs Healthy
 hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy 
 
-## History-dependent transition from S1 to S2
+## History-dependent transition probability from S1 to S2 conditional on surviving
 # Weibull parameters
 n_lambda <- 0.08 # scale
 n_gamma  <- 1.1  # shape
-# Weibull function
+# Weibull hazard
 v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
 # For new treatment 2
 or_S1S2  <- 0.7                       # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2 <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
 logit_S1S2 <- logit(v_p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-# probability to become Sicker when Sick under New treatment 2
+# probability to become Sicker when Sick under New treatment 2 conditional on surviving
 v_p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) 
 
 ## Age-dependent mortality rates
