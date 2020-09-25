@@ -57,7 +57,7 @@ library(boot)
 library(dampack) 
 
 ### Load supplementary functions
-source("functions/Functions.R")
+source("R/Functions.R")
 
 ################################ Model input ################################# 
 ## General setup
@@ -78,13 +78,13 @@ v_names_str <- c("Usual care",         # store the strategy names
 n_str       <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
-p_HS1       <- 0.15                   # probability to become Sick when Healthy
-p_S1H       <- 0.3    # 0.5               # probability to become Healthy when Sick
-p_S1S2      <- 0.105                  # probability to become Sicker when Sick
-hr_S1       <- 2       # 3                # hazard ratio of death in Sick vs Healthy # UNREALISTIC? heart disease? has to decrease enough in PSA
+p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving
+p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving
+p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving
+hr_S1       <- 3                      # hazard ratio of death in Sick vs Healthy 
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
 # For New treatment 2
-or_S1S2     <- 0.7                    # odds ratio of becoming Sicker when Sick under New treatment 2
+or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
 logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
@@ -136,13 +136,13 @@ a_P <- array(0, dim      = c(n_states, n_states, n_t),
                 dimnames = list(v_n, v_n, 0:(n_t - 1)))
 ### Fill in array
 ## From H
-a_P["H", "H", ]   <- 1 - (p_HS1 + v_p_HDage)
-a_P["H", "S1", ]  <- p_HS1
+a_P["H", "H", ]   <- (1 - v_p_HDage) * (1 - p_HS1)
+a_P["H", "S1", ]  <- (1 - v_p_HDage) * p_HS1
 a_P["H", "D", ]   <- v_p_HDage
 ## From S1
-a_P["S1", "H", ]  <- p_S1H
-a_P["S1", "S1", ] <- 1 - (p_S1H + p_S1S2 + v_p_S1Dage)
-a_P["S1", "S2", ] <- p_S1S2
+a_P["S1", "H", ]  <- (1 - v_p_S1Dage) * p_S1H
+a_P["S1", "S1", ] <- (1 - v_p_S1Dage) * (1 - (p_S1H + p_S1S2))
+a_P["S1", "S2", ] <- (1 - v_p_S1Dage) * p_S1S2
 a_P["S1", "D", ]  <- v_p_S1Dage
 ## From S2
 a_P["S2", "S2", ] <- 1 - v_p_S2Dage
@@ -153,8 +153,8 @@ a_P["D", "D", ]   <- 1
 # For New treatment 2
 # Only need to update the probabilities involving the transition from Sick to Sicker, p_S1S2
 a_P_trt2 <- a_P
-a_P_trt2["S1", "S1", ] <- 1 - (p_S1H + p_S1S2_trt2 + v_p_S1Dage)
-a_P_trt2["S1", "S2", ] <- p_S1S2_trt2
+a_P_trt2["S1", "S1", ] <- (1 - v_p_S1Dage) * (1 - (p_S1H + p_S1S2_trt2))
+a_P_trt2["S1", "S2", ] <- (1 - v_p_S1Dage) * p_S1S2_trt2
 
 ### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1) 
 check_transition_probability(a_P,      verbose = TRUE)

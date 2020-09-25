@@ -54,7 +54,7 @@ library(boot)
 library(dampack) 
 
 ### Load supplementary functions
-source("functions/Functions.R")
+source("R/Functions.R")
 
 ################################ Model input ################################# 
 ## General setup
@@ -76,9 +76,9 @@ n_str       <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HD        <- 0.002                  # constant probability of dying when Healthy (all-cause mortality)
-p_HS1       <- 0.15                   # probability to become Sick when Healthy
-p_S1H       <- 0.5                    # probability to become Healthy when Sick
-p_S1S2      <- 0.105                  # probability to become Sicker when Sick
+p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving
+p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving
+p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving
 hr_S1       <- 3                      # hazard ratio of death in Sick vs Healthy
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
 r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
@@ -87,7 +87,7 @@ r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
 p_S1D       <- rate_to_prob(r_S1D)    # probability of dying in Sick
 p_S2D       <- rate_to_prob(r_S2D)    # probability of dying in Sicker 
 # For New treatment 2
-or_S1S2     <- 0.7                    # odds ratio of becoming Sicker when Sick under New treatment 2
+or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
 logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
@@ -133,13 +133,13 @@ m_P <- matrix(0,
               dimnames = list(v_n, v_n)) # define row and column names
 ## Fill in matrix
 # From H
-m_P["H", "H"]   <- 1 - (p_HS1 + p_HD)
-m_P["H", "S1"]  <- p_HS1
+m_P["H", "H"]   <- (1 - p_HD) * (1 - p_HS1)
+m_P["H", "S1"]  <- (1 - p_HD) * p_HS1
 m_P["H", "D"]   <- p_HD
 # From S1
-m_P["S1", "H"]  <- p_S1H
-m_P["S1", "S1"] <- 1 - (p_S1H + p_S1S2 + p_S1D)
-m_P["S1", "S2"] <- p_S1S2
+m_P["S1", "H"]  <- (1 - p_S1D) * p_S1H
+m_P["S1", "S1"] <- (1 - p_S1D) * (1 - (p_S1H + p_S1S2))
+m_P["S1", "S2"] <- (1 - p_S1D) * p_S1S2
 m_P["S1", "D"]  <- p_S1D
 # From S2
 m_P["S2", "S2"] <- 1 - p_S2D
@@ -148,19 +148,17 @@ m_P["S2", "D"]  <- p_S2D
 m_P["D", "D"]   <- 1
 
 # For New treatment 2
-# Only need to update the probabilities involving p_S1S2
+# Only need to update the transition probabilities from S1 involving p_S1S2
 m_P_trt2 <- m_P
-m_P_trt2["S1", "S1"] <- 1 - (p_S1H + p_S1S2_trt2 + p_S1D)
-m_P_trt2["S1", "S2"] <- p_S1S2_trt2
+m_P_trt2["S1", "S1"] <- (1 - p_S1D) * (1 - (p_S1H + p_S1S2_trt2))
+m_P_trt2["S1", "S2"] <- (1 - p_S1D) * p_S1S2_trt2
 
-### Check if transition matrix is valid (i.e., probabilities cannot < 0 or > 1) 
-check_transition_probability(m_P,      array = FALSE, verbose = TRUE)
-check_transition_probability(m_P_trt2, array = FALSE, verbose = TRUE)
-### Check if transition matrix sum to 1 (i.e., each row of probabilities should sum to 1)
-check_sum_of_transition_array(m_P, array = FALSE,
-                              n_states = n_states, n_t = n_t, verbose = TRUE)
-check_sum_of_transition_array(m_P_trt2, array = FALSE, 
-                              n_states = n_states, n_t = n_t, verbose = TRUE)
+### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1) 
+check_transition_probability(m_P,      verbose = TRUE)
+check_transition_probability(m_P_trt2, verbose = TRUE)
+### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
+check_sum_of_transition_array(m_P,      n_states = n_states, n_t = n_t, verbose = TRUE)
+check_sum_of_transition_array(m_P_trt2, n_states = n_states, n_t = n_t, verbose = TRUE)
 
 ## Initialize 3D transition dynamics array
 a_A <- array(0,
@@ -191,8 +189,8 @@ l_m_M <- list(m_M,
 names(l_m_M) <- v_names_str
 
 #### Plot Outputs ####
-## Plot the cohort trace under each strategy
-plot_trace(l_m_M)
+### Plot the cohort trace for Usual care and New Treatment 1
+plot_trace(m_M)
 
 #### State Rewards ####
 ## Vector of state utilities under Usual care

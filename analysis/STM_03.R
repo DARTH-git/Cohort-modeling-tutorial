@@ -159,10 +159,10 @@ for(i in 1:(n_tunnel_size - 1)){
 # repeat code for the last cycle to force the cohort stay in the last tunnel state of Sick
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size],
-            v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) * (1 - (p_S1H +
-                                                    v_p_S1S2_tunnels[n_tunnel_size]))
+            v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) *
+                                               (1 - (p_S1H + v_p_S1S2_tunnels[n_tunnel_size]))
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- (1 - v_p_S1Dage) * 
-                                                     v_p_S1S2_tunnels[n_tunnel_size]
+                                                      v_p_S1S2_tunnels[n_tunnel_size]
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
 ## From S2
 a_P_tunnels["S2", "S2", ] <- 1 - v_p_S2Dage
@@ -172,6 +172,7 @@ a_P_tunnels["D", "D", ] <- 1
 
 # For New treatment 2
 # Only need to update the transition probabilities from S1 involving p_S1S2
+## From S1
 a_P_tunnels_trt2 <- a_P_tunnels
 for(i in 1:(n_tunnel_size - 1)){
   a_P_tunnels_trt2[v_Sick_tunnel[i], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
@@ -182,12 +183,12 @@ for(i in 1:(n_tunnel_size - 1)){
   a_P_tunnels_trt2[v_Sick_tunnel[i], "D", ]  <- v_p_S1Dage
 }
 # repeat code for the last cycle to force the cohort stay in the last tunnel state of Sick
-a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
+a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "H", ] <- (1 - v_p_S1Dage) * p_S1H
 a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size],
-            v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) * (1 - (p_S1H +
-                                                    v_p_S1S2_tunnels_trt2[n_tunnel_size]))
+            v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) * 
+                                               (1 - (p_S1H +v_p_S1S2_tunnels_trt2[n_tunnel_size]))
 a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "S2", ] <- (1 - v_p_S1Dage) *
-                                                          v_p_S1S2_tunnels_trt2[n_tunnel_size]
+                                                           v_p_S1S2_tunnels_trt2[n_tunnel_size]
 a_P_tunnels_trt2[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
 
 ### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1) 
@@ -247,7 +248,7 @@ l_m_M <- list(m_M_tunnels_sum,      # Cohort trace for Usual Care
 names(l_m_M) <- v_names_str
 
 #### Plot Outputs ####
-## Plot the cohort traces 
+## Plot the cohort trace for Usual care and New Treatment 1
 plot_trace(m_M_tunnels_sum)
 plot_trace_strategy(l_m_M)
 
@@ -406,7 +407,7 @@ plot(df_cea, label = "all") +
 
 ###################### Probabalistic Sensitivty Analysis #####################
 # Source functions that contain the model and CEA output
-source('R/Functions STM_03a.R')
+source('R/Functions STM_03.R')
 
 # Function to generate PSA input dataset
 generate_psa_params <- function(n_sim = 1000, seed = 071818){
@@ -414,7 +415,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
     p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy
-    p_S1H    = rbeta(n_sim, 200, 370) ,        # probability to become healthy when sick
+    p_S1H    = rbeta(n_sim, 312, 312) ,        # probability to become healthy when sick
     hr_S1    = rlnorm(n_sim, log(3),  1),      # rate ratio of death in S1 vs healthy
     hr_S2    = rlnorm(n_sim, log(10), 1),      # rate ratio of death in S2 vs healthy 
     n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
@@ -422,12 +423,12 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe 
     # State rewards
     # Costs
-    c_H    = rgamma(n_sim, shape = 100,   scale = 20),    # cost of remaining one cycle in state H
-    c_S1   = rgamma(n_sim, shape = 177.8, scale = 22.5),  # cost of remaining one cycle in state S1
-    c_S2   = rgamma(n_sim, shape = 225,   scale = 66.7),  # cost of remaining one cycle in state S2
-    c_trt1 = rgamma(n_sim, shape = 576,   scale = 21),    # cost of treatment (per cycle)
-    c_trt2 = rgamma(n_sim, shape = 676,   scale = 19),    # cost of treatment (per cycle)
-    c_D    = 0,                                           # cost of being in the death state
+    c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
+    c_S1   = rgamma(n_sim, shape = 177.8, scale = 22.5), # cost of remaining one cycle in state S1
+    c_S2   = rgamma(n_sim, shape = 225,   scale = 66.7), # cost of remaining one cycle in state S2
+    c_trt1 = rgamma(n_sim, shape = 576,   scale = 20.8), # cost of treatment (per cycle)
+    c_trt2 = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment (per cycle)
+    c_D    = 0,                                          # cost of being in the death state
     
     # Utilities
     u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy

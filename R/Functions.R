@@ -107,15 +107,31 @@ check_sum_of_transition_array <- function(a_P,
                                           verbose  = FALSE) {
   
   a_P <- as.array(a_P)
-  valid <- (apply(a_P, 3, function(x) sum(rowSums(x))) == n_states)
-  if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
-    if(err_stop) {
-      stop("This is not a valid transition Matrix")
+  d <- length(dim(a_P))
+  # For matrix
+  if (d == 2) {
+    valid <- sum(rowSums(a_P))
+    if (valid != n_states) {
+      if(err_stop) {
+        stop("This is not a valid transition Matrix")
+      }
+      
+      if(verbose){
+        warning("This is not a valid transition Matrix")
+      } 
     }
-    
-    if(verbose){
-      warning("This is not a valid transition Matrix")
-    } 
+  } else {
+  # For array
+    valid <- (apply(a_P, d, function(x) sum(rowSums(x))) == n_states)
+    if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
+      if(err_stop) {
+        stop("This is not a valid transition Matrix")
+      }
+      
+      if(verbose){
+        warning("This is not a valid transition Matrix")
+      } 
+    }
   }
 }
 
@@ -329,7 +345,7 @@ plot_surv <- function(l_m_M, v_names_death_states) {
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to plot prevalence curve                   ####
+####                   Function to plot prevalence curve                  ####
 #----------------------------------------------------------------------------#
 #' Plot prevalence curve
 #'
@@ -359,7 +375,7 @@ plot_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
 #----------------------------------------------------------------------------#
 ####           Function to plot state-in-state proportion curve           ####
 #----------------------------------------------------------------------------#
-#' Plot proportion state-in-state proportion curve
+#' Plot state-in-state proportion curve
 #'
 #' \code{plot_prevalence} plots the 
 #'
@@ -373,7 +389,7 @@ plot_proportion_sicker <- function(l_m_M, v_names_sick_states, v_names_sicker_st
   
   p <- ggplot(df_proportion_sicker, 
               aes(x = Cycle, y = Proportion.Sicker, group = Strategy)) +
-    geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
+    geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2, na.rm = T) +
     scale_color_brewer(palette = "RdBu") +
     xlab("Cycle") +
     ylab("Proportion") +
