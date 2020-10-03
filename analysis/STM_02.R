@@ -62,7 +62,7 @@ source("R/Functions.R")
 ################################ Model input ################################# 
 ## General setup
 n_age_init  <- 25                      # age at baseline
-n_age_max   <- 100                     # maximum age of follow up
+n_age_max   <- 110                     # maximum age of follow up
 n_t         <- n_age_max - n_age_init  # time horizon, number of cycles
 v_n         <- c("H", "S1", "S2", "D") # the 4 health states of the model:
                                        # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
