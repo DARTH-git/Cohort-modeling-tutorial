@@ -84,6 +84,8 @@ p_HS1 <- 0.15  # probability to become Sick when Healthy conditional on survivin
 p_S1H <- 0.50  # probability to become Healthy when Sick conditional on surviving
 hr_S1 <- 3     # hazard ratio of death in Sick vs Healthy
 hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy 
+or_S1S2  <- 0.6                       # odds ratio of becoming Sicker when Sick under New treatment 2
+lor_S1S2 <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
 
 ## History-dependent transition probability from S1 to S2 conditional on surviving
 # Weibull parameters
@@ -91,12 +93,9 @@ n_lambda <- 0.08 # scale
 n_gamma  <- 1.1  # shape
 # Weibull hazard
 v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
-# For new treatment 2
-or_S1S2  <- 0.6                       # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2 <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
-logit_S1S2 <- logit(v_p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
+v_logit_S1S2 <- logit(v_p_S1S2_tunnels) # vector of log-odds of becoming Sicker when Sick
 # probability to become Sicker when Sick under New treatment 2 conditional on surviving
-v_p_S1S2_tunnels_trt2 <- inv.logit(logit_S1S2 + lor_S1S2) 
+v_p_S1S2_tunnels_trt2 <- inv.logit(v_logit_S1S2 + lor_S1S2) 
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -105,10 +104,12 @@ v_r_mort_by_age <- lt_usa_2015 %>%
                    as.matrix()
 
 ## Age-specific transition probabilities
-# extract age-specific all-cause mortality for ages in model time horizon
+# extract age-specific all-cause mortality rates for ages in model time horizon
 v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
+# compute mortality rates
 v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
 v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+# transform rates to probabilities
 v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
 v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
 v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
