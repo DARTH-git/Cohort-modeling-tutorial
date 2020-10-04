@@ -123,13 +123,13 @@ v_dwe  <- 1 / ((1 + d_c) ^ (0:(n_t)))
 v_s_init <- c(H = 1, S1 = 0, S2 = 0, D = 0) # initial state vector
 v_s_init
 
-## Initialize cohort trace
+## Initialize cohort trace for usual care and new treatment 1
 m_M <- matrix(0, 
               nrow = (n_t + 1), ncol = n_states, 
               dimnames = list(0:n_t, v_n))
 # Store the initial state vector in the first row of the cohort trace
 m_M[1, ] <- v_s_init
-# For treatment 2
+## Initialize cohort trace new treatment 1 and combination of both new treatments
 m_M_trt2 <- m_M
 
 ## Initialize transition probability matrix
@@ -158,10 +158,11 @@ m_P_trt2 <- m_P
 m_P_trt2["S1", "S1"] <- (1 - p_S1D) * (1 - (p_S1H + p_S1S2_trt2))
 m_P_trt2["S1", "S2"] <- (1 - p_S1D) * p_S1S2_trt2
 
-### Check if transition probability matrix is valid (i.e., elements cannot < 0 or > 1) 
+### Check if transition probability matrices are valid
+## Check that transition probabilities are [0, 1]
 check_transition_probability(m_P,      verbose = TRUE)
 check_transition_probability(m_P_trt2, verbose = TRUE)
-### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
+## Check that all rows sum to 1
 check_sum_of_transition_array(m_P,      n_states = n_states, n_t = n_t, verbose = TRUE)
 check_sum_of_transition_array(m_P_trt2, n_states = n_states, n_t = n_t, verbose = TRUE)
 
