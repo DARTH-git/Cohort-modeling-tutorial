@@ -153,9 +153,11 @@ m_P["S2", "D"]  <- p_S2D
 # From D
 m_P["D", "D"]   <- 1
 
-# For New treatment 2
-# Only need to update the transition probabilities from S1 involving p_S1S2
+### For New treatment 2
+## Initialize transition probability array for new treatment 2
 m_P_trt2 <- m_P
+## Only need to update the probabilities involving the transition from Sick to Sicker, p_S1S2
+# From S1
 m_P_trt2["S1", "S1"] <- (1 - p_S1D) * (1 - (p_S1H + p_S1S2_trt2))
 m_P_trt2["S1", "S2"] <- (1 - p_S1D) * p_S1S2_trt2
 

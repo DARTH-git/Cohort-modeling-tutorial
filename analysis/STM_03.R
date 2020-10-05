@@ -165,7 +165,7 @@ a_P_tunnels[v_Sick_tunnel[n_tunnel_size],
             v_Sick_tunnel[n_tunnel_size], ] <- (1 - v_p_S1Dage) *
                                                (1 - (p_S1H + v_p_S1S2_tunnels[n_tunnel_size]))
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "S2", ] <- (1 - v_p_S1Dage) * 
-                                                      v_p_S1S2_tunnels[n_tunnel_size]
+                                                     v_p_S1S2_tunnels[n_tunnel_size]
 a_P_tunnels[v_Sick_tunnel[n_tunnel_size], "D", ]  <- v_p_S1Dage
 ## From S2
 a_P_tunnels["S2", "S2", ] <- 1 - v_p_S2Dage
@@ -173,10 +173,11 @@ a_P_tunnels["S2", "D", ]  <- v_p_S2Dage
 ## From D
 a_P_tunnels["D", "D", ] <- 1
 
-# For New treatment 2
-# Only need to update the transition probabilities from S1 involving p_S1S2
-## From S1
+### For New treatment 2
+## Initialize transition probability array for new treatment 2
 a_P_tunnels_trt2 <- a_P_tunnels
+## Only need to update the probabilities involving the transition from Sick to Sicker, v_p_S1S2_tunnels
+# From S1
 for(i in 1:(n_tunnel_size - 1)){
   a_P_tunnels_trt2[v_Sick_tunnel[i], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
   a_P_tunnels_trt2[v_Sick_tunnel[i], 
