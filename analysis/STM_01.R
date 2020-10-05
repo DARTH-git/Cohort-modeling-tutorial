@@ -91,7 +91,8 @@ or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick 
 lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
 logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                         lor_S1S2)    # probability to become Sicker when Sick under New treatment 2
+                         lor_S1S2)    # probability to become Sicker when Sick 
+                                      # under New treatment 2 conditional on surviving
 
 ## State rewards
 # Costs

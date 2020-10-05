@@ -93,9 +93,11 @@ n_lambda <- 0.08 # scale
 n_gamma  <- 1.1  # shape
 # Weibull hazard
 v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
-v_logit_S1S2 <- boot::logit(v_p_S1S2_tunnels) # vector of log-odds of becoming Sicker when Sick
-# probability to become Sicker when Sick under New treatment 2 conditional on surviving
-v_p_S1S2_tunnels_trt2 <- boot::inv.logit(v_logit_S1S2 + lor_S1S2) 
+# vector of log-odds of becoming Sicker when Sick
+v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
+# vector with probabilities of becoming Sicker when Sick under New treatment 2 
+# conditional on surviving
+v_p_S1S2_tunnels_trt2 <- boot::inv.logit(v_logit_S1S2_tunnels + lor_S1S2) 
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -152,7 +154,7 @@ a_P_tunnels["H", "D", ]              <- v_p_HDage
 for(i in 1:(n_tunnel_size - 1)){
   a_P_tunnels[v_Sick_tunnel[i], "H", ]  <- (1 - v_p_S1Dage) * p_S1H
   a_P_tunnels[v_Sick_tunnel[i], 
-              v_Sick_tunnel[i + 1], ]   <- (1 - v_p_S1Dage) * 
+              v_Sick_tunnel[i + 1], ]   <- (1 - v_p_S1Dage) *
                                            (1 - (p_S1H + v_p_S1S2_tunnels[i]))
   a_P_tunnels[v_Sick_tunnel[i], "S2", ] <- (1 - v_p_S1Dage) * v_p_S1S2_tunnels[i]
   a_P_tunnels[v_Sick_tunnel[i], "D", ]  <- v_p_S1Dage
