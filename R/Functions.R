@@ -93,9 +93,10 @@ check_transition_probability <- function(a_P,
 #' @param a_P A transition probability array.
 #' @param n_states Number of health states.
 #' @param n_t Number of cycles.
-#' @param err_stop Logical variable to stop model run if set up as TRUE. Default = FALSE.
+#' @param err_stop Logical variable to stop model run if set up as TRUE. 
+#' Default = TRUE.
 #' @param verbose Logical variable to indicate print out of messages. 
-#' Default = FALSE
+#' Default = TRUE
 #' @return 
 #' The transition probability array and the cohort trace matrix.
 #' @import dplyr
@@ -103,8 +104,8 @@ check_transition_probability <- function(a_P,
 check_sum_of_transition_array <- function(a_P,
                                           n_states,
                                           n_t,  
-                                          err_stop = FALSE, 
-                                          verbose  = FALSE) {
+                                          err_stop = TRUE, 
+                                          verbose  = TRUE) {
   
   a_P <- as.array(a_P)
   d <- length(dim(a_P))
