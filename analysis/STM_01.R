@@ -130,7 +130,7 @@ m_M <- matrix(0,
 # Store the initial state vector in the first row of the cohort trace
 m_M[1, ] <- v_s_init
 ## Initialize cohort trace new treatment 1 and combination of both new treatments
-m_M_trt2 <- m_M
+m_M_trt2 <- m_M # structure and initial states remain the same.
 
 ## Initialize transition probability matrix
 m_P <- matrix(0, 
@@ -179,11 +179,16 @@ a_A_trt2 <- a_A
 #### Run Markov model ####
 # Iterative solution of time-independent cSTM
 for(t in 1:n_t){
-  # Fill in cohort trace
+  ## Fill in cohort trace
+  # For usual care and new treatment 1
   m_M[t + 1, ] <- m_M[t, ] %*% m_P
+  # For new treatment 2 and combination of both new treatments
   m_M_trt2[t + 1, ] <- m_M_trt2[t, ] %*% m_P_trt2
-  # Fill in transition dynamics array
+  
+  ## Fill in transition dynamics array
+  # For usual care and new treatment 1
   a_A[, , t + 1]  <- m_M[t, ] * m_P
+  # For new treatment 2 and combination of both new treatments
   a_A_trt2[, , t + 1]  <- m_M_trt2[t, ] * m_P_trt2
 }
 

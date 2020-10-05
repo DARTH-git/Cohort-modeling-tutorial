@@ -169,14 +169,14 @@ check_sum_of_transition_array(a_P_trt2, n_states = n_states, n_t = n_t, verbose 
 v_s_init <- c(H = 1, S1 = 0, S2 = 0, D = 0) # initial state vector
 v_s_init
 
-## Initialize cohort trace for age-dependent cSTM
+## Initialize cohort trace for age-dependent (ad) cSTM for usual care and new treatment 1
 m_M_ad <- matrix(0, 
                  nrow     = (n_t + 1), ncol = n_states, 
                  dimnames = list(0:n_t, v_n))
-# use the initial state vector defined above to populate the first row of the cohort trace
+# Store the initial state vector in the first row of the cohort trace
 m_M_ad[1, ] <- v_s_init
-# For New treatment 2 the structure and initial states remain the same:
-m_M_ad_trt2 <- m_M_ad
+## Initialize cohort trace new treatment 1 and combination of both new treatments
+m_M_ad_trt2 <- m_M_ad # structure and initial states remain the same.
 
 ## Initialize transition array which will capture transitions from each state to another over time 
 a_A <- array(0,
@@ -190,11 +190,16 @@ a_A_trt2 <- a_A
 
 ## Iterative solution of age-dependent cSTM
 for(t in 1:n_t){
-  # Fill in cohort trace
+  ## Fill in cohort trace
+  # For usual care and new treatment 1
   m_M_ad[t + 1, ]      <- m_M_ad[t, ]      %*% a_P[, , t]
+  # For new treatment 2 and combination of both new treatments
   m_M_ad_trt2[t + 1, ] <- m_M_ad_trt2[t, ] %*% a_P_trt2[, , t]
-  # Fill in transition dynamics array
+  
+  ## Fill in transition dynamics array
+  # For usual care and new treatment 1
   a_A[, , t + 1]       <- m_M_ad[t, ]       * a_P[, , t]
+  # For new treatment 2 and combination of both new treatments
   a_A_trt2[, , t + 1]  <- m_M_ad_trt2[t, ]  * a_P_trt2[, , t]
 }
 
