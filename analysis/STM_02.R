@@ -9,7 +9,7 @@
 # - Eline Krijkamp
 # - Eva A. Enns
 # - Alan Yang
-# - M.G. Myriam Hunink
+ # - M.G. Myriam Hunink
 # - Petros Pechlivanoglou
 # - Hawre Jalal
 # Please cite the article when using this code

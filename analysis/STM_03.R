@@ -13,7 +13,7 @@
 # - Petros Pechlivanoglou
 # - Hawre Jalal
 # Please cite the article when using this code
-#
+ #
 # To program this tutorial we made use of 
 # R version 4.0.2 (2020-06-22)
 # Platform: 64-bit operating system, x64-based processor
