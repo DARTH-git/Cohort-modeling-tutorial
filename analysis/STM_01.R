@@ -76,18 +76,20 @@ n_str       <- length(v_names_str) # number of strategies
 
 ## Transition probabilities (per cycle) and hazard ratios
 p_HD        <- 0.002                  # constant probability of dying when Healthy (all-cause mortality)
-p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving
-p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving
-p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving
+p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving the cycle
+p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving the cycle
+p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving the cycle
 hr_S1       <- 3                      # hazard ratio of death in Sick vs Healthy
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
+
+# For New treatment 2
+or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick under New treatment 2
+
 r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
 r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick
 r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
-p_S1D       <- rate_to_prob(r_S1D)    # probability of dying in Sick
-p_S2D       <- rate_to_prob(r_S2D)    # probability of dying in Sicker 
-# For New treatment 2
-or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick under New treatment 2
+p_S1D       <- rate_to_prob(r_S1D)    # probability of dying when Sick
+p_S2D       <- rate_to_prob(r_S2D)    # probability of dying when Sicker 
 lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
 logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
 p_S1S2_trt2 <- inv.logit(logit_S1S2 +
@@ -133,14 +135,15 @@ m_M[1, ] <- v_s_init
 ## Initialize cohort trace new treatment 1 and combination of both new treatments
 m_M_trt2 <- m_M # structure and initial states remain the same.
 
-## Initialize transition probability matrix
+## Initialize transition probability matrix 
+# all transitions to a non-death state are assumed to be conditional on survival 
 m_P <- matrix(0, 
               nrow = n_states, ncol = n_states, 
               dimnames = list(v_n, v_n)) # define row and column names
 ## Fill in matrix
 # From H
-m_P["H", "H"]   <- (1 - p_HD) * (1 - p_HS1)
-m_P["H", "S1"]  <- (1 - p_HD) * p_HS1
+m_P["H", "H"]   <- (1 - p_HD) * (1 - p_HS1)    
+m_P["H", "S1"]  <- (1 - p_HD) * p_HS1 
 m_P["H", "D"]   <- p_HD
 # From S1
 m_P["S1", "H"]  <- (1 - p_S1D) * p_S1H

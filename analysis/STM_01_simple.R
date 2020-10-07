@@ -160,15 +160,6 @@ check_transition_probability(m_P_trt2, verbose = TRUE)
 check_sum_of_transition_array(m_P,      n_states = n_states, n_t = n_t, verbose = TRUE)
 check_sum_of_transition_array(m_P_trt2, n_states = n_states, n_t = n_t, verbose = TRUE)
 
-## Initialize 3D transition dynamics array
-a_A <- array(0,
-             dim = c(n_states, n_states, n_t + 1),
-             dimnames = list(v_n, v_n, 0:n_t))
-# Set first slice of A with the initial state vector in its diagonal
-diag(a_A[, , 1]) <- v_s_init
-# For New treatment 2, the array structure and initial state is identical 
-# to Usual care and New treatment 1 
-a_A_trt2 <- a_A
 
 #### Run Markov model ####
 # Iterative solution of time-independent cSTM
@@ -176,9 +167,7 @@ for(t in 1:n_t){
   # Fill in cohort trace
   m_M[t + 1, ] <- m_M[t, ] %*% m_P
   m_M_trt2[t + 1, ] <- m_M_trt2[t, ] %*% m_P_trt2
-  # Fill in transition dynamics array
-  a_A[, , t + 1]  <- m_M[t, ] * m_P
-  a_A_trt2[, , t + 1]  <- m_M_trt2[t, ] * m_P_trt2
+
 }
 
 ## Store the cohort traces in a list

@@ -98,7 +98,7 @@ v_r_mort_by_age <- lt_usa_2015 %>%
 
 ## Age-specific transition probabilities
 # extract age-specific all-cause mortality for ages in model time horizon
-v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
+v_r_HDage  <- v_r_mort_by_age[(n_age_init) + 1:n_t]
 v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
 v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
 v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
