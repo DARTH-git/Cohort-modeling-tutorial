@@ -217,32 +217,32 @@ v_c_UC     <- c(H  = c_H,
                 S1 = c_S1,
                 S2 = c_S2, 
                 D  = c_D)
-## Vector of state utilities under New treatment 1
+## Vector of state utilities under new treatment 1
 v_u_trt1   <- c(H  = u_H, 
                 S1 = u_trt1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under New treatment 1
+## Vector of state costs per cycle under new treatment 1
 v_c_trt1   <- c(H  = c_H, 
                 S1 = c_S1 + c_trt1,
                 S2 = c_S2 + c_trt1, 
                 D  = c_D)
-## Vector of state utilities under New treatment 2
+## Vector of state utilities under new treatment 2
 v_u_trt2   <- c(H  = u_H, 
                 S1 = u_S1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under New treatment 2
+## Vector of state costs per cycle under new treatment 2
 v_c_trt2   <- c(H  = c_H, 
                 S1 = c_S1 + c_trt2, 
                 S2 = c_S2 + c_trt2, 
                 D  = c_D)
-## Vector of state utilities under New treatment 1 & 2
+## Vector of state utilities under new treatments 1 & 2
 v_u_trt1_2 <- c(H  = u_H, 
                 S1 = u_trt1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under New treatment 1 & 2
+## Vector of state costs per cycle under new treatments 1 & 2
 v_c_trt1_2 <- c(H  = c_H, 
                 S1 = c_S1 + (c_trt1 + c_trt2), 
                 S2 = c_S2 + (c_trt1 + c_trt2), 
