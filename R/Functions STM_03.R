@@ -12,6 +12,15 @@
 decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
     
+    ###################### Process sampled inputs #####################
+    ## Age-specific transition probabilities
+    # compute mortality rates
+    v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
+    v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+    # transform rates to probabilities
+    v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
+    v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
+    
     ## History-dependent transition from S1 to S2
     # Create tunnel states
     v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}

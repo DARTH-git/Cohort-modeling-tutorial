@@ -84,8 +84,8 @@ p_HS1 <- 0.15  # probability to become Sick when Healthy conditional on survivin
 p_S1H <- 0.50  # probability to become Healthy when Sick conditional on surviving
 hr_S1 <- 3     # hazard ratio of death in Sick vs Healthy
 hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy 
-or_S1S2  <- 0.6                       # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2 <- log(or_S1S2)              # log-odd ratio of becoming Sicker when Sick
+or_S1S2  <- 0.6          # odds ratio of becoming Sicker when Sick under New treatment 2
+lor_S1S2 <- log(or_S1S2) # log-odd ratio of becoming Sicker when Sick
 
 ## History-dependent transition probability from S1 to S2 conditional on surviving
 # Weibull parameters
