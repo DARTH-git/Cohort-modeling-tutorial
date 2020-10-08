@@ -87,12 +87,10 @@ hr_S2 <- 10    # hazard ratio of death in Sicker vs Healthy
 or_S1S2  <- 0.6          # odds ratio of becoming Sicker when Sick under New treatment 2
 lor_S1S2 <- log(or_S1S2) # log-odd ratio of becoming Sicker when Sick
 
-## History-dependent transition probability from S1 to S2 conditional on surviving
-# Weibull parameters
+# Weibull parameters for history-dependent transition probability of becoming Sicker when Sick
+# conditional on surviving
 n_lambda <- 0.08 # scale
 n_gamma  <- 1.1  # shape
-# Weibull hazard
-v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -124,7 +122,8 @@ ic_D   <- 2000  # increase in cost when dying
 v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
-## Process model inputs
+### Process model inputs
+## Age-specific transiition probability to the Dead state
 # extract age-specific all-cause mortality rates for ages in model time horizon
 v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
 # compute mortality rates
@@ -135,6 +134,11 @@ v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Heal
 v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
 v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
 
+## History-dependent transition probability of becoming Sicker when Sick
+# conditional on surviving
+# Weibull hazard
+v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
+# transform odds ratios to probabilites for New treatment 2
 # vector of log-odds of becoming Sicker when Sick
 v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
 # vector with probabilities of becoming Sicker when Sick under New treatment 2 
@@ -379,8 +383,8 @@ for (i in 1:n_str) {
   #### Expected QALYs and Costs for all transitions per cycle ####
   # QALYs = life years x QoL
   # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-  a_Y_c <- a_A_tunnels * a_R_c
-  a_Y_u <- a_A_tunnels * a_R_u 
+  a_Y_c <- a_A_tunnels_str * a_R_c
+  a_Y_u <- a_A_tunnels_str * a_R_u 
   
   #### Expected QALYs and Costs per cycle ####
   ## Vector of QALYs under Usual Care
@@ -426,6 +430,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
     n_gamma  = rlnorm(n_sim, log(1.1), 0.05),  # transition from S1 to S2 - Weibull shape parameter
     lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe 
+    
     # State rewards
     # Costs
     c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
@@ -434,13 +439,13 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     c_trt1 = rgamma(n_sim, shape = 576,   scale = 20.8), # cost of treatment (per cycle)
     c_trt2 = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment (per cycle)
     c_D    = 0,                                          # cost of being in the death state
-    
     # Utilities
     u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
     u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
     u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
     u_D    = 0,                                       # utility when dead
     u_trt1 = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    
     # Transition rewards
     du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick
     ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),    # increase in cost when transitioning from Healthy to Sick

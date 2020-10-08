@@ -116,7 +116,8 @@ ic_D   <- 2000  # increase in cost when dying
 v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
-## Process model inputs
+### Process model inputs
+## Age-specific transiition probability to the Dead state
 # extract age-specific all-cause mortality for ages in model time horizon
 v_r_HDage   <- v_r_mort_by_age[(n_age_init) + 1:n_t]
 # compute mortality rates
@@ -126,11 +127,13 @@ v_r_S2Dage  <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sic
 v_p_HDage   <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
 v_p_S1Dage  <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
 v_p_S2Dage  <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
-# transform odds ratios to probabilites
-lor_S1S2    <- log(or_S1S2)             # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- logit(p_S1S2)            # log-odds of becoming Sicker when Sick
-p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                           lor_S1S2)    # probability to become Sicker when Sick 
+
+## Transition probability of becoming Sicker when Sick for New treatment 2
+# transform odds ratios to probabilites for New treatment 2
+lor_S1S2    <- log(or_S1S2)               # log-odds ratio of becoming Sicker when Sick
+logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
+p_S1S2_trt2 <- boot::inv.logit(logit_S1S2 +
+                           lor_S1S2)      # probability to become Sicker when Sick 
 # under New treatment 2 conditional on surviving
 
 ###################### Construct state-transition models #####################
@@ -368,13 +371,13 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   set.seed(seed) # set a seed to be able to reproduce the same results
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
-    p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy
-    p_S1H    = rbeta(n_sim, 312, 312) ,        # probability to become healthy when sick
-    hr_S1    = rlnorm(n_sim, log(3),  1),      # rate ratio of death in S1 vs healthy
-    hr_S2    = rlnorm(n_sim, log(10), 1),      # rate ratio of death in S2 vs healthy 
-    n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
-    n_gamma  = rlnorm(n_sim, log(1.1), 0.05),  # transition from S1 to S2 - Weibull shape parameter
-    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe 
+    p_HS1    = rbeta(n_sim, 30, 170),       # probability to become sick when healthy conditional on surviving
+    p_S1H    = rbeta(n_sim, 312, 312) ,     # probability to become healthy when sick conditional on surviving
+    p_S1S2   = rbeta(n_sim, 98.6, 840.2),   # probability to become Sicker when Sick conditional on surviving
+    hr_S1    = rlnorm(n_sim, log(3),  1),   # rate ratio of death in S1 vs healthy
+    hr_S2    = rlnorm(n_sim, log(10), 1),   # rate ratio of death in S2 vs healthy 
+    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1), # log-odds ratio of becoming Sicker when Sick under New Treatment 2
+    
     # State rewards
     # Costs
     c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
@@ -383,13 +386,13 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     c_trt1 = rgamma(n_sim, shape = 576,   scale = 20.8), # cost of treatment (per cycle)
     c_trt2 = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment (per cycle)
     c_D    = 0,                                          # cost of being in the death state
-    
     # Utilities
     u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
     u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
     u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
     u_D    = 0,                                       # utility when dead
     u_trt1 = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    
     # Transition rewards
     du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick
     ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),    # increase in cost when transitioning from Healthy to Sick

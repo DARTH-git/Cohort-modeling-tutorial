@@ -13,17 +13,19 @@ decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
     
     ###################### Process model inputs ######################
+    ## Age-specific transiition probability to the Dead state
     # compute mortality rates
     v_r_S1Dage  <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
     v_r_S2Dage  <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
     # transform  rates to probabilities
     v_p_S1Dage  <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
     v_p_S2Dage  <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
-    # transform odds ratios to probabilites
-    lor_S1S2    <- log(or_S1S2)             # log-odds ratio of becoming Sicker when Sick
-    logit_S1S2  <- logit(p_S1S2)            # log-odds of becoming Sicker when Sick
-    p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                               lor_S1S2)    # probability to become Sicker when Sick 
+    
+    ## Transition probability of becoming Sicker when Sick for New treatment 2
+    # transform odds ratios to probabilites for New treatment 2
+    logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
+    p_S1S2_trt2 <- boot::inv.logit(logit_S1S2 +
+                                   lor_S1S2)  # probability to become Sicker when Sick 
     # under New treatment 2 conditional on surviving
     
     ###################### Construct state-transition models #####################

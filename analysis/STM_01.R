@@ -108,7 +108,8 @@ ic_D   <- 2000  # increase in cost when dying
 v_dwc  <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe  <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
-## Process model inputs
+### Process model inputs
+## Age-specific transiition probability to the Dead state
 # compute mortality rates
 r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
 r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick
@@ -116,11 +117,13 @@ r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
 # transform rates to probabilities
 p_S1D       <- rate_to_prob(r_S1D)    # probability of dying when Sick
 p_S2D       <- rate_to_prob(r_S2D)    # probability of dying when Sicker
-# transform odds ratios to probabilites
-lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
-p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                           lor_S1S2)  # probability to become Sicker when Sick 
+
+## Transition probability of becoming Sicker when Sick for New treatment 2
+# transform odds ratios to probabilites for New treatment 2
+lor_S1S2    <- log(or_S1S2)               # log-odds ratio of becoming Sicker when Sick
+logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
+p_S1S2_trt2 <- boot::inv.logit(logit_S1S2 +
+                               lor_S1S2)  # probability to become Sicker when Sick 
 # under New treatment 2 conditional on surviving
 
 ###################### Construct state-transition models ##################### 

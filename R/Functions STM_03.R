@@ -13,6 +13,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
     
     ###################### Process model inputs ######################
+    ## Age-specific transiition probability to the Dead state
     # compute mortality rates
     v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
     v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
@@ -20,14 +21,16 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
     v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
     
-    ## History-dependent transition probability from S1 to S2 conditional on surviving
+    ## History-dependent transition probability of becoming Sicker when Sick
+    # conditional on surviving
     # Weibull hazard
     v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
+    # transform odds ratios to probabilites for New treatment 2
     # vector of log-odds of becoming Sicker when Sick
-    logit_S1S2 <- boot::logit(v_p_S1S2_tunnels) 
+    v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
     # vector with probabilities of becoming Sicker when Sick under New treatment 2 
     # conditional on surviving
-    v_p_S1S2_tunnels_trt2 <- boot::inv.logit(logit_S1S2 + lor_S1S2) 
+    v_p_S1S2_tunnels_trt2 <- boot::inv.logit(v_logit_S1S2_tunnels + lor_S1S2) 
     
     ###################### Construct state-transition models #####################
     #### Create transition matrix ####
@@ -289,8 +292,8 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       #### Expected QALYs and Costs for all transitions per cycle ####
       # QALYs = life years x QoL
       # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-      a_Y_c <- a_A_tunnels * a_R_c
-      a_Y_u <- a_A_tunnels * a_R_u 
+      a_Y_c <- a_A_tunnels_str * a_R_c
+      a_Y_u <- a_A_tunnels_str * a_R_u 
       
       #### Expected QALYs and Costs per cycle ####
       ## Vector of QALYs under Usual Care
