@@ -13,13 +13,13 @@ decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
     
     ###################### Process model inputs ######################
-    ## Age-specific transiition probability to the Dead state
+    ## Age-specific transition probabilities to the Dead state
     # compute mortality rates
-    v_r_S1Dage  <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
-    v_r_S2Dage  <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
-    # transform  rates to probabilities
-    v_p_S1Dage  <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
-    v_p_S2Dage  <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
+    v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
+    v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+    # transform rates to probabilities
+    v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
+    v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
     
     ## Transition probability of becoming Sicker when Sick for New treatment 2
     # transform odds ratios to probabilites for New treatment 2

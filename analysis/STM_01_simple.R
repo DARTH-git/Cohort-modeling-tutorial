@@ -104,7 +104,7 @@ v_dwc  <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe  <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
 ### Process model inputs
-## Age-specific transiition probability to the Dead state
+## Age-specific transition probabilities to the Dead state
 # compute mortality rates
 r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
 r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick

@@ -123,7 +123,7 @@ v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe <- 1 / ((1 + d_c) ^ (0:(n_t)))
 
 ### Process model inputs
-## Age-specific transiition probability to the Dead state
+## Age-specific transition probabilities to the Dead state
 # extract age-specific all-cause mortality rates for ages in model time horizon
 v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
 # compute mortality rates
