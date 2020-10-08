@@ -206,11 +206,11 @@ for(t in 1:n_t){
   # For new treatment 2 and combination of both new treatments
   m_M_ad_trt2[t + 1, ] <- m_M_ad_trt2[t, ] %*% a_P_trt2[, , t]
   
-  ## Fill in transition dynamics array
-  # For usual care and new treatment 1
-  a_A[, , t + 1]       <- m_M_ad[t, ]       * a_P[, , t]
-  # For new treatment 2 and combination of both new treatments
-  a_A_trt2[, , t + 1]  <- m_M_ad_trt2[t, ]  * a_P_trt2[, , t]
+  ## Fill in transition-dynamics array
+  # For usual care
+  a_A[, , t + 1]      <- m_M_ad[t, ]       * a_P[, , t]
+  # For treatment 2
+  a_A_trt2[, , t + 1] <- m_M_ad_trt2[t, ]  * a_P_trt2[, , t]
 }
 
 ## Store the cohort traces in a list
@@ -239,119 +239,119 @@ grid.arrange(survival_plot, prevalence_S1_plot, prevalence_S2_plot, prevalence_S
              ncol = 1, heights = c(0.75, 0.75, 0.75, 0.75, 1))
 
 #### State Rewards ####
-## Vector of state utilities under Usual care
+## Vector of state utilities under Status Quo
 v_u_UC     <- c(H  = u_H, 
                 S1 = u_S1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under Usual care
+## Vector of state costs under Status Quo
 v_c_UC     <- c(H  = c_H, 
                 S1 = c_S1,
                 S2 = c_S2, 
                 D  = c_D)
-## Vector of state utilities under New treatment 1
+## Vector of state utilities under Strategy A
 v_u_trt1   <- c(H  = u_H, 
                 S1 = u_trt1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under new treatment 1
+## Vector of state costs under Strategy A
 v_c_trt1   <- c(H  = c_H, 
                 S1 = c_S1 + c_trt1,
                 S2 = c_S2 + c_trt1, 
                 D  = c_D)
-## Vector of state utilities under new treatment 2
+## Vector of state utilities under Strategy B
 v_u_trt2   <- c(H  = u_H, 
                 S1 = u_S1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under new treatment 2
+## Vector of state costs under Strategy B
 v_c_trt2   <- c(H  = c_H, 
                 S1 = c_S1 + c_trt2, 
                 S2 = c_S2 + c_trt2, 
                 D  = c_D)
-## Vector of state utilities under new treatments 1 & 2
+## Vector of state utilities under Strategy AB
 v_u_trt1_2 <- c(H  = u_H, 
                 S1 = u_trt1, 
                 S2 = u_S2, 
                 D  = u_D)
-## Vector of state costs per cycle under new treatments 1 & 2
+## Vector of state costs under Strategy AB
 v_c_trt1_2 <- c(H  = c_H, 
                 S1 = c_S1 + (c_trt1 + c_trt2), 
                 S2 = c_S2 + (c_trt1 + c_trt2), 
                 D  = c_D)
 
 ## Store the vectors of state utilities for each strategy in a list 
-l_u   <- list(v_u_UC,
-              v_u_trt1,
-              v_u_trt2,
-              v_u_trt1_2)
+l_u   <- list(SQ = v_u_UC,
+              A =  v_u_trt1,
+              B =  v_u_trt2,
+              AB = v_u_trt1_2)
 ## Store the vectors of state cost for each strategy in a list 
-l_c   <- list(v_c_UC,
-              v_c_trt1,
-              v_c_trt2,
-              v_c_trt1_2)
+l_c   <- list(SQ = v_c_UC,
+              A =  v_c_trt1,
+              B =  v_c_trt2,
+              AB = v_c_trt1_2)
 ## Store the transition array for each strategy in a list
-l_a_A <- list(a_A,
-              a_A,
-              a_A_trt2,
-              a_A_trt2)
+l_a_A <- list(SQ = a_A,
+              A =  a_A,
+              B =  a_A_trt2,
+              AB = a_A_trt2)
 
 # assign strategy names to matching items in the lists
 names(l_u) <- names(l_c) <- names(l_a_A) <- v_names_str
 
 ## create empty vectors to store total utilities and costs 
-v_totqaly <- v_totcost <- vector(mode = "numeric", length = n_str)
-names(v_totqaly) <- names(v_totcost) <- v_names_str
+v_tot_qaly <- v_tot_cost <- vector(mode = "numeric", length = n_str)
+names(v_tot_qaly) <- names(v_tot_cost) <- v_names_str
 
 #### Loop through each strategy and calculate total utilities and costs ####
 for (i in 1:n_str) {
-  v_u     <- l_u[[i]]   # select the vector of state utilities for the ith strategy
-  v_c     <- l_c[[i]]   # select the vector of state costs for the ith strategy
+  v_u_str <- l_u[[i]]   # select the vector of state utilities for the ith strategy
+  v_c_str <- l_c[[i]]   # select the vector of state costs for the ith strategy
   a_A_str <- l_a_A[[i]] # select the transition array for the ith strategy
   
   #### Array of state rewards ####
   # Create transition matrices of state utilities and state costs for the ith strategy 
-  m_u   <- matrix(v_u, nrow = n_states, ncol = n_states, byrow = T)
-  m_c   <- matrix(v_c, nrow = n_states, ncol = n_states, byrow = T)
+  m_u_str   <- matrix(v_u_str, nrow = n_states, ncol = n_states, byrow = T)
+  m_c_str   <- matrix(v_c_str, nrow = n_states, ncol = n_states, byrow = T)
   # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
-  a_R_u <- array(m_u, 
-                 dim      = c(n_states, n_states, n_t + 1),
-                 dimnames = list(v_n, v_n, 0:n_t))
+  a_R_u_str <- array(m_u_str, 
+                     dim      = c(n_states, n_states, n_t + 1),
+                     dimnames = list(v_n, v_n, 0:n_t))
   # Expand the transition matrix of state costs across cycles to form a transition array of state costs
-  a_R_c <- array(m_c, 
-                 dim      = c(n_states, n_states, n_t + 1),
-                 dimnames = list(v_n, v_n, 0:n_t))
+  a_R_c_str <- array(m_c_str, 
+                     dim      = c(n_states, n_states, n_t + 1),
+                     dimnames = list(v_n, v_n, 0:n_t))
   
   #### Apply transition rewards ####  
   # Apply disutility due to transition from H to S1
-  a_R_u["H", "S1", ]      <- a_R_u["H", "S1", ]       - du_HS1
+  a_R_u_str["H", "S1", ]      <- a_R_u_str["H", "S1", ]       - du_HS1
   # Add transition cost per cycle due to transition from H to S1
-  a_R_c["H", "S1", ]      <- a_R_c["H", "S1", ]       + ic_HS1
+  a_R_c_str["H", "S1", ]      <- a_R_c_str["H", "S1", ]       + ic_HS1
   # Add transition cost  per cycle of dying from all non-dead states
-  a_R_c[-n_states, "D", ] <- a_R_c[- n_states, "D", ] + ic_D
+  a_R_c_str[-n_states, "D", ] <- a_R_c_str[- n_states, "D", ] + ic_D
   
   #### Expected QALYs and Costs for all transitions per cycle ####
   # QALYs = life years x QoL
   # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-  a_Y_c <- a_A_str * a_R_c
-  a_Y_u <- a_A_str * a_R_u 
+  a_Y_c_str <- a_A_str * a_R_c_str
+  a_Y_u_str <- a_A_str * a_R_u_str 
   
   #### Expected QALYs and Costs per cycle ####
   ## Vector of QALYs under Usual Care
-  v_qaly <- apply(a_Y_u, 3, sum) # sum the proportion of the cohort across transitions 
-  v_cost <- apply(a_Y_c, 3, sum) # sum the proportion of the cohort across transitions
+  v_qaly_str <- apply(a_Y_u_str, 3, sum) # sum the proportion of the cohort across transitions 
+  v_cost_str <- apply(a_Y_c_str, 3, sum) # sum the proportion of the cohort across transitions
   
   #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
   ## QALYs
-  v_totqaly[i] <- t(v_qaly) %*% (v_dwe * v_hcc)
+  v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_hcc)
   ## Costs
-  v_totcost[i] <- t(v_cost) %*% (v_dwc * v_hcc)
+  v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_hcc)
 }
 
 ########################## Cost-effectiveness analysis #######################
 ### Calculate incremental cost-effectiveness ratios (ICERs)
-df_cea <- calculate_icers(cost       = v_totcost, 
-                          effect     = v_totqaly,
+df_cea <- calculate_icers(cost       = v_tot_cost, 
+                          effect     = v_tot_qaly,
                           strategies = v_names_str)
 df_cea
 
