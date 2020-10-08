@@ -91,6 +91,7 @@ lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2015 %>% 
                    select(Total) %>%
                    as.matrix() # anyone above 100 have the same mortality, ALTERNATIVELY: conditional probs
+names(v_r_mort_by_age) <- lt_usa_2015$Age
 
 ## State rewards
 # Costs
