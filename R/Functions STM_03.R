@@ -12,8 +12,7 @@
 decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
     
-    ###################### Process sampled inputs #####################
-    ## Age-specific transition probabilities
+    ###################### Process model inputs ######################
     # compute mortality rates
     v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
     v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
@@ -21,11 +20,14 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
     v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
     
-    ## History-dependent transition from S1 to S2
-    # Create tunnel states
+    ## History-dependent transition probability from S1 to S2 conditional on surviving
+    # Weibull hazard
     v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
-    logit_S1S2 <- boot::logit(v_p_S1S2_tunnels) # log-odds of becoming Sicker when Sick
-    v_p_S1S2_tunnels_trt2 <- boot::inv.logit(logit_S1S2 + lor_S1S2) # probability to become Sicker when Sick under New treatment 2
+    # vector of log-odds of becoming Sicker when Sick
+    logit_S1S2 <- boot::logit(v_p_S1S2_tunnels) 
+    # vector with probabilities of becoming Sicker when Sick under New treatment 2 
+    # conditional on surviving
+    v_p_S1S2_tunnels_trt2 <- boot::inv.logit(logit_S1S2 + lor_S1S2) 
     
     ###################### Construct state-transition models #####################
     #### Create transition matrix ####
@@ -259,9 +261,9 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     
     #### Loop through each strategy and calculate total utilities and costs ####
     for (i in 1:n_str) {
-      v_u <- l_u[[i]]    # select the vector of state utilities for the ith strategy
-      v_c <- l_c[[i]]    # select the vector of state costs for the ith strategy
-      a_A_tunnels <- l_a_A[[i]]  # select the transition array for the ith strategy
+      v_u             <- l_u[[i]]   # select the vector of state utilities for the ith strategy
+      v_c             <- l_c[[i]]   # select the vector of state costs for the ith strategy
+      a_A_tunnels_str <- l_a_A[[i]] # select the transition array for the ith strategy
       
       #### Array of state utilities and costs ####
       # Create transition matrices of state utilities and state costs for the ith strategy 

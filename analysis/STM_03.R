@@ -93,28 +93,12 @@ n_lambda <- 0.08 # scale
 n_gamma  <- 1.1  # shape
 # Weibull hazard
 v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
-# vector of log-odds of becoming Sicker when Sick
-v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
-# vector with probabilities of becoming Sicker when Sick under New treatment 2 
-# conditional on surviving
-v_p_S1S2_tunnels_trt2 <- boot::inv.logit(v_logit_S1S2_tunnels + lor_S1S2) 
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2015 %>% 
                    select(Total) %>%
                    as.matrix()
-
-## Age-specific transition probabilities
-# extract age-specific all-cause mortality rates for ages in model time horizon
-v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
-# compute mortality rates
-v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
-v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
-# transform rates to probabilities
-v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
-v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
-v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
 
 ## State rewards
 # Costs
@@ -139,6 +123,23 @@ ic_D   <- 2000  # increase in cost when dying
 # Discount weight (equal discounting is assumed for costs and effects)
 v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe <- 1 / ((1 + d_c) ^ (0:(n_t)))
+
+## Process model inputs
+# extract age-specific all-cause mortality rates for ages in model time horizon
+v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
+# compute mortality rates
+v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
+v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+# transform rates to probabilities
+v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
+v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
+v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
+
+# vector of log-odds of becoming Sicker when Sick
+v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
+# vector with probabilities of becoming Sicker when Sick under New treatment 2 
+# conditional on surviving
+v_p_S1S2_tunnels_trt2 <- boot::inv.logit(v_logit_S1S2_tunnels + lor_S1S2) 
 
 ###################### Construct state-transition models #####################
 #### Create transition matrix ####
@@ -350,9 +351,9 @@ names(v_totqaly) <- names(v_totcost) <- v_names_str
 
 #### Loop through each strategy and calculate total utilities and costs ####
 for (i in 1:n_str) {
-  v_u <- l_u[[i]]    # select the vector of state utilities for the ith strategy
-  v_c <- l_c[[i]]    # select the vector of state costs for the ith strategy
-  a_A_tunnels <- l_a_A[[i]]  # select the transition array for the ith strategy
+  v_u             <- l_u[[i]]   # select the vector of state utilities for the ith strategy
+  v_c             <- l_c[[i]]   # select the vector of state costs for the ith strategy
+  a_A_tunnels_str <- l_a_A[[i]] # select the transition array for the ith strategy
   
   #### Array of state utilities and costs ####
   # Create transition matrices of state utilities and state costs for the ith strategy 
@@ -479,7 +480,7 @@ colnames(df_e) <- v_names_str
 # Run Markov model on each parameter set of PSA input dataset
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
-  df_c[i, ]  <- l_out_temp$Cost  # HUGE PROBLEM HERE
+  df_c[i, ]  <- l_out_temp$Cost  
   df_e[i, ]  <- l_out_temp$Effect
   # Display simulation progress
   if(i/(n_sim/100) == round(i/(n_sim/100), 0)) { # display progress every 5%

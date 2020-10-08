@@ -77,7 +77,7 @@ v_names_str <- c("Usual care",         # store the strategy names
                  "New treatments 1 & 2") 
 n_str       <- length(v_names_str) # number of strategies
 
-## Transition probabilities (per cycle) and hazard ratios
+## Transition probabilities (per cycle), hazard ratios and odds ratio
 p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving
 p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving
 p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving
@@ -85,25 +85,12 @@ hr_S1       <- 3                      # hazard ratio of death in Sick vs Healthy
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
 # For New treatment 2
 or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
-p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                           lor_S1S2)  # probability to become Sicker when Sick under New treatment 2
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2015 %>% 
                    select(Total) %>%
                    as.matrix() # anyone above 100 have the same mortality, ALTERNATIVELY: conditional probs
-
-## Age-specific transition probabilities
-# extract age-specific all-cause mortality for ages in model time horizon
-v_r_HDage  <- v_r_mort_by_age[(n_age_init) + 1:n_t]
-v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
-v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
-v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
-v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
-v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
 
 ## State rewards
 # Costs
@@ -128,6 +115,23 @@ ic_D   <- 2000  # increase in cost when dying
 # Discount weight (equal discounting is assumed for costs and effects)
 v_dwc <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe <- 1 / ((1 + d_c) ^ (0:(n_t)))
+
+## Process model inputs
+# extract age-specific all-cause mortality for ages in model time horizon
+v_r_HDage   <- v_r_mort_by_age[(n_age_init) + 1:n_t]
+# compute mortality rates
+v_r_S1Dage  <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
+v_r_S2Dage  <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+# transform rates to probabilities
+v_p_HDage   <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
+v_p_S1Dage  <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
+v_p_S2Dage  <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
+# transform odds ratios to probabilites
+lor_S1S2    <- log(or_S1S2)             # log-odds ratio of becoming Sicker when Sick
+logit_S1S2  <- logit(p_S1S2)            # log-odds of becoming Sicker when Sick
+p_S1S2_trt2 <- inv.logit(logit_S1S2 +
+                           lor_S1S2)    # probability to become Sicker when Sick 
+# under New treatment 2 conditional on surviving
 
 ###################### Construct state-transition models #####################
 #### Create transition arrays ####
@@ -297,9 +301,9 @@ names(v_totqaly) <- names(v_totcost) <- v_names_str
 
 #### Loop through each strategy and calculate total utilities and costs ####
 for (i in 1:n_str) {
-  v_u <- l_u[[i]]    # select the vector of state utilities for the ith strategy
-  v_c <- l_c[[i]]    # select the vector of state costs for the ith strategy
-  a_A <- l_a_A[[i]]  # select the transition array for the ith strategy
+  v_u     <- l_u[[i]]   # select the vector of state utilities for the ith strategy
+  v_c     <- l_c[[i]]   # select the vector of state costs for the ith strategy
+  a_A_str <- l_a_A[[i]] # select the transition array for the ith strategy
   
   #### Array of state rewards ####
   # Create transition matrices of state utilities and state costs for the ith strategy 
@@ -325,8 +329,8 @@ for (i in 1:n_str) {
   #### Expected QALYs and Costs for all transitions per cycle ####
   # QALYs = life years x QoL
   # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-  a_Y_c <- a_A * a_R_c
-  a_Y_u <- a_A * a_R_u 
+  a_Y_c <- a_A_str * a_R_c
+  a_Y_u <- a_A_str * a_R_u 
   
   #### Expected QALYs and Costs per cycle ####
   ## Vector of QALYs under Usual Care
@@ -355,4 +359,132 @@ table_cea
 plot(df_cea, label = "all") +
      expand_limits(x = max(table_cea$QALYs) + 0.5) 
 
+###################### Probabalistic Sensitivty Analysis #####################
+# Source functions that contain the model and CEA output
+source('R/Functions STM_02.R')
 
+# Function to generate PSA input dataset
+generate_psa_params <- function(n_sim = 1000, seed = 071818){
+  set.seed(seed) # set a seed to be able to reproduce the same results
+  df_psa <- data.frame(
+    # Transition probabilities (per cycle)
+    p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy
+    p_S1H    = rbeta(n_sim, 312, 312) ,        # probability to become healthy when sick
+    hr_S1    = rlnorm(n_sim, log(3),  1),      # rate ratio of death in S1 vs healthy
+    hr_S2    = rlnorm(n_sim, log(10), 1),      # rate ratio of death in S2 vs healthy 
+    n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
+    n_gamma  = rlnorm(n_sim, log(1.1), 0.05),  # transition from S1 to S2 - Weibull shape parameter
+    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe 
+    # State rewards
+    # Costs
+    c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
+    c_S1   = rgamma(n_sim, shape = 177.8, scale = 22.5), # cost of remaining one cycle in state S1
+    c_S2   = rgamma(n_sim, shape = 225,   scale = 66.7), # cost of remaining one cycle in state S2
+    c_trt1 = rgamma(n_sim, shape = 576,   scale = 20.8), # cost of treatment (per cycle)
+    c_trt2 = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment (per cycle)
+    c_D    = 0,                                          # cost of being in the death state
+    
+    # Utilities
+    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
+    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
+    u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
+    u_D    = 0,                                       # utility when dead
+    u_trt1 = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    # Transition rewards
+    du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick
+    ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),    # increase in cost when transitioning from Healthy to Sick
+    ic_D   = rgamma(n_sim, shape = 100, scale = 20)     # increase in cost when dying
+  )
+  return(df_psa)
+}
+
+# Number of PSA samples
+n_sim <- 1000
+
+# Generate PSA input dataset
+df_psa_input <- generate_psa_params(n_sim = n_sim)
+# First six observations
+head(df_psa_input)
+
+# Histogram of parameters
+ggplot(melt(df_psa_input, variable.name = "Parameter"), 
+       aes(x = value)) +
+  facet_wrap(~Parameter, scales = "free") +
+  geom_histogram(aes(y = ..density..)) +
+  theme_bw(base_size = 16)
+
+# Initialize matrices with PSA output 
+# Dataframe of costs
+df_c <- as.data.frame(matrix(0, 
+                             nrow = n_sim,
+                             ncol = n_str))
+colnames(df_c) <- v_names_str
+# Dataframe of effectiveness
+df_e <- as.data.frame(matrix(0, 
+                             nrow = n_sim,
+                             ncol = n_str))
+colnames(df_e) <- v_names_str
+
+## Conduct probabilistic sensitivity analysis
+# Run Markov model on each parameter set of PSA input dataset
+for(i in 1:n_sim){
+  l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+  df_c[i, ]  <- l_out_temp$Cost  
+  df_e[i, ]  <- l_out_temp$Effect
+  # Display simulation progress
+  if(i/(n_sim/100) == round(i/(n_sim/100), 0)) { # display progress every 5%
+    cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
+  }
+}
+
+# Create PSA object for dampack
+l_psa <- make_psa_obj(cost          = df_c, 
+                      effectiveness = df_e, 
+                      parameters    = df_psa_input, 
+                      strategies    = v_names_str)
+l_psa$strategies <- v_names_str
+colnames(l_psa$effectiveness)<- v_names_str
+colnames(l_psa$cost)<- v_names_str
+
+# Vector with willingness-to-pay (WTP) thresholds.
+v_wtp <- seq(0, 200000, by = 10000)
+
+# Cost-Effectiveness Scatter plot
+plot(l_psa)
+
+## Conduct CEA with probabilistic output
+# Compute expected costs and effects for each strategy from the PSA
+df_out_ce_psa <- summary(l_psa)
+
+# Calculate incremental cost-effectiveness ratios (ICERs)
+df_cea_psa <- calculate_icers(cost       = df_out_ce_psa$meanCost, 
+                              effect     = df_out_ce_psa$meanEffect,
+                              strategies = df_out_ce_psa$Strategy)
+df_cea_psa
+
+## Plot cost-effectiveness frontier
+plot(df_cea_psa, label = "all") +
+  expand_limits(x = 20.8)
+
+## Cost-effectiveness acceptability curves (CEACs) and frontier (CEAF)
+ceac_obj <- ceac(wtp = v_wtp, psa = l_psa)
+# Regions of highest probability of cost-effectiveness for each strategy
+summary(ceac_obj)
+# ceac_obj$Strategy <- ordered(ceac_obj$Strategy, levels = v_names_str)
+
+# CEAC & CEAF plot
+plot(ceac_obj, txtsize = 16, xlim = c(0, NA)) +
+  theme(legend.position = "bottom")
+
+##  Expected Loss Curves (ELCs)
+elc_obj <- calc_exp_loss(wtp = v_wtp, psa = l_psa)
+elc_obj
+
+# ELC plot
+plot(elc_obj, log_y = FALSE, txtsize = 16, xlim = c(0, NA)) +
+  theme(legend.position = "bottom")
+
+## Expected value of perfect information (EVPI)
+evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)
+# EVPI plot
+plot(evpi, effect_units = "QALY")

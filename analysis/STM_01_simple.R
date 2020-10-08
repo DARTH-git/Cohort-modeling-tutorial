@@ -74,24 +74,15 @@ v_names_str <- c("Usual care",         # store the strategy names
                  "New treatments 1 & 2") 
 n_str       <- length(v_names_str) # number of strategies
 
-## Transition probabilities (per cycle) and hazard ratios
+## Transition probabilities (per cycle), hazard ratios and odds ratio
 p_HD        <- 0.002                  # constant probability of dying when Healthy (all-cause mortality)
-p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving
-p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving
-p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving
+p_HS1       <- 0.15                   # probability to become Sick when Healthy conditional on surviving the cycle
+p_S1H       <- 0.5                    # probability to become Healthy when Sick conditional on surviving the cycle
+p_S1S2      <- 0.105                  # probability to become Sicker when Sick conditional on surviving the cycle
 hr_S1       <- 3                      # hazard ratio of death in Sick vs Healthy
 hr_S2       <- 10                     # hazard ratio of death in Sicker vs Healthy 
-r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
-r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick
-r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
-p_S1D       <- rate_to_prob(r_S1D)    # probability of dying in Sick
-p_S2D       <- rate_to_prob(r_S2D)    # probability of dying in Sicker 
 # For New treatment 2
 or_S1S2     <- 0.6                    # odds ratio of becoming Sicker when Sick under New treatment 2
-lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
-p_S1S2_trt2 <- inv.logit(logit_S1S2 +
-                           lor_S1S2)    # probability to become Sicker when Sick under New treatment 2
 
 ## State rewards
 # Costs
@@ -111,6 +102,21 @@ u_trt1 <- 0.95  # utility when being treated
 # Discount weight (equal discounting is assumed for costs and effects)
 v_dwc  <- 1 / ((1 + d_e) ^ (0:(n_t)))
 v_dwe  <- 1 / ((1 + d_c) ^ (0:(n_t)))
+
+## Process model inputs
+# compute mortality rates
+r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
+r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick
+r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
+# transform rates to probabilities
+p_S1D       <- rate_to_prob(r_S1D)    # probability of dying when Sick
+p_S2D       <- rate_to_prob(r_S2D)    # probability of dying when Sicker
+# transform odds ratios to probabilites
+lor_S1S2    <- log(or_S1S2)           # log-odds ratio of becoming Sicker when Sick
+logit_S1S2  <- logit(p_S1S2)          # log-odds of becoming Sicker when Sick
+p_S1S2_trt2 <- inv.logit(logit_S1S2 +
+                           lor_S1S2)  # probability to become Sicker when Sick 
+# under New treatment 2 conditional on surviving
 
 ###################### Construct state-transition models ##################### 
 ## Initial state vector
@@ -247,15 +253,15 @@ names(v_tot_qaly) <- names(v_tot_cost) <- v_names_str
 
 #### Loop through each strategy and calculate total utilities and costs ####
 for (i in 1:n_str) {
-  v_u <- l_u[[i]]    # select the vector of state utilities for the ith strategy
-  v_c <- l_c[[i]]    # select the vector of state costs for the ith strategy
-  m_M <- l_m_M[[i]]  # select the cohort trace for the ith strategy
+  v_u     <- l_u[[i]]   # select the vector of state utilities for the ith strategy
+  v_c     <- l_c[[i]]   # select the vector of state costs for the ith strategy
+  m_M_str <- l_m_M[[i]] # select the cohort trace for the ith strategy
   
   #### Expected QALYs and Costs per cycle ####
   ## Vector of QALYs under Usual Care
-  v_qaly <- m_M %*% v_u
+  v_qaly <- m_M_str %*% v_u
   ## Vector of costs under Usual Care
-  v_cost <- m_M %*% v_c
+  v_cost <- m_M_str %*% v_c
   
   #### Discounted total expected QALYs and Costs per strategy ####
   ### Apply half-cycle correction if applicable 
