@@ -93,7 +93,7 @@ u_H    <- 1     # utility when Healthy
 u_S1   <- 0.75  # utility when Sick 
 u_S2   <- 0.5   # utility when Sicker
 u_D    <- 0     # utility when Healthy 
-u_trt  <- 0.95  # utility when being treated
+u_trtA <- 0.95  # utility when being treated
 
 ## Transition rewards
 du_HS1 <- 0.01  # disutility when transitioning from Healthy to Sick
@@ -224,7 +224,7 @@ v_c_SoC    <- c(H  = c_H,
                 D  = c_D)
 ## Vector of state utilities under strategy A
 v_u_strA   <- c(H  = u_H, 
-                S1 = u_trt, 
+                S1 = u_trtA, 
                 S2 = u_S2, 
                 D  = u_D)
 ## Vector of state costs under strategy A
@@ -244,7 +244,7 @@ v_c_strB   <- c(H  = c_H,
                 D  = c_D)
 ## Vector of state utilities under strategy AB
 v_u_strAB  <- c(H  = u_H, 
-                S1 = u_trt, 
+                S1 = u_trtA, 
                 S2 = u_S2, 
                 D  = u_D)
 ## Vector of state costs under strategy AB

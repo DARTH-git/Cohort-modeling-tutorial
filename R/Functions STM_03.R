@@ -202,7 +202,7 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
                  D  = c_D)
     
     ## Vector of utilities for S1 under strategy A
-    v_u_S1_strA <- rep(u_trt, n_tunnel_size)
+    v_u_S1_strA <- rep(u_trtA, n_tunnel_size)
     names(v_u_S1_strA) <- v_Sick_tunnel
     ## Vector of state utilities under strategy A
     v_u_strA <- c(H  = u_H, 
@@ -236,7 +236,7 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
                   D  = c_D)
     
     ## Vector of utilities for S1 under strategy AB
-    v_u_S1_strAB <- rep(u_trt, n_tunnel_size)
+    v_u_S1_strAB <- rep(u_trtA, n_tunnel_size)
     names(v_u_S1_strAB) <- v_Sick_tunnel
     ## Vector of state utilities under strategy AB
     v_u_strAB <- c(H  = u_H, 

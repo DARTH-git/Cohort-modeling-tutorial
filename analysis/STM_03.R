@@ -109,7 +109,7 @@ u_H    <- 1     # utility when Healthy
 u_S1   <- 0.75  # utility when Sick 
 u_S2   <- 0.5   # utility when Sicker
 u_D    <- 0     # utility when Healthy 
-u_trt  <- 0.95  # utility when being treated
+u_trtA <- 0.95  # utility when being treated
 
 ## Transition rewards
 du_HS1 <- 0.01  # disutility when transitioning from Healthy to Sick
@@ -284,7 +284,7 @@ v_c_SoC <- c(H  = c_H,
              D  = c_D)
 
 ## Vector of utilities for S1 under strategy A
-v_u_S1_strA <- rep(u_trt, n_tunnel_size)
+v_u_S1_strA <- rep(u_trtA, n_tunnel_size)
 names(v_u_S1_strA) <- v_Sick_tunnel
 ## Vector of state utilities under strategy A
 v_u_strA <- c(H  = u_H, 
@@ -318,7 +318,7 @@ v_c_strB <- c(H  = c_H,
               D  = c_D)
 
 ## Vector of utilities for S1 under strategy AB
-v_u_S1_strAB <- rep(u_trt, n_tunnel_size)
+v_u_S1_strAB <- rep(u_trtA, n_tunnel_size)
 names(v_u_S1_strAB) <- v_Sick_tunnel
 ## Vector of state utilities under strategy AB
 v_u_strAB <- c(H  = u_H, 
@@ -448,7 +448,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
     u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
     u_D    = 0,                                       # utility when dead
-    u_trt  = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
     
     # Transition rewards
     du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick

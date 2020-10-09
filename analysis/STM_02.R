@@ -389,7 +389,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
     u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
     u_D    = 0,                                       # utility when dead
-    u_trtA  = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
     
     # Transition rewards
     du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick

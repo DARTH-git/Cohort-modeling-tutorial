@@ -14,7 +14,10 @@ classoption: landscape
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Cohort tutorial model components
+# Cohort tutorial model components
+
+**Table I: Input parameters**
+
 This table contains an overview of the key model components used in the code for the Sick-Sicker example from the [DARTH](http://darthworkgroup.com/publications/) manuscript: "Implementation of cohort state-transition models in R". The first column gives the mathematical notation for some of the model components that are used in the euqations in the manuscript. The second column gives a describtion of the model component with the R name in the third column. The forth gives the data structure, e.g. scalar, list, vector, matrix etc, with the according dimensions of this data structure in the fifth column. The final column indicated the type of data that is stored in the data structure, e.g. numeric (5.2,6.3,7.4), categoric (A,B,C), integer (5,6,7), logical (TRUE, FALSE).
 
 
@@ -91,6 +94,31 @@ This table contains an overview of the key model components used in the code for
 |              | Total expected discounted costs for all strategies |  `v_tot_cost` | vector     | 1 x `n_str`                            | numeric |
 |              | Summary of the model outcomes                      | `df_cea`      | data frame |                                        |         |
 |              | Summary of the model outcomes - reformatted        | `table_cea`   | table      |                                        |         |
+
+**Table II: Input parameters for probabilistic analysis**
+
+|           **Parameter**        |  **Distribution** |  **Distribution values** | **Distribution mean** | **Distribution standard deviation** | 
+|:-----------------------------------|------------------:|----------------------------------------------:|
+| Number of simulation               | `n_sim`           | 1000                                          |
+| Annual transition probabilities    |                   |                                               |
+| - Disease onset (H to S1)          | Beta              |  $\alpha=30, \ \beta=170$                     |
+| - Recovery (S1 to H)               | Beta              | $\alpha=60, \ \beta=60$                       |
+| - Disease progression (S1 to S2) in the time-homogeneous model | Beta | $\alpha=84, \ \beta=716$       |
+| Annual mortality                   |                   |                                               |
+| - All-cause mortality (H to D)     | Beta              |  $\alpha=10, \ \beta=1990$                    |
+| - Hazard ratio of death in S1 vs H | Lognormal         |  $\mu = log(3), \ \sigma = 0.01$              |
+| - Hazard ratio of death in S2 vs H | Lognormal         |  $\mu = log(10), \ \sigma = 0.02$             |
+| Annual costs                       |                   |                                               |
+| - Healthy individuals              | Gamma             |  shape = 100.0, scale = 20.0                  |
+| - Sick individuals in S1           | Gamma             |  shape = 177.8, scale = 22.5                  |
+| - Sick individuals in S2           | Gamma             |  shape = 225.0, scale = 66.7                  |
+| - Additional costs of sick individuals treated in S1 or S2 | Gamma | shape = 73.5, scale = 163.3       |
+| Utility weights                    |                   |                                               |
+| - Healthy individuals              | Beta              | $\alpha = 200, \ \beta = 3$                   |
+| - Sick individuals in S1           | Beta              | $\alpha = 130, \ \beta = 45$                  |
+| - Sick individuals in S2           | Beta              | $\alpha = 230, \ \beta = 230$                 |
+| Intervention effect                |                   |                                               |
+| - Utility for treated individuals in S1 | Beta         | $\alpha = 300, \ \beta = 15$                  |
 
 
 
