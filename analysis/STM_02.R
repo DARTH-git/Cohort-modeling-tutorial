@@ -102,7 +102,7 @@ u_H    <- 1     # utility when Healthy
 u_S1   <- 0.75  # utility when Sick 
 u_S2   <- 0.5   # utility when Sicker
 u_D    <- 0     # utility when Healthy 
-u_trt  <- 0.95  # utility when being treated
+u_trtA  <- 0.95  # utility when being treated
 
 ## Transition rewards
 du_HS1 <- 0.01  # disutility when transitioning from Healthy to Sick
@@ -247,7 +247,7 @@ v_c_SoC    <- c(H  = c_H,
                 D  = c_D)
 ## Vector of state utilities under strategy A
 v_u_strA   <- c(H  = u_H, 
-                S1 = u_trt, 
+                S1 = u_trtA, 
                 S2 = u_S2, 
                 D  = u_D)
 ## Vector of state costs under strategy A
@@ -267,7 +267,7 @@ v_c_strB   <- c(H  = c_H,
                 D  = c_D)
 ## Vector of state utilities under strategy AB
 v_u_strAB  <- c(H  = u_H, 
-                S1 = u_trt, 
+                S1 = u_trtA, 
                 S2 = u_S2, 
                 D  = u_D)
 ## Vector of state costs under strategy AB
@@ -356,8 +356,9 @@ table_cea <- format_table_cea(df_cea)
 table_cea
 
 ### CEA frontier
-plot(df_cea, label = "all") +
-     expand_limits(x = max(table_cea$QALYs) + 0.5) 
+plot(df_cea, label = "all", txtsize = 16) +
+     expand_limits(x = max(table_cea$QALYs) + 0.1) +
+  theme(legend.position = c(0.8, 0.2))
 
 ###################### Probabalistic Sensitivty Analysis #####################
 # Source functions that contain the model and CEA output
@@ -388,7 +389,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
     u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
     u_D    = 0,                                       # utility when dead
-    u_trt  = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    u_trtA  = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
     
     # Transition rewards
     du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick
@@ -447,7 +448,7 @@ colnames(l_psa$effectiveness)<- v_names_str
 colnames(l_psa$cost)<- v_names_str
 
 # Vector with willingness-to-pay (WTP) thresholds.
-v_wtp <- seq(0, 200000, by = 10000)
+v_wtp <- seq(0, 200000, by = 5000)
 
 # Cost-Effectiveness Scatter plot
 plot(l_psa)

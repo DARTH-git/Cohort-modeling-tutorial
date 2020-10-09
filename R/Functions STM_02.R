@@ -157,7 +157,7 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
                     D  = c_D)
     ## Vector of state utilities under strategy A
     v_u_strA   <- c(H  = u_H, 
-                    S1 = u_trt, 
+                    S1 = u_trtA, 
                     S2 = u_S2, 
                     D  = u_D)
     ## Vector of state costs under strategy A
@@ -177,7 +177,7 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
                     D  = c_D)
     ## Vector of state utilities under strategy AB
     v_u_strAB  <- c(H  = u_H, 
-                    S1 = u_trt, 
+                    S1 = u_trtA, 
                     S2 = u_S2, 
                     D  = u_D)
     ## Vector of state costs under strategy AB
