@@ -369,12 +369,12 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   set.seed(seed) # set a seed to be able to reproduce the same results
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
-    p_HS1    = rbeta(n_sim, 30, 170),            # probability to become sick when healthy conditional on surviving
-    p_S1H    = rbeta(n_sim, 312, 312) ,          # probability to become healthy when sick conditional on surviving
-    p_S1S2   = rbeta(n_sim, 98.6, 840.2),        # probability to become Sicker when Sick conditional on surviving
-    hr_S1    = rlnorm(n_sim, log(3), log(1.18)), # rate ratio of death in S1 vs healthy
-    hr_S2    = rlnorm(n_sim, log(10), log(1.1)), # rate ratio of death in S2 vs healthy 
-    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),      # log-odds ratio of becoming Sicker when Sick under B
+    p_HS1    = rbeta(n_sim, 30, 170),        # probability to become sick when healthy conditional on surviving
+    p_S1H    = rbeta(n_sim, 60, 60) ,        # probability to become healthy when sick conditional on surviving
+    p_S1S2   = rbeta(n_sim, 84, 716),        # probability to become Sicker when Sick conditional on surviving
+    hr_S1    = rlnorm(n_sim, log(3), 0.01),  # rate ratio of death in S1 vs healthy
+    hr_S2    = rlnorm(n_sim, log(10), 0.02), # rate ratio of death in S2 vs healthy 
+    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),  # log-odds ratio of becoming Sicker when Sick under B
     
     # State rewards
     # Costs
@@ -385,11 +385,11 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     c_trtB = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment B (per cycle)
     c_D    = 0,                                          # cost of being in the death state
     # Utilities
-    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
-    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
-    u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
-    u_D    = 0,                                       # utility when dead
-    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),    # utility when healthy
+    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45),   # utility when sick
+    u_S2   = rbeta(n_sim, shape1 = 230,  shape2 = 230), # utility when sicker
+    u_D    = 0,                                         # utility when dead
+    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15),   # utility when being treated
     
     # Transition rewards
     du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick

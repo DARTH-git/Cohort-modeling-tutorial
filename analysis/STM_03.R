@@ -427,14 +427,13 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   set.seed(seed) # set a seed to be able to reproduce the same results
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
-    p_HS1    = rbeta(n_sim, 30, 170),            # probability to become sick when healthy conditional on surviving
-    p_S1H    = rbeta(n_sim, 312, 312) ,          # probability to become healthy when sick conditional on surviving
-    hr_S1    = rlnorm(n_sim, log(3), log(1.18)), # rate ratio of death in S1 vs healthy 
-    hr_S2    = rlnorm(n_sim, log(10), log(1.1)), # rate ratio of death in S2 vs healthy 
-    n_lambda = rlnorm(n_sim, log(0.08), 0.02),   # transition from S1 to S2 - Weibull scale parameter
-    n_gamma  = rlnorm(n_sim, log(1.1), 0.05),    # transition from S1 to S2 - Weibull shape parameter
-    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),      # log-odds ratio of becoming Sicker whe 
-    
+    p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy conditional on surviving
+    p_S1H    = rbeta(n_sim, 60, 60) ,          # probability to become healthy when sick conditional on surviving
+    hr_S1    = rlnorm(n_sim, log(3), 0.01),    # rate ratio of death in S1 vs healthy 
+    hr_S2    = rlnorm(n_sim, log(10), 0.02),   # rate ratio of death in S2 vs healthy 
+    n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
+    n_gamma  = rlnorm(n_sim, log(1.1), 0.02),  # transition from S1 to S2 - Weibull shape parameter
+    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe  
     # State rewards
     # Costs
     c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
