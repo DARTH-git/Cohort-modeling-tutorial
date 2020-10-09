@@ -32,7 +32,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     #### Create transition arrays ####
     # Initialize 3-D array
     a_P <- array(0, dim      = c(n_states, n_states, n_t),
-                 dimnames = list(v_n, v_n, 0:(n_t - 1)))
+                 dimnames = list(v_names_states, v_names_states, 0:(n_t - 1)))
     ### Fill in array
     ## From H
     a_P["H", "H", ]   <- (1 - v_p_HDage) * (1 - p_HS1)
@@ -73,7 +73,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## Initialize cohort trace for age-dependent (ad) cSTM for srategies SoC and A
     m_M_ad <- matrix(0, 
                      nrow     = (n_t + 1), ncol = n_states, 
-                     dimnames = list(0:n_t, v_n))
+                     dimnames = list(0:n_t, v_names_states))
     # Store the initial state vector in the first row of the cohort trace
     m_M_ad[1, ] <- v_s_init
     ## Initialize cohort trace for srategies B and AB
@@ -83,7 +83,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     # for srategies SoC and A
     a_A <- array(0,
                  dim      = c(n_states, n_states, n_t + 1),
-                 dimnames = list(v_n, v_n, 0:n_t))
+                 dimnames = list(v_names_states, v_names_states, 0:n_t))
     # Set first slice of a_A with the initial state vector in its diagonal
     diag(a_A[, , 1]) <- v_s_init
     # For srategies B and AB, the array structure and initial state are identical 
@@ -222,11 +222,11 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
       a_R_u_str <- array(m_u_str, 
                          dim      = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_n, v_n, 0:n_t))
+                         dimnames = list(v_names_states, v_names_states, 0:n_t))
       # Expand the transition matrix of state costs across cycles to form a transition array of state costs
       a_R_c_str <- array(m_c_str, 
                          dim      = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_n, v_n, 0:n_t))
+                         dimnames = list(v_names_states, v_names_states, 0:n_t))
       
       #### Apply transition rewards ####  
       # Apply disutility due to transition from H to S1

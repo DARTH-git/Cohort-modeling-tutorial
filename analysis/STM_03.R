@@ -57,7 +57,7 @@ source("R/Functions.R")
 n_age_init <- 25                      # age at baseline
 n_age_max  <- 100                     # maximum age of follow up
 n_t        <- n_age_max - n_age_init  # time horizon, number of cycles
-v_n        <- c("H", "S1", "S2", "D") # the 4 health states of the model: # change to v_names_states
+v_names_states <- c("H", "S1", "S2", "D") # the 4 health states of the model
 
 ## Tunnel inputs
 # Number of tunnels
@@ -65,8 +65,8 @@ n_tunnel_size <- n_t
 # Name for tunnels states of Sick state
 v_Sick_tunnel <- paste("S1_", seq(1, n_tunnel_size), "Yr", sep = "")
 # Create variables for model with tunnels
-v_n_tunnels <- c("H", v_Sick_tunnel, "S2", "D") # health state names
-n_states_tunnels <- length(v_n_tunnels)         # number of health states
+v_names_states_tunnels <- c("H", v_Sick_tunnel, "S2", "D") # health state names
+n_states_tunnels <- length(v_names_states_tunnels)         # number of health states
 
 v_hcc       <- rep(1, n_t + 1)                  # vector of half-cycle correction 
 v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5
@@ -147,7 +147,7 @@ v_p_S1S2_tunnels_trtB <- boot::inv.logit(v_logit_S1S2_tunnels + lor_S1S2)
 #### Create transition matrix ####
 # Initialize 3-D array
 a_P_tunnels <- array(0, dim   = c(n_states_tunnels, n_states_tunnels, n_t),
-                     dimnames = list(v_n_tunnels, v_n_tunnels, 0:(n_t - 1)))
+                     dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:(n_t - 1)))
 ### Fill in array
 ## From H
 a_P_tunnels["H", "H", ]              <- (1 - v_p_HDage) * (1 - p_HS1)
@@ -213,7 +213,7 @@ v_s_init_tunnels <- c(1, rep(0, n_tunnel_size), 0, 0)
 ## Initialize cohort trace for history-dependent cSTM
 m_M_tunnels <- matrix(0, 
                       nrow    = (n_t + 1), ncol = n_states_tunnels, 
-                      dimnames = list(0:n_t, v_n_tunnels))
+                      dimnames = list(0:n_t, v_names_states_tunnels))
 # Store the initial state vector in the first row of the cohort trace
 m_M_tunnels[1, ] <- v_s_init_tunnels
 # For strategies B and AB
@@ -222,7 +222,7 @@ m_M_tunnels_strB <- m_M_tunnels
 ## Initialize transition array
 a_A_tunnels <- array(0,
                      dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                     dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
+                     dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
 # Set first slice of A with the initial state vector in its diagonal
 diag(a_A_tunnels[, , 1]) <- v_s_init_tunnels
 # For strategies B and AB
@@ -370,11 +370,11 @@ for (i in 1:n_str) {
   # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
   a_R_u_str <- array(m_u_str, 
                      dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                     dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
+                     dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
   # Expand the transition matrix of state costs across cycles to form a transition array of state costs
   a_R_c_str <- array(m_c_str, 
                      dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                     dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
+                     dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
   
   #### Apply transition rewards ####  
   # Add disutility due to transition from H to S1

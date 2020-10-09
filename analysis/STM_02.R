@@ -64,10 +64,10 @@ n_age_init  <- 25                       # age at baseline
 n_age_max   <- 100                      # maximum age of follow up
 n_t         <- n_age_max - n_age_init   # time horizon, number of cycles
 v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
-                                        # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+                                           # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
 v_hcc       <- rep(1, n_t + 1)          # vector of half-cycle correction 
 v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5    # half-cycle correction weight 
-n_states    <- length(v_names_states)              # number of health states 
+n_states    <- length(v_names_states)   # number of health states 
 d_c         <- 0.03                     # discount rate for costs 
 d_e         <- 0.03                     # discount rate for QALYs
 v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
@@ -86,7 +86,7 @@ or_S1S2     <- 0.6   # odds ratio of becoming Sicker when Sick
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
 v_r_mort_by_age <- lt_usa_2015 %>% 
                    select(Total) %>%
-                   as.matrix() # anyone above 100 have the same mortality, ALTERNATIVELY: conditional probs
+                   as.matrix() # anyone above 100 have the same mortality
 names(v_r_mort_by_age) <- lt_usa_2015$Age
 
 ## State rewards

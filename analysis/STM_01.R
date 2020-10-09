@@ -60,11 +60,11 @@ source("R/Functions.R")
 n_age_init  <- 25                       # age at baseline
 n_age_max   <- 100                      # maximum age of follow up
 n_t         <- n_age_max - n_age_init   # time horizon, number of cycles
-v_n         <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
-                                        # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
+                                           # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
 v_hcc       <- rep(1, n_t + 1)          # vector of half-cycle correction 
 v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5    # half-cycle correction weight 
-n_states    <- length(v_n)              # number of health states 
+n_states    <- length(v_names_states)   # number of health states 
 d_c         <- 0.03                     # discount rate for costs 
 d_e         <- 0.03                     # discount rate for QALYs
 v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
@@ -119,7 +119,7 @@ p_S2D       <- rate_to_prob(r_S2D)    # probability of dying when Sicker
 lor_S1S2    <- log(or_S1S2)               # log-odds ratio of becoming Sicker when Sick
 logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
 p_S1S2_trtB <- boot::inv.logit(logit_S1S2 +
-                                 lor_S1S2)  # probability to become Sicker when Sick 
+                               lor_S1S2)  # probability to become Sicker when Sick 
 # under B conditional on surviving
 
 ###################### Construct state-transition models ##################### 
@@ -131,7 +131,7 @@ v_s_init
 ## Initialize cohort trace for cSTM for strategies SoC and A
 m_M <- matrix(0, 
               nrow = (n_t + 1), ncol = n_states, 
-              dimnames = list(0:n_t, v_n))
+              dimnames = list(0:n_t, v_names_states))
 # Store the initial state vector in the first row of the cohort trace
 m_M[1, ] <- v_s_init
 ## Initialize cohort trace for strategies B and AB
@@ -141,7 +141,7 @@ m_M_strB <- m_M # structure and initial states remain the same.
 # all transitions to a non-death state are assumed to be conditional on survival 
 m_P <- matrix(0, 
               nrow = n_states, ncol = n_states, 
-              dimnames = list(v_n, v_n)) # define row and column names
+              dimnames = list(v_names_states, v_names_states)) # define row and column names
 ## Fill in matrix
 # From H
 m_P["H", "H"]   <- (1 - p_HD) * (1 - p_HS1)    
@@ -178,7 +178,7 @@ check_sum_of_transition_array(m_P_strB, n_states = n_states, n_t = n_t, verbose 
 # for strategies SoC and A
 a_A <- array(0,
              dim = c(n_states, n_states, n_t + 1),
-             dimnames = list(v_n, v_n, 0:n_t))
+             dimnames = list(v_names_states, v_names_states, 0:n_t))
 # Set first slice of A with the initial state vector in its diagonal
 diag(a_A[, , 1]) <- v_s_init
 # For strategies B and AB, the array structure and initial state are identical 
@@ -289,11 +289,11 @@ for (i in 1:n_str) {
   # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
   a_R_u_str <- array(m_u_str, 
                      dim      = c(n_states, n_states, n_t + 1),
-                     dimnames = list(v_n, v_n, 0:n_t))
+                     dimnames = list(v_names_states, v_names_states, 0:n_t))
   # Expand the transition matrix of state costs across cycles to form a transition array of state costs
   a_R_c_str <- array(m_c_str, 
                      dim      = c(n_states, n_states, n_t + 1),
-                     dimnames = list(v_n, v_n, 0:n_t))
+                     dimnames = list(v_names_states, v_names_states, 0:n_t))
   
   #### Apply transition rewards ####  
   # Apply disutility due to transition from H to S1

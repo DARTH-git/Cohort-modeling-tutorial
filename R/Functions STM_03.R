@@ -36,7 +36,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     #### Create transition matrix ####
     # Initialize 3-D array
     a_P_tunnels <- array(0, dim   = c(n_states_tunnels, n_states_tunnels, n_t),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:(n_t - 1)))
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:(n_t - 1)))
     ### Fill in array
     ## From H
     a_P_tunnels["H", "H", ]              <- (1 - v_p_HDage) * (1 - p_HS1)
@@ -102,7 +102,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## Initialize cohort trace for history-dependent cSTM
     m_M_tunnels <- matrix(0, 
                           nrow    = (n_t + 1), ncol = n_states_tunnels, 
-                          dimnames = list(0:n_t, v_n_tunnels))
+                          dimnames = list(0:n_t, v_names_states_tunnels))
     # Store the initial state vector in the first row of the cohort trace
     m_M_tunnels[1, ] <- v_s_init_tunnels
     # For strategies B and AB
@@ -111,7 +111,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## Initialize transition array
     a_A_tunnels <- array(0,
                          dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
     # Set first slice of A with the initial state vector in its diagonal
     diag(a_A_tunnels[, , 1]) <- v_s_init_tunnels
     # For strategies B and AB
@@ -288,11 +288,11 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
       a_R_u_str <- array(m_u_str, 
                          dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
       # Expand the transition matrix of state costs across cycles to form a transition array of state costs
       a_R_c_str <- array(m_c_str, 
                          dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_n_tunnels, v_n_tunnels, 0:n_t))
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
       
       #### Apply transition rewards ####  
       # Add disutility due to transition from H to S1

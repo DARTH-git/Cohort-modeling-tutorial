@@ -171,7 +171,7 @@ get_DARTH_cols <- function() {
 plot_trace <- function(m_M) {
   df_M      <- data.frame(Cycle = 0:n_t, m_M, check.names = F)
   df_M_long <- tidyr::gather(df_M, key = `Health State`, value, 2:ncol(df_M))
-  df_M_long$`Health State` <- factor(df_M_long$`Health State`, levels = v_n)
+  df_M_long$`Health State` <- factor(df_M_long$`Health State`, levels = v_names_states)
   p <- ggplot(df_M_long, aes(x = Cycle, y = value, 
                             color = `Health State`, linetype = `Health State`)) +
        geom_line(size = 1) +
@@ -202,7 +202,7 @@ plot_trace_strategy <- function(l_m_M) {
   df_M_strategies$Cycle <- rep(0:n_t, n_str)
   m_M_plot <- tidyr::gather(df_M_strategies, key = `Health State`, value, 
                             2:(ncol(df_M_strategies)-1))
-  m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_n)
+  m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_names_states)
   m_M_plot$Strategy <- factor(m_M_plot$Strategy, levels = v_names_str)
 
   p <- ggplot(m_M_plot, aes(x = Cycle, y = value, 
