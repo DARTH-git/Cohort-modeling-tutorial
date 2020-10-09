@@ -97,13 +97,13 @@ This table contains an overview of the key model components used in the code for
 
 **Table II: Input parameters for probabilistic analysis**
 
-|           **Parameter**        |  **Distribution** |  **Distribution values** | **Distribution mean** | **Distribution standard deviation** | 
-|:-----------------------------------|------------------:|----------------------------------------------:|
-| Number of simulation               | `n_sim`           | 1000                                          |
-| Annual transition probabilities    |                   |                                               |
-| - Disease onset (H to S1)          | Beta              |  $\alpha=30.45, \ \beta=172.55$ |        0.15       |  0.03
-| - Recovery (S1 to H)               | Beta              | $\alpha=49.50, \ \beta=49.50$         |  0.50             | 0.05
-| - Disease progression (S1 to S2) in the age-dependent model | Beta | $\alpha=98.57, \ \beta=840.18$     | 0.105  | 0.01
+|           **Parameter**            |  **Distribution** |  **Distribution values** | **Parameter mean** | **Parameter standard deviation** | 
+|:-----------------------------------|------------------:|---------------------:|---------------------:|---------------------:|
+| Number of simulation               | `n_sim`           | 1000                 |     -                |           -          |
+| Annual transition probabilities    |                   |                                             |                      |
+| - Disease onset (H to S1)          | Beta              | $\alpha=30.45, \ \beta=172.55$ |        0.15       |  0.025        |
+| - Recovery (S1 to H)               | Beta              | $\alpha=49.50, \ \beta=49.50$  |  0.50             | 0.05   |
+| - Disease progression (S1 to S2) in the age-dependent model | Beta | $\alpha=98.57, \ \beta=840.18$     | 0.105  | 0.01     |
 | Annual mortality                   |                   |                                               |
 | - Hazard ratio of death in S1 vs H | Lognormal         |  $\log(\mu) = \log(3), \ \log(\sigma) = log(1.18)$    |    3     | 0.5   |
 | - Hazard ratio of death in S2 vs H | Lognormal         |  $\log(\mu) = \log(10), \ \log(\sigma) = \log(1.1)$  |    10    |  1  |
