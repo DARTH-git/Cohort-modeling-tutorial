@@ -101,20 +101,21 @@ This table contains an overview of the key model components used in the code for
 |:-----------------------------------|------------------:|----------------------------------------------:|
 | Number of simulation               | `n_sim`           | 1000                                          |
 | Annual transition probabilities    |                   |                                               |
-| - Disease onset (H to S1)          | Beta              |  $\alpha=30, \ \beta=170$                     |
-| - Recovery (S1 to H)               | Beta              | $\alpha=60, \ \beta=60$                       |
-| - Disease progression (S1 to S2) in the time-homogeneous model | Beta | $\alpha=84, \ \beta=716$       |
+| - Disease onset (H to S1)          | Beta              |  $\alpha=30.45, \ \beta=172.55$ |        0.15       |  0.03
+| - Recovery (S1 to H)               | Beta              | $\alpha=49.50, \ \beta=49.50$         |  0.50             | 0.05
+| - Disease progression (S1 to S2) in the age-dependent model | Beta | $\alpha=98.57, \ \beta=840.18$     | 0.105  | 0.01
 | Annual mortality                   |                   |                                               |
-| - All-cause mortality (H to D)     | Beta              |  $\alpha=10, \ \beta=1990$                    |
-| - Hazard ratio of death in S1 vs H | Lognormal         |  $\mu = log(3), \ \sigma = 0.01$              |
-| - Hazard ratio of death in S2 vs H | Lognormal         |  $\mu = log(10), \ \sigma = 0.02$             |
-| Annual costs                       |                   |                                               |
-| - Healthy individuals              | Gamma             |  shape = 100.0, scale = 20.0                  |
-| - Sick individuals in S1           | Gamma             |  shape = 177.8, scale = 22.5                  |
-| - Sick individuals in S2           | Gamma             |  shape = 225.0, scale = 66.7                  |
-| - Additional costs of sick individuals treated in S1 or S2 | Gamma | shape = 73.5, scale = 163.3       |
+| - Hazard ratio of death in S1 vs H | Lognormal         |  $\log(\mu) = \log(3), \ \log(\sigma) = log(1.18)$    |    3     | 0.5   |
+| - Hazard ratio of death in S2 vs H | Lognormal         |  $\log(\mu) = \log(10), \ \log(\sigma) = \log(1.1)$  |    10    |  1  |
+| - Log odds ratio of S1 to S2  | Normal         |  $\mu = \log(0.6), \ \sigma = 0.1$  |    -0.51   |  1  |
+|  Annual costs                       |                   |                                               |  
+| - Healthy individuals              | Gamma             |  shape = 100, scale = 20     | 2000            | 200  |
+| - Sick individuals in S1           | Gamma             |  shape = 177.78, scale = 22.5       | 4000     | 300        |
+| - Sick individuals in S2           | Gamma             |  shape = 225, scale = 66.67      | 15000            | 1000|
+| - Cost of treatment A for individuals in S1 or S2 | Gamma | shape = 225, scale = 53.33       | 12000 | 800 |
+| - Cost of treatment B for individuals in S1 or S2 | Gamma | shape = 208.64, scale = 62.31       | 13000 | 900 |
 | Utility weights                    |                   |                                               |
-| - Healthy individuals              | Beta              | $\alpha = 200, \ \beta = 3$                   |
+| - Healthy individuals              | Beta              | $\alpha = 12.81, \ \beta = 0.01$      | 0.999             | 0.008 |
 | - Sick individuals in S1           | Beta              | $\alpha = 130, \ \beta = 45$                  |
 | - Sick individuals in S2           | Beta              | $\alpha = 230, \ \beta = 230$                 |
 | Intervention effect                |                   |                                               |
