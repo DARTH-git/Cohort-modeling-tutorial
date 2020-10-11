@@ -8,7 +8,7 @@
 # - Eline Krijkamp
 # - Eva A. Enns
 # - Alan Yang
- # - M.G. Myriam Hunink
+# - M.G. Myriam Hunink
 # - Petros Pechlivanoglou
 # - Hawre Jalal
 # Please cite the article when using this code
@@ -116,14 +116,14 @@ v_dwe <- 1 / ((1 + d_c) ^ (0:n_t))
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # extract age-specific all-cause mortality for ages in model time horizon
-v_r_HDage   <- v_r_mort_by_age[n_age_init + (1:n_t)]
+v_r_HDage <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
 # compute mortality rates
-v_r_S1Dage  <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
-v_r_S2Dage  <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
+v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
 # transform rates to probabilities
-v_p_HDage   <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
-v_p_S1Dage  <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
-v_p_S2Dage  <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
+v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
+v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
+v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
 
 ## Transition probability of becoming Sicker when Sick for treatment B
 # transform odds ratios to probabilites 
@@ -223,15 +223,27 @@ plot_trace_strategy(l_m_M)
 ## Plot the epidemiology outcomes
 survival_plot        <- plot_surv(l_m_M, v_names_death_states = "D") +
                         theme(legend.position = "")
-prevalence_S1_plot   <- plot_prevalence(l_m_M, v_names_sick_states = c("S1"), v_names_dead_states = "D")  +
+prevalence_S1_plot   <- plot_prevalence(l_m_M, 
+                                        v_names_sick_states = c("S1"), 
+                                        v_names_dead_states = "D")  +
                         theme(legend.position = "")
-prevalence_S2_plot   <- plot_prevalence(l_m_M, v_names_sick_states = c("S2"), v_names_dead_states = "D")  +
+prevalence_S2_plot   <- plot_prevalence(l_m_M, 
+                                        v_names_sick_states = c("S2"), 
+                                        v_names_dead_states = "D")  +
                         theme(legend.position = "")
-prevalence_S1S2_plot <- plot_prevalence(l_m_M, v_names_sick_states = c("S1", "S2"), v_names_dead_states = "D") +
+prevalence_S1S2_plot <- plot_prevalence(l_m_M, 
+                                        v_names_sick_states = c("S1", "S2"), 
+                                        v_names_dead_states = "D") +
                         theme(legend.position = "")
-prop_sicker_plot     <- plot_proportion_sicker(l_m_M, v_names_sick_states = c("S1", "S2"), v_names_sicker_states = c("S2")) +
+prop_sicker_plot     <- plot_proportion_sicker(l_m_M, 
+                                               v_names_sick_states = c("S1", "S2"), 
+                                               v_names_sicker_states = c("S2")) +
                         theme(legend.position = "bottom")
-grid.arrange(survival_plot, prevalence_S1_plot, prevalence_S2_plot, prevalence_S1S2_plot, prop_sicker_plot, 
+grid.arrange(survival_plot, 
+             prevalence_S1_plot, 
+             prevalence_S2_plot, 
+             prevalence_S1S2_plot, 
+             prop_sicker_plot, 
              ncol = 1, heights = c(0.75, 0.75, 0.75, 0.75, 1))
 
 #### State Rewards ####
