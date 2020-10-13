@@ -126,7 +126,7 @@ v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick
 v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
 
 ## Transition probability of becoming Sicker when Sick for treatment B
-# transform odds ratios to probabilites 
+# transform odds ratios to probabilities 
 lor_S1S2    <- log(or_S1S2)               # log-odds ratio of becoming Sicker when Sick
 logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
 p_S1S2_trtB <- boot::inv.logit(logit_S1S2 +

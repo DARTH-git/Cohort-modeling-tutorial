@@ -99,7 +99,7 @@ This table contains an overview of the key model components used in the code for
 
 **Table II: Input parameters for probabilistic analysis**
 
-|           Parameter      |  Distribution |  Distribution values | Parameter mean | Parameter standard deviation | 
+|           Parameter      |  Distribution |  Distribution values | Parameter mean | Parameter standard error | 
 |:-----------------------------------|------------------:|----------------------------------------------:|---------:|---------:|
 | Number of simulation               | `n_sim`           | 1000                                          |
 | Annual transition probabilities    |                   |                                               |
