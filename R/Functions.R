@@ -93,9 +93,10 @@ check_transition_probability <- function(a_P,
 #' @param a_P A transition probability array.
 #' @param n_states Number of health states.
 #' @param n_t Number of cycles.
-#' @param err_stop Logical variable to stop model run if set up as TRUE. Default = FALSE.
+#' @param err_stop Logical variable to stop model run if set up as TRUE. 
+#' Default = TRUE.
 #' @param verbose Logical variable to indicate print out of messages. 
-#' Default = FALSE
+#' Default = TRUE
 #' @return 
 #' The transition probability array and the cohort trace matrix.
 #' @import dplyr
@@ -103,19 +104,35 @@ check_transition_probability <- function(a_P,
 check_sum_of_transition_array <- function(a_P,
                                           n_states,
                                           n_t,  
-                                          err_stop = FALSE, 
-                                          verbose  = FALSE) {
+                                          err_stop = TRUE, 
+                                          verbose  = TRUE) {
   
   a_P <- as.array(a_P)
-  valid <- (apply(a_P, 3, function(x) sum(rowSums(x))) == n_states)
-  if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
-    if(err_stop) {
-      stop("This is not a valid transition Matrix")
+  d <- length(dim(a_P))
+  # For matrix
+  if (d == 2) {
+    valid <- sum(rowSums(a_P))
+    if (valid != n_states) {
+      if(err_stop) {
+        stop("This is not a valid transition Matrix")
+      }
+      
+      if(verbose){
+        warning("This is not a valid transition Matrix")
+      } 
     }
-    
-    if(verbose){
-      warning("This is not a valid transition Matrix")
-    } 
+  } else {
+  # For array
+    valid <- (apply(a_P, d, function(x) sum(rowSums(x))) == n_states)
+    if (!isTRUE(all.equal(as.numeric(sum(valid)), as.numeric(n_t)))) {
+      if(err_stop) {
+        stop("This is not a valid transition Matrix")
+      }
+      
+      if(verbose){
+        warning("This is not a valid transition Matrix")
+      } 
+    }
   }
 }
 
@@ -154,7 +171,7 @@ get_DARTH_cols <- function() {
 plot_trace <- function(m_M) {
   df_M      <- data.frame(Cycle = 0:n_t, m_M, check.names = F)
   df_M_long <- tidyr::gather(df_M, key = `Health State`, value, 2:ncol(df_M))
-  df_M_long$`Health State` <- factor(df_M_long$`Health State`, levels = v_n)
+  df_M_long$`Health State` <- factor(df_M_long$`Health State`, levels = v_names_states)
   p <- ggplot(df_M_long, aes(x = Cycle, y = value, 
                             color = `Health State`, linetype = `Health State`)) +
        geom_line(size = 1) +
@@ -185,7 +202,7 @@ plot_trace_strategy <- function(l_m_M) {
   df_M_strategies$Cycle <- rep(0:n_t, n_str)
   m_M_plot <- tidyr::gather(df_M_strategies, key = `Health State`, value, 
                             2:(ncol(df_M_strategies)-1))
-  m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_n)
+  m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_names_states)
   m_M_plot$Strategy <- factor(m_M_plot$Strategy, levels = v_names_str)
 
   p <- ggplot(m_M_plot, aes(x = Cycle, y = value, 
@@ -329,7 +346,7 @@ plot_surv <- function(l_m_M, v_names_death_states) {
 }
 
 #----------------------------------------------------------------------------#
-####                   Function to plot prevalence curve                   ####
+####                   Function to plot prevalence curve                  ####
 #----------------------------------------------------------------------------#
 #' Plot prevalence curve
 #'
@@ -359,7 +376,7 @@ plot_prevalence <- function(l_m_M, v_names_sick_states, v_names_dead_states) {
 #----------------------------------------------------------------------------#
 ####           Function to plot state-in-state proportion curve           ####
 #----------------------------------------------------------------------------#
-#' Plot proportion state-in-state proportion curve
+#' Plot state-in-state proportion curve
 #'
 #' \code{plot_prevalence} plots the 
 #'
@@ -373,7 +390,7 @@ plot_proportion_sicker <- function(l_m_M, v_names_sick_states, v_names_sicker_st
   
   p <- ggplot(df_proportion_sicker, 
               aes(x = Cycle, y = Proportion.Sicker, group = Strategy)) +
-    geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2) +
+    geom_line(aes(linetype = Strategy, col = Strategy), size = 1.2, na.rm = T) +
     scale_color_brewer(palette = "RdBu") +
     xlab("Cycle") +
     ylab("Proportion") +
