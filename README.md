@@ -1,7 +1,7 @@
 # Cohort state-transition models in R: A Tutorial
 This GitHub repository provides the code of the three different implementations of cohort state-transition model (cSTM), explained in the following manuscript: 
 
-- Alarid-Escudero F, Krijkamp EM, Enns EA, Hunink MGM, Pechlivanoglou P, Jalal H. [Cohort state-transition models in R: A Tutorial](http://arxiv.org/abs/2001.07824). arXiv:200107824v1. 2020:1-31.
+- Alarid-Escudero F, Krijkamp EM, Enns EA, Yang A, Hunink MGM, Pechlivanoglou P, Jalal H. [Cohort state-transition models in R: A Tutorial](http://arxiv.org/abs/2001.07824). arXiv:200107824v1. 2020:1-31.
 
 We recommend to first read the manuscript before using the code. Understanding of the use of the multidimensional dynamics array described in 
 
@@ -26,10 +26,10 @@ To run the cost-effectiveness analysis, you require The Decision Analytic Modeli
 
   * [Eva Enns](https://github.com/evaenns)
   
+  * [Alan Yang](https://github.com/alanyang0924)  
+  
   * [Myriam Hunink](http://www.erasmus-epidemiology.nl/people/profile.php?id=45)
   
   * [Petros Pechlivanoglou](https://github.com/ppehli)
-
-  * [Alan Yang](https://github.com/alanyang0924)
   
   * [Hawre Jalal](https://github.com/hjalal)
