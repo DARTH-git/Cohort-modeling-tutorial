@@ -56,6 +56,15 @@ check_transition_probability <- function(a_P,
                                          verbose = FALSE) {
   
   a_P <- as.array(a_P)
+  
+  # Verify if a_P is 2D or 3D matrix
+  n_dim <- length(dim(a_P))
+  # If a_P is a 2D matrix, convert to a 3D array
+  if (n_dim < 3){
+    a_P <- array(a_P, dim = list(nrow(a_P), ncol(a_P), 1), 
+                 dimnames = list(rownames(a_P), colnames(a_P), "Time independent"))
+  }
+  # Check which entries are not valid
   m_indices_notvalid <- arrayInd(which(a_P < 0 | a_P > 1), 
                                  dim(a_P))
   
