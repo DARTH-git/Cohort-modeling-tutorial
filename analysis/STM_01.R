@@ -41,6 +41,7 @@ rm(list = ls())    # remove any variables in R's memory
 # install.packages("boot")       # to handle log odds and log odds ratios
 # install.packages("devtools")   # to ensure compatibility among packages
 # devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub, for CEA and calculate ICERs
+# devtools::install_github("DARTH-git/darthtools") # to install dampack form GitHub, for CEA and calculate ICERs
 
 ### Load packages
 library(dplyr)    
@@ -51,6 +52,7 @@ library(ggplot2)
 library(scales)    
 library(boot)
 library(dampack) 
+library(darthtools)
 
 ### Load supplementary functions
 source("R/Functions.R")
@@ -71,7 +73,7 @@ v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
 n_str       <- length(v_names_str)      # number of strategies
 
 ## Transition probabilities (per cycle), hazard ratios and odds ratio
-p_HD        <- 0.002 # constant probability of dying when Healthy (all-cause mortality)
+r_HD        <- 0.002 # constant rate of dying when Healthy (all-cause mortality)
 p_HS1       <- 0.15  # probability to become Sick when Healthy conditional on surviving
 p_S1H       <- 0.5   # probability to become Healthy when Sick conditional on surviving
 p_S1S2      <- 0.105 # probability to become Sicker when Sick conditional on surviving
@@ -107,10 +109,10 @@ v_dwe <- 1 / ((1 + d_c) ^ (0:n_t))
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # compute mortality rates
-r_HD        <- prob_to_rate(p_HD)     # hazard rate of dying when Healthy
 r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick
 r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
 # transform rates to probabilities
+p_HD        <- rate_to_prob(r_HD)     # probability of dying when Healthy
 p_S1D       <- rate_to_prob(r_S1D)    # probability of dying when Sick
 p_S2D       <- rate_to_prob(r_S2D)    # probability of dying when Sicker
 
@@ -157,8 +159,6 @@ m_P["S2", "S2"] <- 1 - p_S2D
 m_P["S2", "D"]  <- p_S2D
 # From D
 m_P["D", "D"]   <- 1
-# Round to 6 digits to avoid floating errors
-m_P <- round(m_P, 6)
 
 ### For strategies B and AB
 ## Initialize transition probability array for strategies B and AB
