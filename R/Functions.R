@@ -34,6 +34,23 @@ rate_to_prob <- function(r, t = 1){
   return(p)
 }
 
+#---------------------------------------------------------------------------------------------#
+#### Function to convert convert probabilities to probabilities with a different frequency ####
+#---------------------------------------------------------------------------------------------#
+#' Convert a probability to a probability with a different frequency
+#'
+#' \code{rate_to_prob} convert a probability to a probability with a different frequency.
+#'
+#' @param p probability
+#' @param t time/ frequency
+#' @return a number - converted probability
+#' 
+# Function to convert probabilities to probabilities with a different frequency
+ProbProb <- function(p, t = 1){
+  p_new <- RateProb(ProbRate(p, t))
+  return(p_new)
+}
+
 #----------------------------------------------------------------------------#
 ####   Function to check if transition probability array/matrix  is valid ####
 #----------------------------------------------------------------------------#
