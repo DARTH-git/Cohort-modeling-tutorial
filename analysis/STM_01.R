@@ -157,6 +157,8 @@ m_P["S2", "S2"] <- 1 - p_S2D
 m_P["S2", "D"]  <- p_S2D
 # From D
 m_P["D", "D"]   <- 1
+# Round to 6 digits to avoid floating errors
+m_P <- round(m_P, 6)
 
 ### For strategies B and AB
 ## Initialize transition probability array for strategies B and AB
