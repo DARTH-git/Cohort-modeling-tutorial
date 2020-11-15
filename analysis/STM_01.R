@@ -64,13 +64,16 @@ n_age_max   <- 100                      # maximum age of follow up
 n_t         <- n_age_max - n_age_init   # time horizon, number of cycles
 v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
                                            # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
-v_hcc       <- rep(1, n_t + 1)          # vector of half-cycle correction 
-v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5    # half-cycle correction weight 
 n_states    <- length(v_names_states)   # number of health states 
+# Discounting factors
 d_c         <- 0.03                     # discount rate for costs 
 d_e         <- 0.03                     # discount rate for QALYs
+# Strategies
 v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
 n_str       <- length(v_names_str)      # number of strategies
+# Within-cycle correction (WCC) using Simpson's 1/3 rule
+v_wcc    <- darthtools::gen_wcc(n_t = n_t, method = "Simpson1/3") # vector of wcc
+
 
 ## Transition probabilities (per cycle), hazard ratios and odds ratio
 r_HD        <- 0.002 # constant rate of dying when Healthy (all-cause mortality)
@@ -318,9 +321,9 @@ for (i in 1:n_str) {
   
   #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
   ## QALYs
-  v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_hcc)
+  v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_wcc)
   ## Costs
-  v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_hcc)
+  v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_wcc)
 }
 
 ########################## Cost-effectiveness analysis #######################
