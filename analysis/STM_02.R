@@ -63,16 +63,22 @@ source("R/Functions.R")
 ## General setup
 n_age_init  <- 25                       # age at baseline
 n_age_max   <- 100                      # maximum age of follow up
-n_t         <- n_age_max - n_age_init   # time horizon, number of cycles
+n_cycles    <- n_age_max - n_age_init   # time horizon, number of cycles
 v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
                                            # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
-v_hcc       <- rep(1, n_t + 1)          # vector of half-cycle correction 
-v_hcc[1]    <- v_hcc[n_t + 1] <- 0.5    # half-cycle correction weight 
 n_states    <- length(v_names_states)   # number of health states 
+
+# Discounting factors
 d_c         <- 0.03                     # discount rate for costs 
 d_e         <- 0.03                     # discount rate for QALYs
+
+# Strategies
 v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
 n_str       <- length(v_names_str)      # number of strategies
+
+# Within-cycle correction (WCC) using Simpson's 1/3 rule
+v_wcc <- darthtools::gen_wcc(n_cycles = n_cycles, 
+                             method = "Simpson1/3") # vector of wcc
 
 ## Transition probabilities (per cycle), hazard ratios and odds ratio
 p_HS1       <- 0.15  # probability to become Sick when Healthy conditional on surviving
@@ -80,8 +86,9 @@ p_S1H       <- 0.5   # probability to become Healthy when Sick conditional on su
 p_S1S2      <- 0.105 # probability to become Sicker when Sick conditional on surviving
 hr_S1       <- 3     # hazard ratio of death in Sick vs Healthy 
 hr_S2       <- 10    # hazard ratio of death in Sicker vs Healthy 
-# For treatment B 
-or_S1S2     <- 0.6   # odds ratio of becoming Sicker when Sick 
+
+# Effectiveness of treatment B 
+hr_S1S2_trtB <- 0.6  # hazard ratio of becoming Sicker when Sick under treatment B
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -111,34 +118,35 @@ ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
 ic_D   <- 2000  # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
-v_dwc <- 1 / ((1 + d_e) ^ (0:n_t))
-v_dwe <- 1 / ((1 + d_c) ^ (0:n_t))
+v_dwc <- 1 / ((1 + d_e) ^ (0:n_cycles))
+v_dwe <- 1 / ((1 + d_c) ^ (0:n_cycles))
 
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # extract age-specific all-cause mortality for ages in model time horizon
-v_r_HDage <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_t - 1)]
+v_r_HDage <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_cycles - 1)]
 # compute mortality rates
-v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
-v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
+v_r_S1Dage <- v_r_HDage * hr_S1 # Age-specific mortality rate in the Sick state 
+v_r_S2Dage <- v_r_HDage * hr_S2 # Age-specific mortality rate in the Sicker state 
 # transform rates to probabilities
 v_p_HDage  <- rate_to_prob(v_r_HDage)  # Age-specific mortality risk in the Healthy state 
 v_p_S1Dage <- rate_to_prob(v_r_S1Dage) # Age-specific mortality risk in the Sick state
 v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
 
 ## Transition probability of becoming Sicker when Sick for treatment B
-# transform odds ratios to probabilities 
-lor_S1S2    <- log(or_S1S2)               # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
-p_S1S2_trtB <- boot::inv.logit(logit_S1S2 +
-                               lor_S1S2)  # probability to become Sicker when Sick 
-# under B conditional on surviving
+# transform probability to rate
+r_S1S2 <- prob_to_rate(p = p_S1S2)
+# apply hazard ratio to rate to obtain transition rate of becoming Sicker when Sick for treatment B
+r_S1S2_trtB <- r_S1S2 * hr_S1S2_trtB
+# transform rate to probability
+p_S1S2_trtB <- rate_to_prob(r = r_S1S2_trtB) # probability to become Sicker when Sick 
+                                             # under treatment B conditional on surviving
 
 ###################### Construct state-transition models #####################
 #### Create transition arrays ####
 # Initialize 3-D array
-a_P <- array(0, dim      = c(n_states, n_states, n_t),
-                dimnames = list(v_names_states, v_names_states, 0:(n_t - 1)))
+a_P <- array(0, dim      = c(n_states, n_states, n_cycles),
+                dimnames = list(v_names_states, v_names_states, 0:(n_cycles - 1)))
 ### Fill in array
 ## From H
 a_P["H", "H", ]   <- (1 - v_p_HDage) * (1 - p_HS1)
@@ -167,8 +175,8 @@ a_P_strB["S1", "S2", ] <- (1 - v_p_S1Dage) * p_S1S2_trtB
 check_transition_probability(a_P,      verbose = TRUE)
 check_transition_probability(a_P_strB, verbose = TRUE)
 ### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
-check_sum_of_transition_array(a_P,      n_states = n_states, n_t = n_t, verbose = TRUE)
-check_sum_of_transition_array(a_P_strB, n_states = n_states, n_t = n_t, verbose = TRUE)
+check_sum_of_transition_array(a_P,      n_states = n_states, n_t = n_cycles, verbose = TRUE)
+check_sum_of_transition_array(a_P_strB, n_states = n_states, n_t = n_cycles, verbose = TRUE)
 
 #### Run Markov model ####
 ## Initial state vector
@@ -178,8 +186,8 @@ v_s_init
 
 ## Initialize cohort trace for age-dependent (ad) cSTM for srategies SoC and A
 m_M_ad <- matrix(0, 
-                 nrow     = (n_t + 1), ncol = n_states, 
-                 dimnames = list(0:n_t, v_names_states))
+                 nrow     = (n_cycles + 1), ncol = n_states, 
+                 dimnames = list(0:n_cycles, v_names_states))
 # Store the initial state vector in the first row of the cohort trace
 m_M_ad[1, ] <- v_s_init
 ## Initialize cohort trace for srategies B and AB
@@ -188,15 +196,15 @@ m_M_ad_strB <- m_M_ad # structure and initial states remain the same.
 ## Initialize transition array which will capture transitions from each state to another over time 
 # for srategies SoC and A
 a_A <- array(0,
-             dim      = c(n_states, n_states, n_t + 1),
-             dimnames = list(v_names_states, v_names_states, 0:n_t))
+             dim      = c(n_states, n_states, n_cycles + 1),
+             dimnames = list(v_names_states, v_names_states, 0:n_cycles))
 # Set first slice of a_A with the initial state vector in its diagonal
 diag(a_A[, , 1]) <- v_s_init
 # For srategies B and AB, the array structure and initial state are identical 
 a_A_strB <- a_A
 
 ## Iterative solution of age-dependent cSTM
-for(t in 1:n_t){
+for(t in 1:n_cycles){
   ## Fill in cohort trace
   # For srategies SoC and A
   m_M_ad[t + 1, ]      <- m_M_ad[t, ]      %*% a_P[, , t]
@@ -324,12 +332,12 @@ for (i in 1:n_str) {
   m_c_str   <- matrix(v_c_str, nrow = n_states, ncol = n_states, byrow = T)
   # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
   a_R_u_str <- array(m_u_str, 
-                     dim      = c(n_states, n_states, n_t + 1),
-                     dimnames = list(v_names_states, v_names_states, 0:n_t))
+                     dim      = c(n_states, n_states, n_cycles + 1),
+                     dimnames = list(v_names_states, v_names_states, 0:n_cycles))
   # Expand the transition matrix of state costs across cycles to form a transition array of state costs
   a_R_c_str <- array(m_c_str, 
-                     dim      = c(n_states, n_states, n_t + 1),
-                     dimnames = list(v_names_states, v_names_states, 0:n_t))
+                     dim      = c(n_states, n_states, n_cycles + 1),
+                     dimnames = list(v_names_states, v_names_states, 0:n_cycles))
   
   #### Apply transition rewards ####  
   # Apply disutility due to transition from H to S1
@@ -352,9 +360,9 @@ for (i in 1:n_str) {
   
   #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
   ## QALYs
-  v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_hcc)
+  v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_wcc)
   ## Costs
-  v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_hcc)
+  v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_wcc)
 }
 
 ########################## Cost-effectiveness analysis #######################
@@ -387,7 +395,7 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     p_S1S2   = rbeta(n_sim, 84, 716),        # probability to become Sicker when Sick conditional on surviving
     hr_S1    = rlnorm(n_sim, log(3), 0.01),  # rate ratio of death in S1 vs healthy
     hr_S2    = rlnorm(n_sim, log(10), 0.02), # rate ratio of death in S2 vs healthy 
-    lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),  # log-odds ratio of becoming Sicker when Sick under B
+    hr_S1S2_trtB = rlnorm(n_sim, log(0.6), 0.1), # hazard ratio of becoming Sicker when Sick under B
     
     # State rewards
     # Costs
@@ -441,6 +449,7 @@ colnames(df_e) <- v_names_str
 
 #### Conduct probabilistic sensitivity analysis ####
 # Run Markov model on each parameter set of PSA input dataset in series
+n_time_init_psa_series <- Sys.time()
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
   df_c[i, ]  <- l_out_temp$Cost  
@@ -450,6 +459,11 @@ for(i in 1:n_sim){
     cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
   }
 }
+n_time_end_psa_series <- Sys.time()
+n_time_total_psa_series <- n_time_end_psa_series - n_time_init_psa_series
+print(paste0("PSA with ", comma(n_sim), " simulations run in series in ", 
+             round(n_time_total_psa_series, 2), " ", 
+             units(n_time_total_psa_series)))
 
 ### Run Markov model on each parameter set of PSA input dataset in parallel
 # ## Get OS
@@ -458,12 +472,12 @@ for(i in 1:n_sim){
 # 
 # no_cores <- parallel::detectCores() - 1
 # 
-# n_time_init_likpar <- Sys.time()
+# n_time_init_psa <- Sys.time()
 # 
 # ## Run parallelized PSA based on OS
 # if(os == "macosx"){
 #   # Initialize cluster object
-#   cl <- parallel::makeForkCluster(no_cores) 
+#   cl <- parallel::makeForkCluster(no_cores)
 #   # Register clusters
 #   doParallel::registerDoParallel(cl)
 #   # Run parallelized PSA
@@ -475,7 +489,7 @@ for(i in 1:n_sim){
 #   df_c[i, ] <- df_ce[, 1:n_str]
 #   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
 #   # Register end time of parallelized PSA
-#   n_time_end_likpar <- Sys.time()
+#   n_time_end_psa <- Sys.time()
 # }
 # if(os == "windows"){
 #   # Initialize cluster object
@@ -495,7 +509,7 @@ for(i in 1:n_sim){
 #   df_c[i, ] <- df_ce[, 1:n_str]
 #   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
 #   # Register end time of parallelized PSA
-#   n_time_end_likpar <- Sys.time()
+#   n_time_end_psa <- Sys.time()
 # }
 # if(os == "linux"){
 #   # Initialize cluster object
@@ -511,10 +525,14 @@ for(i in 1:n_sim){
 #   df_c[i, ] <- df_ce[, 1:n_str]
 #   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
 #   # Register end time of parallelized PSA
-#   n_time_end_likpar <- Sys.time()
+#   n_time_end_psa <- Sys.time()
 # }
 # # Stope clusters
 # stopCluster(cl)
+# n_time_total_psa <- n_time_end_psa - n_time_init_psa
+# print(paste0("PSA with ", comma(n_sim), " simulations run in series in ",
+#              round(n_time_total_psa, 2), " ", 
+#              units(n_time_total_psa_series)))
 
 # Create PSA object for dampack
 l_psa <- make_psa_obj(cost          = df_c, 

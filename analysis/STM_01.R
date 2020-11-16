@@ -62,19 +62,22 @@ source("R/Functions.R")
 ## General setup
 n_age_init  <- 25                       # age at baseline
 n_age_max   <- 100                      # maximum age of follow up
-n_cycles         <- n_age_max - n_age_init   # time horizon, number of cycles
+n_cycles    <- n_age_max - n_age_init   # time horizon, number of cycles
 v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
                                            # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
 n_states    <- length(v_names_states)   # number of health states 
+
 # Discounting factors
 d_c         <- 0.03                     # discount rate for costs 
 d_e         <- 0.03                     # discount rate for QALYs
+
 # Strategies
 v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
 n_str       <- length(v_names_str)      # number of strategies
-# Within-cycle correction (WCC) using Simpson's 1/3 rule
-v_wcc    <- darthtools::gen_wcc(n_t = n_cycles, method = "Simpson1/3") # vector of wcc
 
+# Within-cycle correction (WCC) using Simpson's 1/3 rule
+v_wcc <- darthtools::gen_wcc(n_cycles = n_cycles, 
+                             method = "Simpson1/3") # vector of wcc
 
 ## Transition probabilities (per cycle), hazard ratios and odds ratio
 r_HD        <- 0.002 # constant rate of dying when Healthy (all-cause mortality)
@@ -83,8 +86,9 @@ p_S1H       <- 0.5   # probability to become Healthy when Sick conditional on su
 p_S1S2      <- 0.105 # probability to become Sicker when Sick conditional on surviving
 hr_S1       <- 3     # hazard ratio of death in Sick vs Healthy 
 hr_S2       <- 10    # hazard ratio of death in Sicker vs Healthy 
-# For treatment B 
-or_S1S2     <- 0.6   # odds ratio of becoming Sicker when Sick under B 
+
+# Effectiveness of treatment B 
+hr_S1S2_trtB <- 0.6  # hazard ratio of becoming Sicker when Sick under B under treatment B
 
 ## State rewards
 # Costs
@@ -113,20 +117,21 @@ v_dwe <- 1 / ((1 + d_c) ^ (0:n_cycles))
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # compute mortality rates
-r_S1D       <- r_HD * hr_S1           # hazard rate of dying when Sick
-r_S2D       <- r_HD * hr_S2           # hazard rate of dying when Sicker
+r_S1D  <- r_HD * hr_S1           # hazard rate of dying when Sick
+r_S2D  <- r_HD * hr_S2           # hazard rate of dying when Sicker
 # transform rates to probabilities
-p_HD        <- rate_to_prob(r_HD)     # probability of dying when Healthy
-p_S1D       <- rate_to_prob(r_S1D)    # probability of dying when Sick
-p_S2D       <- rate_to_prob(r_S2D)    # probability of dying when Sicker
+p_HD  <- rate_to_prob(r_HD)     # probability of dying when Healthy
+p_S1D <- rate_to_prob(r_S1D)    # probability of dying when Sick
+p_S2D <- rate_to_prob(r_S2D)    # probability of dying when Sicker
 
 ## Transition probability of becoming Sicker when Sick for treatment B
-# transform odds ratios to probabilites 
-lor_S1S2    <- log(or_S1S2)               # log-odds ratio of becoming Sicker when Sick
-logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
-p_S1S2_trtB <- boot::inv.logit(logit_S1S2 +
-                               lor_S1S2)  # probability to become Sicker when Sick 
-# under B conditional on surviving
+# transform probability to rate
+r_S1S2      <- prob_to_rate(p = p_S1S2)
+# apply hazard ratio to rate to obtain transition rate of becoming Sicker when Sick for treatment B
+r_S1S2_trtB <- r_S1S2 * hr_S1S2_trtB
+# transform rate to probability
+p_S1S2_trtB <- rate_to_prob(r = r_S1S2_trtB) # probability to become Sicker when Sick 
+                                             # under treatment B conditional on surviving
 
 ###################### Construct state-transition models ##################### 
 ## Initial state vector

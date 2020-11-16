@@ -22,17 +22,19 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     v_p_S2Dage  <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sicker state
     
     ## Transition probability of becoming Sicker when Sick for B
-    # transform odds ratios to probabilites 
-    logit_S1S2  <- boot::logit(p_S1S2)        # log-odds of becoming Sicker when Sick
-    p_S1S2_trtB <- boot::inv.logit(logit_S1S2 +
-                                     lor_S1S2)  # probability to become Sicker when Sick 
-    # under B conditional on surviving
+    # transform probability to rate
+    r_S1S2 <- prob_to_rate(p = p_S1S2)
+    # apply hazard ratio to rate to obtain transition rate of becoming Sicker when Sick for treatment B
+    r_S1S2_trtB <- r_S1S2 * hr_S1S2_trtB
+    # transform rate to probability
+    p_S1S2_trtB <- rate_to_prob(r = r_S1S2_trtB) # probability to become Sicker when Sick 
+                                                 # under treatment B conditional on surviving
     
     ###################### Construct state-transition models #####################
     #### Create transition arrays ####
     # Initialize 3-D array
-    a_P <- array(0, dim      = c(n_states, n_states, n_t),
-                 dimnames = list(v_names_states, v_names_states, 0:(n_t - 1)))
+    a_P <- array(0, dim      = c(n_states, n_states, n_cycles),
+                 dimnames = list(v_names_states, v_names_states, 0:(n_cycles - 1)))
     ### Fill in array
     ## From H
     a_P["H", "H", ]   <- (1 - v_p_HDage) * (1 - p_HS1)
@@ -61,8 +63,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     check_transition_probability(a_P,      verbose = TRUE)
     check_transition_probability(a_P_strB, verbose = TRUE)
     ### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
-    check_sum_of_transition_array(a_P,      n_states = n_states, n_t = n_t, verbose = TRUE)
-    check_sum_of_transition_array(a_P_strB, n_states = n_states, n_t = n_t, verbose = TRUE)
+    check_sum_of_transition_array(a_P,      n_states = n_states, n_t = n_cycles, verbose = TRUE)
+    check_sum_of_transition_array(a_P_strB, n_states = n_states, n_t = n_cycles, verbose = TRUE)
     
     #### Run Markov model ####
     ## Initial state vector
@@ -72,8 +74,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     
     ## Initialize cohort trace for age-dependent (ad) cSTM for srategies SoC and A
     m_M_ad <- matrix(0, 
-                     nrow     = (n_t + 1), ncol = n_states, 
-                     dimnames = list(0:n_t, v_names_states))
+                     nrow     = (n_cycles + 1), ncol = n_states, 
+                     dimnames = list(0:n_cycles, v_names_states))
     # Store the initial state vector in the first row of the cohort trace
     m_M_ad[1, ] <- v_s_init
     ## Initialize cohort trace for srategies B and AB
@@ -82,15 +84,15 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## Initialize transition array which will capture transitions from each state to another over time 
     # for srategies SoC and A
     a_A <- array(0,
-                 dim      = c(n_states, n_states, n_t + 1),
-                 dimnames = list(v_names_states, v_names_states, 0:n_t))
+                 dim      = c(n_states, n_states, n_cycles + 1),
+                 dimnames = list(v_names_states, v_names_states, 0:n_cycles))
     # Set first slice of a_A with the initial state vector in its diagonal
     diag(a_A[, , 1]) <- v_s_init
     # For srategies B and AB, the array structure and initial state are identical 
     a_A_strB <- a_A
     
     ## Iterative solution of age-dependent cSTM
-    for(t in 1:n_t){
+    for(t in 1:n_cycles){
       ## Fill in cohort trace
       # For srategies SoC and A
       m_M_ad[t + 1, ]      <- m_M_ad[t, ]      %*% a_P[, , t]
@@ -221,12 +223,12 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       m_c_str   <- matrix(v_c_str, nrow = n_states, ncol = n_states, byrow = T)
       # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
       a_R_u_str <- array(m_u_str, 
-                         dim      = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_names_states, v_names_states, 0:n_t))
+                         dim      = c(n_states, n_states, n_cycles + 1),
+                         dimnames = list(v_names_states, v_names_states, 0:n_cycles))
       # Expand the transition matrix of state costs across cycles to form a transition array of state costs
       a_R_c_str <- array(m_c_str, 
-                         dim      = c(n_states, n_states, n_t + 1),
-                         dimnames = list(v_names_states, v_names_states, 0:n_t))
+                         dim      = c(n_states, n_states, n_cycles + 1),
+                         dimnames = list(v_names_states, v_names_states, 0:n_cycles))
       
       #### Apply transition rewards ####  
       # Apply disutility due to transition from H to S1
@@ -249,9 +251,9 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       
       #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
       ## QALYs
-      v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_hcc)
+      v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_wcc)
       ## Costs
-      v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_hcc)
+      v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_wcc)
     }
     
     

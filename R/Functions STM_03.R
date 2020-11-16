@@ -25,18 +25,21 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     # conditional on surviving
     # Weibull hazard
     v_p_S1S2_tunnels <- r_S1S2_lambda * r_S1S2_gamma * (1:n_tunnel_size)^{r_S1S2_gamma-1}
-    # transform odds ratios to probabilites for B
-    # vector of log-odds of becoming Sicker when Sick
-    v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
-    # vector with probabilities of becoming Sicker when Sick under B 
-    # conditional on surviving
-    v_p_S1S2_tunnels_trtB <- boot::inv.logit(v_logit_S1S2_tunnels + lor_S1S2) 
+    
+    ## History-dependent transition probability of becoming Sicker when Sick for treatment B
+    # transform probability to rate
+    v_r_S1S2_tunnels <- prob_to_rate(p = v_p_S1S2_tunnels)
+    # apply hazard ratio to rate to obtain transition rate of becoming Sicker when Sick for treatment B
+    r_S1S2_tunnels_trtB <- v_r_S1S2_tunnels * hr_S1S2_trtB
+    # transform rate to probability
+    v_p_S1S2_tunnels_trtB <- rate_to_prob(r = r_S1S2_tunnels_trtB) # probability to become Sicker when Sick 
+    # under treatment B conditional on surviving
     
     ###################### Construct state-transition models #####################
     #### Create transition matrix ####
     # Initialize 3-D array
-    a_P_tunnels <- array(0, dim   = c(n_states_tunnels, n_states_tunnels, n_t),
-                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:(n_t - 1)))
+    a_P_tunnels <- array(0, dim   = c(n_states_tunnels, n_states_tunnels, n_cycles),
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:(n_cycles - 1)))
     ### Fill in array
     ## From H
     a_P_tunnels["H", "H", ]              <- (1 - v_p_HDage) * (1 - p_HS1)
@@ -91,8 +94,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     check_transition_probability(a_P_tunnels,      verbose = TRUE)
     check_transition_probability(a_P_tunnels_strB, verbose = TRUE)
     ### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
-    check_sum_of_transition_array(a_P_tunnels,      n_states = n_states_tunnels, n_t = n_t, verbose = TRUE)
-    check_sum_of_transition_array(a_P_tunnels_strB, n_states = n_states_tunnels, n_t = n_t, verbose = TRUE)
+    check_sum_of_transition_array(a_P_tunnels,      n_states = n_states_tunnels, n_cycles = n_cycles, verbose = TRUE)
+    check_sum_of_transition_array(a_P_tunnels_strB, n_states = n_states_tunnels, n_cycles = n_cycles, verbose = TRUE)
     
     #### Run Markov model ####
     ## Initial state vector
@@ -101,8 +104,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     
     ## Initialize cohort trace for history-dependent cSTM
     m_M_tunnels <- matrix(0, 
-                          nrow    = (n_t + 1), ncol = n_states_tunnels, 
-                          dimnames = list(0:n_t, v_names_states_tunnels))
+                          nrow    = (n_cycles + 1), ncol = n_states_tunnels, 
+                          dimnames = list(0:n_cycles, v_names_states_tunnels))
     # Store the initial state vector in the first row of the cohort trace
     m_M_tunnels[1, ] <- v_s_init_tunnels
     # For strategies B and AB
@@ -110,15 +113,15 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     
     ## Initialize transition array
     a_A_tunnels <- array(0,
-                         dim = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
+                         dim = c(n_states_tunnels, n_states_tunnels, n_cycles + 1),
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_cycles))
     # Set first slice of A with the initial state vector in its diagonal
     diag(a_A_tunnels[, , 1]) <- v_s_init_tunnels
     # For strategies B and AB
     a_A_tunnels_strB <- a_A_tunnels
     
     ## Iterative solution of age-dependent cSTM
-    for(t in 1:n_t){
+    for(t in 1:n_cycles){
       # Fill in cohort trace
       # For srategies SoC and A
       m_M_tunnels[t + 1, ]     <- m_M_tunnels[t, ]      %*% a_P_tunnels[, , t]
@@ -287,12 +290,12 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       m_c_str  <- matrix(v_c_str, nrow = n_states_tunnels, ncol = n_states_tunnels, byrow = T)
       # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
       a_R_u_str <- array(m_u_str, 
-                         dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
+                         dim      = c(n_states_tunnels, n_states_tunnels, n_cycles + 1),
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_cycles))
       # Expand the transition matrix of state costs across cycles to form a transition array of state costs
       a_R_c_str <- array(m_c_str, 
-                         dim      = c(n_states_tunnels, n_states_tunnels, n_t + 1),
-                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_t))
+                         dim      = c(n_states_tunnels, n_states_tunnels, n_cycles + 1),
+                         dimnames = list(v_names_states_tunnels, v_names_states_tunnels, 0:n_cycles))
       
       #### Apply transition rewards ####  
       # Add disutility due to transition from H to S1
@@ -315,9 +318,9 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       
       #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
       ## QALYs
-      v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_hcc)
+      v_tot_qaly[i] <- t(v_qaly_str) %*% (v_dwe * v_wcc)
       ## Costs
-      v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_hcc)
+      v_tot_cost[i] <- t(v_cost_str) %*% (v_dwc * v_wcc)
     }
     
     ########################## Cost-effectiveness analysis #######################
