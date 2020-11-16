@@ -24,7 +24,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## History-dependent transition probability of becoming Sicker when Sick
     # conditional on surviving
     # Weibull hazard
-    v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
+    v_p_S1S2_tunnels <- r_S1S2_lambda * r_S1S2_gamma * (1:n_tunnel_size)^{r_S1S2_gamma-1}
     # transform odds ratios to probabilites for B
     # vector of log-odds of becoming Sicker when Sick
     v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 

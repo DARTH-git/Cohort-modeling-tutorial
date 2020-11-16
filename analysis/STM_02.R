@@ -33,20 +33,19 @@
 rm(list = ls())    # remove any variables in R's memory 
 
 ### Install packages
-# install.packages("dplyr")      # to manipulate data
-# install.packages("data.table") # to manipulate data
-# install.packages("tidyr")      # to manipulate data
-# install.packages("reshape2")   # to manipulate data
-# install.packages("ggplot2")    # to visualize data
-# install.packages("gridExtra")  # to visualize data
-# install.packages("scales")     # for dollar signs and commas
-# install.packages("boot")       # to handle log odds and log odds ratios
-# install.packages("devtools")   # to ensure compatibility among packages
-# devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub, for CEA and calculate ICERs
+# install.packages("dplyr")     # to manipulate data
+# install.packages("tidyr")     # to manipulate data
+# install.packages("reshape2")  # to manipulate data
+# install.packages("ggplot2")   # to visualize data
+# install.packages("gridExtra") # to visualize data
+# install.packages("scales")    # for dollar signs and commas
+# install.packages("boot")      # to handle log odds and log odds ratios
+# install.packages("devtools")  # to ensure compatibility among packages
+# devtools::install_github("DARTH-git/dampack") # to install dampack from GitHub, for CEA and calculate ICERs
+# devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
 
 ### Load packages
 library(dplyr)    
-library(data.table)
 library(tidyr)
 library(reshape2) 
 library(ggplot2)
@@ -54,6 +53,8 @@ library(gridExtra)
 library(scales)    
 library(boot)
 library(dampack) 
+library(darthtools)
+library(doParallel)
 
 ### Load supplementary functions
 source("R/Functions.R")
@@ -438,8 +439,8 @@ df_e <- as.data.frame(matrix(0,
                              ncol = n_str))
 colnames(df_e) <- v_names_str
 
-## Conduct probabilistic sensitivity analysis
-# Run Markov model on each parameter set of PSA input dataset
+#### Conduct probabilistic sensitivity analysis ####
+# Run Markov model on each parameter set of PSA input dataset in series
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
   df_c[i, ]  <- l_out_temp$Cost  
@@ -449,6 +450,71 @@ for(i in 1:n_sim){
     cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
   }
 }
+
+### Run Markov model on each parameter set of PSA input dataset in parallel
+# ## Get OS
+# os <- get_os()
+# print(paste0("Parallelized PSA on ", os))
+# 
+# no_cores <- parallel::detectCores() - 1
+# 
+# n_time_init_likpar <- Sys.time()
+# 
+# ## Run parallelized PSA based on OS
+# if(os == "macosx"){
+#   # Initialize cluster object
+#   cl <- parallel::makeForkCluster(no_cores) 
+#   # Register clusters
+#   doParallel::registerDoParallel(cl)
+#   # Run parallelized PSA
+#   df_ce <- foreach::foreach(i = 1:n_sim, .combine = rbind) %dopar% {
+#     l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+#     df_ce <- c(l_out_temp$Cost, l_out_temp$Effect)
+#   }
+#   # Extract costs and effects from the PSA dataset
+#   df_c[i, ] <- df_ce[, 1:n_str]
+#   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
+#   # Register end time of parallelized PSA
+#   n_time_end_likpar <- Sys.time()
+# }
+# if(os == "windows"){
+#   # Initialize cluster object
+#   cl <- parallel::makeCluster(no_cores)
+#   # Register clusters
+#   doParallel::registerDoParallel(cl)
+#   opts <- list(attachExportEnv = TRUE)
+#   # Run parallelized PSA
+#   df_ce <- foeach::foreach(i = 1:n_samp, .combine = rbind,
+#                            .export = ls(globalenv()),
+#                            .packages=c("dampack"),
+#                            .options.snow = opts) %dopar% {
+#                              l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+#                              df_ce <- c(l_out_temp$Cost, l_out_temp$Effect)
+#                            }
+#   # Extract costs and effects from the PSA dataset
+#   df_c[i, ] <- df_ce[, 1:n_str]
+#   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
+#   # Register end time of parallelized PSA
+#   n_time_end_likpar <- Sys.time()
+# }
+# if(os == "linux"){
+#   # Initialize cluster object
+#   cl <- parallel::makeCluster(no_cores)
+#   # Register clusters
+#   doParallel::registerDoMC(cl)
+#   # Run parallelized PSA
+#   df_ce <- foreach::foreach(i = 1:n_sim, .combine = rbind) %dopar% {
+#     l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+#     df_ce <- c(l_out_temp$Cost, l_out_temp$Effect)
+#   }
+#   # Extract costs and effects from the PSA dataset
+#   df_c[i, ] <- df_ce[, 1:n_str]
+#   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
+#   # Register end time of parallelized PSA
+#   n_time_end_likpar <- Sys.time()
+# }
+# # Stope clusters
+# stopCluster(cl)
 
 # Create PSA object for dampack
 l_psa <- make_psa_obj(cost          = df_c, 

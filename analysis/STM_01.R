@@ -32,16 +32,16 @@
 rm(list = ls())    # remove any variables in R's memory 
 
 ### Install packages
-# install.packages("dplyr")      # to manipulate data
-# install.packages("data.table") # to manipulate data
-# install.packages("tidyr")      # to manipulate data
-# install.packages("reshape2")   # to manipulate data
-# install.packages("ggplot2")    # to visualize data
-# install.packages("scales")     # for dollar signs and commas
-# install.packages("boot")       # to handle log odds and log odds ratios
-# install.packages("devtools")   # to ensure compatibility among packages
-# devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub, for CEA and calculate ICERs
-# devtools::install_github("DARTH-git/darthtools") # to install dampack form GitHub, for CEA and calculate ICERs
+# install.packages("dplyr")     # to manipulate data
+# install.packages("tidyr")     # to manipulate data
+# install.packages("reshape2")  # to manipulate data
+# install.packages("ggplot2")   # to visualize data
+# install.packages("gridExtra") # to visualize data
+# install.packages("scales")    # for dollar signs and commas
+# install.packages("boot")      # to handle log odds and log odds ratios
+# install.packages("devtools")  # to ensure compatibility among packages
+# devtools::install_github("DARTH-git/dampack") # to install dampack from GitHub, for CEA and calculate ICERs
+# devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
 
 ### Load packages
 library(dplyr)    
@@ -53,6 +53,7 @@ library(scales)
 library(boot)
 library(dampack) 
 library(darthtools)
+library(doParallel)
 
 ### Load supplementary functions
 source("R/Functions.R")

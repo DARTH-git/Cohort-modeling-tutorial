@@ -33,13 +33,16 @@
 rm(list = ls())    # remove any variables in R's memory 
 
 ### Install packages
-# install.packages("dplyr")    # to manipulate data
-# install.packages("reshape2") # to transform data
-# install.packages("ggplot2")  # to visualize data
-# install.packages("scales")   # for dollar signs and commas
-# install.packages("boot")     # to handle log odds and log odds ratios
-# install.packages("devtools") # to ensure compatibility among packages
-# devtools::install_github("DARTH-git/dampack") # to install dampack form GitHub, for CEA and calculate ICERs
+# install.packages("dplyr")     # to manipulate data
+# install.packages("tidyr")     # to manipulate data
+# install.packages("reshape2")  # to transform data
+# install.packages("ggplot2")   # to visualize data
+# install.packages("gridExtra") # to visualize data
+# install.packages("scales")    # for dollar signs and commas
+# install.packages("boot")      # to handle log odds and log odds ratios
+# install.packages("devtools")  # to ensure compatibility among packages
+# devtools::install_github("DARTH-git/dampack") # to install dampack from GitHub, for CEA and calculate ICERs
+# devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
 
 ### Load packages
 library(dplyr)    
@@ -47,7 +50,9 @@ library(reshape2)
 library(ggplot2)   
 library(scales)    
 library(boot)
-library(dampack) 
+library(dampack)
+library(darthtools)
+library(doParallel)
 
 ### Load functions
 source("R/Functions.R")
@@ -86,8 +91,8 @@ lor_S1S2 <- log(or_S1S2) # log-odd ratio of becoming Sicker when Sick
 
 # Weibull parameters for history-dependent transition probability of becoming Sicker when Sick
 # conditional on surviving
-n_lambda <- 0.08 # scale
-n_gamma  <- 1.1  # shape
+r_S1S2_lambda <- 0.08 # scale
+r_S1S2_gamma  <- 1.1  # shape
 
 ## Age-dependent mortality rates
 lt_usa_2015 <- read.csv("data/LifeTable_USA_Mx_2015.csv")
@@ -135,7 +140,7 @@ v_p_S2Dage <- rate_to_prob(v_r_S2Dage) # Age-specific mortality risk in the Sick
 ## History-dependent transition probability of becoming Sicker when Sick
 # conditional on surviving
 # Weibull hazard
-v_p_S1S2_tunnels <- n_lambda * n_gamma * (1:n_tunnel_size)^{n_gamma-1}
+v_p_S1S2_tunnels <- r_S1S2_lambda * r_S1S2_gamma * (1:n_tunnel_size)^{r_S1S2_gamma-1}
 # transform odds ratios to probabilites for treatment B
 # vector of log-odds of becoming Sicker when Sick
 v_logit_S1S2_tunnels <- boot::logit(v_p_S1S2_tunnels) 
@@ -431,8 +436,8 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     p_S1H    = rbeta(n_sim, 60, 60) ,          # probability to become healthy when sick conditional on surviving
     hr_S1    = rlnorm(n_sim, log(3), 0.01),    # rate ratio of death in S1 vs healthy 
     hr_S2    = rlnorm(n_sim, log(10), 0.02),   # rate ratio of death in S2 vs healthy 
-    n_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
-    n_gamma  = rlnorm(n_sim, log(1.1), 0.02),  # transition from S1 to S2 - Weibull shape parameter
+    r_S1S2_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
+    r_S1S2_gamma  = rlnorm(n_sim, log(1.1), 0.02),  # transition from S1 to S2 - Weibull shape parameter
     lor_S1S2 = rnorm(n_sim, log(0.6), 0.1),    # log-odds ratio of becoming Sicker whe  
     # State rewards
     # Costs
@@ -484,8 +489,8 @@ df_e <- as.data.frame(matrix(0,
                              ncol = n_str))
 colnames(df_e) <- v_names_str
 
-## Conduct probabilistic sensitivity analysis
-# Run Markov model on each parameter set of PSA input dataset
+#### Conduct probabilistic sensitivity analysis ####
+## Run Markov model on each parameter set of PSA input dataset in series
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
   df_c[i, ]  <- l_out_temp$Cost  
@@ -495,6 +500,72 @@ for(i in 1:n_sim){
     cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
   }
 }
+
+
+### Run Markov model on each parameter set of PSA input dataset in parallel
+# ## Get OS
+# os <- get_os()
+# print(paste0("Parallelized PSA on ", os))
+# 
+# no_cores <- parallel::detectCores() - 1
+# 
+# n_time_init_likpar <- Sys.time()
+# 
+# ## Run parallelized PSA based on OS
+# if(os == "macosx"){
+#   # Initialize cluster object
+#   cl <- parallel::makeForkCluster(no_cores) 
+#   # Register clusters
+#   doParallel::registerDoParallel(cl)
+#   # Run parallelized PSA
+#   df_ce <- foreach::foreach(i = 1:n_sim, .combine = rbind) %dopar% {
+#     l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+#     df_ce <- c(l_out_temp$Cost, l_out_temp$Effect)
+#   }
+#   # Extract costs and effects from the PSA dataset
+#   df_c[i, ] <- df_ce[, 1:n_str]
+#   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
+#   # Register end time of parallelized PSA
+#   n_time_end_likpar <- Sys.time()
+# }
+# if(os == "windows"){
+#   # Initialize cluster object
+#   cl <- parallel::makeCluster(no_cores)
+#   # Register clusters
+#   doParallel::registerDoParallel(cl)
+#   opts <- list(attachExportEnv = TRUE)
+#   # Run parallelized PSA
+#   df_ce <- foeach::foreach(i = 1:n_samp, .combine = rbind,
+#                            .export = ls(globalenv()),
+#                            .packages=c("dampack"),
+#                            .options.snow = opts) %dopar% {
+#                              l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+#                              df_ce <- c(l_out_temp$Cost, l_out_temp$Effect)
+#                            }
+#   # Extract costs and effects from the PSA dataset
+#   df_c[i, ] <- df_ce[, 1:n_str]
+#   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
+#   # Register end time of parallelized PSA
+#   n_time_end_likpar <- Sys.time()
+# }
+# if(os == "linux"){
+#   # Initialize cluster object
+#   cl <- parallel::makeCluster(no_cores)
+#   # Register clusters
+#   doParallel::registerDoMC(cl)
+#   # Run parallelized PSA
+#   df_ce <- foreach::foreach(i = 1:n_sim, .combine = rbind) %dopar% {
+#     l_out_temp <- calculate_ce_out(df_psa_input[i, ])
+#     df_ce <- c(l_out_temp$Cost, l_out_temp$Effect)
+#   }
+#   # Extract costs and effects from the PSA dataset
+#   df_c[i, ] <- df_ce[, 1:n_str]
+#   df_e[i, ] <- df_ce[, (n_str+1):(2*n_str)]
+#   # Register end time of parallelized PSA
+#   n_time_end_likpar <- Sys.time()
+# }
+# # Stope clusters
+# stopCluster(cl)
 
 # Create PSA object for dampack
 l_psa <- make_psa_obj(cost          = df_c, 
