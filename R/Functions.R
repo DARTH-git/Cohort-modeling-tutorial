@@ -9,7 +9,7 @@
 #' @return a ggplot object - plot of the cohort trace
 #' 
 plot_trace <- function(m_M) {
-  df_M      <- data.frame(Cycle = 0:n_t, m_M, check.names = F)
+  df_M      <- data.frame(Cycle = 0:n_cycles, m_M, check.names = F)
   df_M_long <- tidyr::gather(df_M, key = `Health State`, value, 2:ncol(df_M))
   df_M_long$`Health State` <- factor(df_M_long$`Health State`, levels = v_names_states)
   p <- ggplot(df_M_long, aes(x = Cycle, y = value, 
@@ -39,7 +39,7 @@ plot_trace_strategy <- function(l_m_M) {
   l_df_M <- lapply(l_m_M, as.data.frame)
   df_M_strategies <- data.table::rbindlist(l_df_M, use.names = T, 
                                            idcol = "Strategy")
-  df_M_strategies$Cycle <- rep(0:n_t, n_str)
+  df_M_strategies$Cycle <- rep(0:n_cycles, n_str)
   m_M_plot <- tidyr::gather(df_M_strategies, key = `Health State`, value, 
                             2:(ncol(df_M_strategies)-1))
   m_M_plot$`Health State`    <- factor(m_M_plot$`Health State`, levels = v_names_states)
@@ -76,7 +76,7 @@ calc_surv <- function(l_m_M, v_names_death_states) {
                                     }
                                   ))
   colnames(df_surv) <- v_names_str
-  df_surv$Cycle     <- 0:n_t
+  df_surv$Cycle     <- 0:n_cycles
   df_surv_long      <- tidyr::gather(df_surv, key = Strategy, Survival, 1:n_str)
   df_surv_long$Strategy <- ordered(df_surv_long$Strategy, levels = v_names_str)
   df_surv_long <- df_surv_long %>% 
@@ -107,7 +107,7 @@ calc_sick <- function(l_m_M, v_names_sick_states) {
                                   }
   ))
   colnames(df_sick) <- v_names_str
-  df_sick$Cycle     <- 0:n_t
+  df_sick$Cycle     <- 0:n_cycles
   df_sick_long      <- tidyr::gather(df_sick, key = Strategy, Sick, 1:n_str)
   df_sick_long$Strategy <- ordered(df_sick_long$Strategy, levels = v_names_str)
   df_sick_long <- df_sick_long %>% 

@@ -62,7 +62,7 @@ source("R/Functions.R")
 ## General setup
 n_age_init  <- 25                       # age at baseline
 n_age_max   <- 100                      # maximum age of follow up
-n_t         <- n_age_max - n_age_init   # time horizon, number of cycles
+n_cycles         <- n_age_max - n_age_init   # time horizon, number of cycles
 v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
                                            # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
 n_states    <- length(v_names_states)   # number of health states 
@@ -73,7 +73,7 @@ d_e         <- 0.03                     # discount rate for QALYs
 v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
 n_str       <- length(v_names_str)      # number of strategies
 # Within-cycle correction (WCC) using Simpson's 1/3 rule
-v_wcc    <- darthtools::gen_wcc(n_t = n_t, method = "Simpson1/3") # vector of wcc
+v_wcc    <- darthtools::gen_wcc(n_t = n_cycles, method = "Simpson1/3") # vector of wcc
 
 
 ## Transition probabilities (per cycle), hazard ratios and odds ratio
@@ -107,8 +107,8 @@ ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
 ic_D   <- 2000  # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
-v_dwc <- 1 / ((1 + d_e) ^ (0:n_t))
-v_dwe <- 1 / ((1 + d_c) ^ (0:n_t))
+v_dwc <- 1 / ((1 + d_e) ^ (0:n_cycles))
+v_dwe <- 1 / ((1 + d_c) ^ (0:n_cycles))
 
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
@@ -136,8 +136,8 @@ v_s_init
 
 ## Initialize cohort trace for cSTM for strategies SoC and A
 m_M <- matrix(0, 
-              nrow = (n_t + 1), ncol = n_states, 
-              dimnames = list(0:n_t, v_names_states))
+              nrow = (n_cycles + 1), ncol = n_states, 
+              dimnames = list(0:n_cycles, v_names_states))
 # Store the initial state vector in the first row of the cohort trace
 m_M[1, ] <- v_s_init
 ## Initialize cohort trace for strategies B and AB
@@ -177,14 +177,14 @@ m_P_strB["S1", "S2"] <- (1 - p_S1D) * p_S1S2_trtB
 check_transition_probability(m_P,      verbose = TRUE)
 check_transition_probability(m_P_strB, verbose = TRUE)
 ## Check that all rows sum to 1
-check_sum_of_transition_array(m_P,      n_states = n_states, n_t = n_t, verbose = TRUE)
-check_sum_of_transition_array(m_P_strB, n_states = n_states, n_t = n_t, verbose = TRUE)
+check_sum_of_transition_array(m_P,      n_states = n_states, n_t = n_cycles, verbose = TRUE)
+check_sum_of_transition_array(m_P_strB, n_states = n_states, n_t = n_cycles, verbose = TRUE)
 
 ## Initialize transition array which will capture transitions from each state to another over time 
 # for strategies SoC and A
 a_A <- array(0,
-             dim = c(n_states, n_states, n_t + 1),
-             dimnames = list(v_names_states, v_names_states, 0:n_t))
+             dim = c(n_states, n_states, n_cycles + 1),
+             dimnames = list(v_names_states, v_names_states, 0:n_cycles))
 # Set first slice of A with the initial state vector in its diagonal
 diag(a_A[, , 1]) <- v_s_init
 # For strategies B and AB, the array structure and initial state are identical 
@@ -192,7 +192,7 @@ a_A_strB <- a_A
 
 #### Run Markov model ####
 # Iterative solution of time-independent cSTM
-for(t in 1:n_t){
+for(t in 1:n_cycles){
   ## Fill in cohort trace
   # For strategies SoC and A
   m_M[t + 1, ]      <- m_M[t, ]      %*% m_P
@@ -294,12 +294,12 @@ for (i in 1:n_str) {
   m_c_str   <- matrix(v_c_str, nrow = n_states, ncol = n_states, byrow = T)
   # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
   a_R_u_str <- array(m_u_str, 
-                     dim      = c(n_states, n_states, n_t + 1),
-                     dimnames = list(v_names_states, v_names_states, 0:n_t))
+                     dim      = c(n_states, n_states, n_cycles + 1),
+                     dimnames = list(v_names_states, v_names_states, 0:n_cycles))
   # Expand the transition matrix of state costs across cycles to form a transition array of state costs
   a_R_c_str <- array(m_c_str, 
-                     dim      = c(n_states, n_states, n_t + 1),
-                     dimnames = list(v_names_states, v_names_states, 0:n_t))
+                     dim      = c(n_states, n_states, n_cycles + 1),
+                     dimnames = list(v_names_states, v_names_states, 0:n_cycles))
   
   #### Apply transition rewards ####  
   # Apply disutility due to transition from H to S1
