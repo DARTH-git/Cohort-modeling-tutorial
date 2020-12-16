@@ -111,18 +111,18 @@ ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
 ic_D   <- 2000  # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
-v_dwc <- 1 / ((1 + d_e) ^ (0:n_cycles))
-v_dwe <- 1 / ((1 + d_c) ^ (0:n_cycles))
+v_dwc  <- 1 / ((1 + d_e) ^ (0:n_cycles))
+v_dwe  <- 1 / ((1 + d_c) ^ (0:n_cycles))
 
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # compute mortality rates
-r_S1D  <- r_HD * hr_S1           # hazard rate of dying when Sick
-r_S2D  <- r_HD * hr_S2           # hazard rate of dying when Sicker
+r_S1D <- r_HD * hr_S1        # hazard rate of dying when Sick
+r_S2D <- r_HD * hr_S2        # hazard rate of dying when Sicker
 # transform rates to probabilities
-p_HD  <- rate_to_prob(r_HD)     # probability of dying when Healthy
-p_S1D <- rate_to_prob(r_S1D)    # probability of dying when Sick
-p_S2D <- rate_to_prob(r_S2D)    # probability of dying when Sicker
+p_HD  <- rate_to_prob(r_HD)  # probability of dying when Healthy
+p_S1D <- rate_to_prob(r_S1D) # probability of dying when Sick
+p_S2D <- rate_to_prob(r_S2D) # probability of dying when Sicker
 
 ## Transition probability of becoming Sicker when Sick for treatment B
 # transform probability to rate
@@ -182,8 +182,8 @@ m_P_strB["S1", "S2"] <- (1 - p_S1D) * p_S1S2_trtB
 check_transition_probability(m_P,      verbose = TRUE)
 check_transition_probability(m_P_strB, verbose = TRUE)
 ## Check that all rows sum to 1
-check_sum_of_transition_array(m_P,      n_states = n_states, n_t = n_cycles, verbose = TRUE)
-check_sum_of_transition_array(m_P_strB, n_states = n_states, n_t = n_cycles, verbose = TRUE)
+check_sum_of_transition_array(m_P,      n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
+check_sum_of_transition_array(m_P_strB, n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
 
 ## Initialize transition array which will capture transitions from each state to another over time 
 # for strategies SoC and A
@@ -266,18 +266,18 @@ v_c_strAB  <- c(H  = c_H,
 
 ## Store the vectors of state utilities for each strategy in a list 
 l_u   <- list(SQ = v_u_SoC,
-              A =  v_u_strA,
-              B =  v_u_strB,
+              A  = v_u_strA,
+              B  = v_u_strB,
               AB = v_u_strAB)
 ## Store the vectors of state cost for each strategy in a list 
 l_c   <- list(SQ = v_c_SoC,
-              A =  v_c_strA,
-              B =  v_c_strB,
+              A  = v_c_strA,
+              B  = v_c_strB,
               AB = v_c_strAB)
 ## Store the transition array for each strategy in a list
 l_a_A <- list(SQ = a_A,
-              A =  a_A,
-              B =  a_A_strB,
+              A  = a_A,
+              B  = a_A_strB,
               AB = a_A_strB)
 
 # assign strategy names to matching items in the lists

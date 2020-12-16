@@ -110,7 +110,7 @@ u_H    <- 1     # utility when Healthy
 u_S1   <- 0.75  # utility when Sick 
 u_S2   <- 0.5   # utility when Sicker
 u_D    <- 0     # utility when Healthy 
-u_trtA  <- 0.95  # utility when being treated
+u_trtA <- 0.95  # utility when being treated
 
 ## Transition rewards
 du_HS1 <- 0.01  # disutility when transitioning from Healthy to Sick
@@ -118,13 +118,13 @@ ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
 ic_D   <- 2000  # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
-v_dwc <- 1 / ((1 + d_e) ^ (0:n_cycles))
-v_dwe <- 1 / ((1 + d_c) ^ (0:n_cycles))
+v_dwc  <- 1 / ((1 + d_e) ^ (0:n_cycles))
+v_dwe  <- 1 / ((1 + d_c) ^ (0:n_cycles))
 
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # extract age-specific all-cause mortality for ages in model time horizon
-v_r_HDage <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_cycles - 1)]
+v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_cycles - 1)]
 # compute mortality rates
 v_r_S1Dage <- v_r_HDage * hr_S1 # Age-specific mortality rate in the Sick state 
 v_r_S2Dage <- v_r_HDage * hr_S2 # Age-specific mortality rate in the Sicker state 
@@ -175,8 +175,8 @@ a_P_strB["S1", "S2", ] <- (1 - v_p_S1Dage) * p_S1S2_trtB
 check_transition_probability(a_P,      verbose = TRUE)
 check_transition_probability(a_P_strB, verbose = TRUE)
 ### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
-check_sum_of_transition_array(a_P,      n_states = n_states, n_t = n_cycles, verbose = TRUE)
-check_sum_of_transition_array(a_P_strB, n_states = n_states, n_t = n_cycles, verbose = TRUE)
+check_sum_of_transition_array(a_P,      n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
+check_sum_of_transition_array(a_P_strB, n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
 
 #### Run Markov model ####
 ## Initial state vector
@@ -406,16 +406,16 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     c_trtB = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment B (per cycle)
     c_D    = 0,                                          # cost of being in the death state
     # Utilities
-    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),    # utility when healthy
-    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45),   # utility when sick
-    u_S2   = rbeta(n_sim, shape1 = 230,  shape2 = 230), # utility when sicker
-    u_D    = 0,                                         # utility when dead
-    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15),   # utility when being treated
+    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),     # utility when healthy
+    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45),    # utility when sick
+    u_S2   = rbeta(n_sim, shape1 = 230,  shape2 = 230),  # utility when sicker
+    u_D    = 0,                                          # utility when dead
+    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15),    # utility when being treated
     
     # Transition rewards
-    du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick
-    ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),    # increase in cost when transitioning from Healthy to Sick
-    ic_D   = rgamma(n_sim, shape = 100, scale = 20)     # increase in cost when dying
+    du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088),  # disutility when transitioning from Healthy to Sick
+    ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),     # increase in cost when transitioning from Healthy to Sick
+    ic_D   = rgamma(n_sim, shape = 100, scale = 20)      # increase in cost when dying
   )
   return(df_psa)
 }
@@ -431,9 +431,9 @@ head(df_psa_input)
 # Histogram of parameters
 ggplot(melt(df_psa_input, variable.name = "Parameter"), 
        aes(x = value)) +
-  facet_wrap(~Parameter, scales = "free") +
-  geom_histogram(aes(y = ..density..)) +
-  theme_bw(base_size = 16)
+       facet_wrap(~Parameter, scales = "free") +
+       geom_histogram(aes(y = ..density..)) +
+       theme_bw(base_size = 16)
 
 # Initialize matrices with PSA output 
 # Dataframe of costs
@@ -571,7 +571,7 @@ summary(ceac_obj)
 
 # CEAC & CEAF plot
 plot(ceac_obj, txtsize = 16, xlim = c(0, NA)) +
-  theme(legend.position = "bottom")
+     theme(legend.position = "bottom")
 
 ##  Expected Loss Curves (ELCs)
 elc_obj <- calc_exp_loss(wtp = v_wtp, psa = l_psa)
@@ -579,7 +579,7 @@ elc_obj
 
 # ELC plot
 plot(elc_obj, log_y = FALSE, txtsize = 16, xlim = c(0, NA)) +
-  theme(legend.position = "bottom")
+     theme(legend.position = "bottom")
 
 ## Expected value of perfect information (EVPI)
 evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)

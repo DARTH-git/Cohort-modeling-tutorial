@@ -130,13 +130,13 @@ ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
 ic_D   <- 2000  # increase in cost when dying
 
 # Discount weight (equal discounting is assumed for costs and effects)
-v_dwc <- 1 / ((1 + d_e) ^ (0:n_cycles))
-v_dwe <- 1 / ((1 + d_c) ^ (0:n_cycles))
+v_dwc  <- 1 / ((1 + d_e) ^ (0:n_cycles))
+v_dwe  <- 1 / ((1 + d_c) ^ (0:n_cycles))
 
 ### Process model inputs
 ## Age-specific transition probabilities to the Dead state
 # extract age-specific all-cause mortality rates for ages in model time horizon
-v_r_HDage <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_cycles - 1)]
+v_r_HDage  <- v_r_mort_by_age[(n_age_init + 1) + 0:(n_cycles - 1)]
 # compute mortality rates
 v_r_S1Dage <- v_r_HDage * hr_S1        # Age-specific mortality rate in the Sick state 
 v_r_S2Dage <- v_r_HDage * hr_S2        # Age-specific mortality rate in the Sicker state 
@@ -228,7 +228,7 @@ v_s_init_tunnels <- c(1, rep(0, n_tunnel_size), 0, 0)
 
 ## Initialize cohort trace for history-dependent cSTM
 m_M_tunnels <- matrix(0, 
-                      nrow    = (n_cycles + 1), ncol = n_states_tunnels, 
+                      nrow     = (n_cycles + 1), ncol = n_states_tunnels, 
                       dimnames = list(0:n_cycles, v_names_states_tunnels))
 # Store the initial state vector in the first row of the cohort trace
 m_M_tunnels[1, ] <- v_s_init_tunnels
@@ -443,13 +443,14 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
   set.seed(seed) # set a seed to be able to reproduce the same results
   df_psa <- data.frame(
     # Transition probabilities (per cycle)
-    p_HS1    = rbeta(n_sim, 30, 170),          # probability to become sick when healthy conditional on surviving
-    p_S1H    = rbeta(n_sim, 60, 60) ,          # probability to become healthy when sick conditional on surviving
-    hr_S1    = rlnorm(n_sim, log(3), 0.01),    # rate ratio of death in S1 vs healthy 
-    hr_S2    = rlnorm(n_sim, log(10), 0.02),   # rate ratio of death in S2 vs healthy 
+    p_HS1    = rbeta(n_sim, 30, 170),               # probability to become sick when healthy conditional on surviving
+    p_S1H    = rbeta(n_sim, 60, 60) ,               # probability to become healthy when sick conditional on surviving
+    hr_S1    = rlnorm(n_sim, log(3), 0.01),         # rate ratio of death in S1 vs healthy 
+    hr_S2    = rlnorm(n_sim, log(10), 0.02),        # rate ratio of death in S2 vs healthy 
     r_S1S2_lambda = rlnorm(n_sim, log(0.08), 0.02), # transition from S1 to S2 - Weibull scale parameter
     r_S1S2_gamma  = rlnorm(n_sim, log(1.1), 0.02),  # transition from S1 to S2 - Weibull shape parameter
-    hr_S1S2_trtB = rlnorm(n_sim, log(0.6), 0.1), # hazard ratio of becoming Sicker when Sick under B
+    hr_S1S2_trtB = rlnorm(n_sim, log(0.6), 0.1),    # hazard ratio of becoming Sicker when Sick under B
+    
     # State rewards
     # Costs
     c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
@@ -459,16 +460,16 @@ generate_psa_params <- function(n_sim = 1000, seed = 071818){
     c_trtB = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment B (per cycle)
     c_D    = 0,                                          # cost of being in the death state
     # Utilities
-    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),  # utility when healthy
-    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45), # utility when sick
-    u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50), # utility when sicker
-    u_D    = 0,                                       # utility when dead
-    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15), # utility when being treated
+    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),     # utility when healthy
+    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45),    # utility when sick
+    u_S2   = rbeta(n_sim, shape1 = 50,  shape2 = 50),    # utility when sicker
+    u_D    = 0,                                          # utility when dead
+    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15),    # utility when being treated
     
     # Transition rewards
-    du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088), # disutility when transitioning from Healthy to Sick
-    ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),    # increase in cost when transitioning from Healthy to Sick
-    ic_D   = rgamma(n_sim, shape = 100, scale = 20)     # increase in cost when dying
+    du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088),  # disutility when transitioning from Healthy to Sick
+    ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),     # increase in cost when transitioning from Healthy to Sick
+    ic_D   = rgamma(n_sim, shape = 100, scale = 20)      # increase in cost when dying
   )
   return(df_psa)
 }
@@ -484,9 +485,9 @@ head(df_psa_input)
 # Histogram of parameters
 ggplot(melt(df_psa_input, variable.name = "Parameter"), 
        aes(x = value)) +
-  facet_wrap(~Parameter, scales = "free") +
-  geom_histogram(aes(y = ..density..)) +
-  theme_bw(base_size = 16)
+       facet_wrap(~Parameter, scales = "free") +
+       geom_histogram(aes(y = ..density..)) +
+       theme_bw(base_size = 16)
 
 # Initialize matrices with PSA output 
 # Dataframe of costs
@@ -624,7 +625,7 @@ summary(ceac_obj)
 
 # CEAC & CEAF plot
 plot(ceac_obj, txtsize = 16, xlim = c(0, NA)) +
-  theme(legend.position = "bottom")
+     theme(legend.position = "bottom")
 
 ##  Expected Loss Curves (ELCs)
 elc_obj <- calc_exp_loss(wtp = v_wtp, psa = l_psa)
@@ -632,7 +633,7 @@ elc_obj
 
 # ELC plot
 plot(elc_obj, log_y = FALSE, txtsize = 16, xlim = c(0, NA)) +
-  theme(legend.position = "bottom")
+     theme(legend.position = "bottom")
 
 ## Expected value of perfect information (EVPI)
 evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)

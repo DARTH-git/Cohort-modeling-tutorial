@@ -33,7 +33,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ###################### Construct state-transition models #####################
     #### Create transition arrays ####
     # Initialize 3-D array
-    a_P <- array(0, dim      = c(n_states, n_states, n_cycles),
+    a_P <- array(0, dim   = c(n_states, n_states, n_cycles),
                  dimnames = list(v_names_states, v_names_states, 0:(n_cycles - 1)))
     ### Fill in array
     ## From H
@@ -63,8 +63,8 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     check_transition_probability(a_P,      verbose = TRUE)
     check_transition_probability(a_P_strB, verbose = TRUE)
     ### Check if transition probability matrix sum to 1 (i.e., each row should sum to 1)
-    check_sum_of_transition_array(a_P,      n_states = n_states, n_t = n_cycles, verbose = TRUE)
-    check_sum_of_transition_array(a_P_strB, n_states = n_states, n_t = n_cycles, verbose = TRUE)
+    check_sum_of_transition_array(a_P,      n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
+    check_sum_of_transition_array(a_P_strB, n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
     
     #### Run Markov model ####
     ## Initial state vector
@@ -101,9 +101,9 @@ decision_model <- function(l_params_all, verbose = FALSE) {
       
       ## Fill in transition-dynamics array
       # For srategies SoC and A
-      a_A[, , t + 1]      <- m_M_ad[t, ]      * a_P[, , t]
+      a_A[, , t + 1]       <- m_M_ad[t, ]      * a_P[, , t]
       # For srategies B and AB
-      a_A_strB[, , t + 1] <- m_M_ad_strB[t, ] * a_P_strB[, , t]
+      a_A_strB[, , t + 1]  <- m_M_ad_strB[t, ] * a_P_strB[, , t]
     }
     
     ## Store the cohort traces in a list
@@ -190,18 +190,18 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     
     ## Store the vectors of state utilities for each strategy in a list 
     l_u   <- list(SQ = v_u_SoC,
-                  A =  v_u_strA,
-                  B =  v_u_strB,
+                  A  = v_u_strA,
+                  B  = v_u_strB,
                   AB = v_u_strAB)
     ## Store the vectors of state cost for each strategy in a list 
     l_c   <- list(SQ = v_c_SoC,
-                  A =  v_c_strA,
-                  B =  v_c_strB,
+                  A  = v_c_strA,
+                  B  = v_c_strB,
                   AB = v_c_strAB)
     ## Store the transition array for each strategy in a list
     l_a_A <- list(SQ = a_A,
-                  A =  a_A,
-                  B =  a_A_strB,
+                  A  = a_A,
+                  B  = a_A_strB,
                   AB = a_A_strB)
     
     # assign strategy names to matching items in the lists

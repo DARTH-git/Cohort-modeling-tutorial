@@ -104,7 +104,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     
     ## Initialize cohort trace for history-dependent cSTM
     m_M_tunnels <- matrix(0, 
-                          nrow    = (n_cycles + 1), ncol = n_states_tunnels, 
+                          nrow     = (n_cycles + 1), ncol = n_states_tunnels, 
                           dimnames = list(0:n_cycles, v_names_states_tunnels))
     # Store the initial state vector in the first row of the cohort trace
     m_M_tunnels[1, ] <- v_s_init_tunnels
@@ -130,9 +130,9 @@ decision_model <- function(l_params_all, verbose = FALSE) {
       
       # Fill in transition dynamics array
       # For srategies SoC and A
-      a_A_tunnels[, , t + 1]       <- m_M_tunnels[t, ]      * a_P_tunnels[, , t]
+      a_A_tunnels[, , t + 1]      <- m_M_tunnels[t, ]      * a_P_tunnels[, , t]
       # For srategies B and AB
-      a_A_tunnels_strB[, , t + 1]  <- m_M_tunnels_strB[t, ] * a_P_tunnels_strB[, , t]
+      a_A_tunnels_strB[, , t + 1] <- m_M_tunnels_strB[t, ] * a_P_tunnels_strB[, , t]
     }
     
     # Create aggregated trace
@@ -203,7 +203,6 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
                  v_c_S1_SoC, 
                  S2 = c_S2,
                  D  = c_D)
-    
     ## Vector of utilities for S1 under strategy A
     v_u_S1_strA <- rep(u_trtA, n_tunnel_size)
     names(v_u_S1_strA) <- v_Sick_tunnel
@@ -286,8 +285,8 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
       
       #### Array of state utilities and costs ####
       # Create transition matrices of state utilities and state costs for the ith strategy 
-      m_u_str  <- matrix(v_u_str, nrow = n_states_tunnels, ncol = n_states_tunnels, byrow = T)
-      m_c_str  <- matrix(v_c_str, nrow = n_states_tunnels, ncol = n_states_tunnels, byrow = T)
+      m_u_str   <- matrix(v_u_str, nrow = n_states_tunnels, ncol = n_states_tunnels, byrow = T)
+      m_c_str   <- matrix(v_c_str, nrow = n_states_tunnels, ncol = n_states_tunnels, byrow = T)
       # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
       a_R_u_str <- array(m_u_str, 
                          dim      = c(n_states_tunnels, n_states_tunnels, n_cycles + 1),
