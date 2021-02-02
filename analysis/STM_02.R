@@ -532,7 +532,7 @@ print(paste0("PSA with ", comma(n_sim), " simulations run in series in ",
 # n_time_total_psa <- n_time_end_psa - n_time_init_psa
 # print(paste0("PSA with ", comma(n_sim), " simulations run in series in ",
 #              round(n_time_total_psa, 2), " ", 
-#              units(n_time_total_psa_series)))
+#              units(n_time_total_psa)))
 
 # Create PSA object for dampack
 l_psa <- make_psa_obj(cost          = df_c, 
