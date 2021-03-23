@@ -32,23 +32,26 @@
 rm(list = ls())    # remove any variables in R's memory 
 
 ### Install packages
-# install.packages("dplyr")     # to manipulate data
-# install.packages("tidyr")     # to manipulate data
-# install.packages("reshape2")  # to manipulate data
-# install.packages("ggplot2")   # to visualize data
-# install.packages("gridExtra") # to visualize data
-# install.packages("scales")    # for dollar signs and commas
-# install.packages("boot")      # to handle log odds and log odds ratios
-# install.packages("devtools")  # to ensure compatibility among packages
-# install.packages("dampack")   # for CEA and calculate ICERs
+# install.packages("dplyr")      # to manipulate data
+# install.packages("data.table") # to manipulate data
+# install.packages("tidyr")      # to manipulate data
+# install.packages("reshape2")   # to manipulate data
+# install.packages("ggplot2")    # to visualize data
+# install.packages("gridExtra")  # to visualize data
+# install.packages("scales")     # for dollar signs and commas
+# install.packages("boot")       # to handle log odds and log odds ratios
+# install.packages("devtools")   # to ensure compatibility among packages
+# install.packages("dampack")    # for CEA and calculate ICERs
 # devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
+# install.packages("doParallel") # to handle parallel processing
 
 ### Load packages
 library(dplyr)    
 library(data.table)
 library(tidyr)
 library(reshape2) 
-library(ggplot2)   
+library(ggplot2) 
+library(gridExtra)
 library(scales)    
 library(boot)
 library(dampack) 
@@ -60,29 +63,29 @@ source("R/Functions.R")
 
 ################################ Model input ################################# 
 ## General setup
-n_age_init  <- 25                       # age at baseline
-n_age_max   <- 100                      # maximum age of follow up
-n_cycles    <- n_age_max - n_age_init   # time horizon, number of cycles
-v_names_states <- c("H", "S1", "S2", "D")  # the 4 health states of the model:
-                                           # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
-n_states    <- length(v_names_states)   # number of health states 
+n_age_init  <- 25                         # age at baseline
+n_age_max   <- 100                        # maximum age of follow up
+n_cycles    <- n_age_max - n_age_init     # time horizon, number of cycles
+v_names_states <- c("H", "S1", "S2", "D") # the 4 health states of the model:
+                                          # Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+n_states    <- length(v_names_states)     # number of health states 
 
 # Discounting factors
-d_c         <- 0.03                     # discount rate for costs 
-d_e         <- 0.03                     # discount rate for QALYs
+d_c         <- 0.03                       # discount rate for costs 
+d_e         <- 0.03                       # discount rate for QALYs
 
 # Strategies
-v_names_str <- c("Standard of care", # store the strategy names
+v_names_str <- c("Standard of care",      # store the strategy names
                  "Strategy A", 
                  "Strategy B",
                  "Strategy AB") 
-n_str       <- length(v_names_str)      # number of strategies
+n_str       <- length(v_names_str)        # number of strategies
 
 # Within-cycle correction (WCC) using Simpson's 1/3 rule
 v_wcc <- darthtools::gen_wcc(n_cycles = n_cycles, 
                              method = "Simpson1/3") # vector of wcc
 
-## Transition probabilities (per cycle), hazard ratios and odds ratio
+## Transition probabilities (per cycle), hazard ratios 
 r_HD        <- 0.002 # constant rate of dying when Healthy (all-cause mortality)
 p_HS1       <- 0.15  # probability to become Sick when Healthy conditional on surviving
 p_S1H       <- 0.5   # probability to become Healthy when Sick conditional on surviving
@@ -95,9 +98,9 @@ hr_S1S2_trtB <- 0.6  # hazard ratio of becoming Sicker when Sick under B under t
 
 ## State rewards
 # Costs
-c_H    <- 2000  # cost of remaining one cycle Healthy 
-c_S1   <- 4000  # cost of remaining one cycle Sick 
-c_S2   <- 15000 # cost of remaining one cycle Sicker 
+c_H    <- 2000  # cost of remaining one cycle in Healthy 
+c_S1   <- 4000  # cost of remaining one cycle in Sick 
+c_S2   <- 15000 # cost of remaining one cycle in Sicker 
 c_D    <- 0     # cost of being dead (per cycle)
 c_trtA <- 12000 # cost of treatment A
 c_trtB <- 13000 # cost of treatment B
@@ -105,8 +108,8 @@ c_trtB <- 13000 # cost of treatment B
 u_H    <- 1     # utility when Healthy 
 u_S1   <- 0.75  # utility when Sick 
 u_S2   <- 0.5   # utility when Sicker
-u_D    <- 0     # utility when Healthy 
-u_trtA <- 0.95  # utility when being treated
+u_D    <- 0     # utility when Dead 
+u_trtA <- 0.95  # utility when being treated with A
 
 # Discount weight (equal discounting is assumed for costs and effects)
 v_dwc  <- 1 / ((1 + d_e) ^ (0:n_cycles))
