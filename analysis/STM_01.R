@@ -40,7 +40,7 @@ rm(list = ls())    # remove any variables in R's memory
 # install.packages("scales")    # for dollar signs and commas
 # install.packages("boot")      # to handle log odds and log odds ratios
 # install.packages("devtools")  # to ensure compatibility among packages
-# devtools::install_github("DARTH-git/dampack") # to install dampack from GitHub, for CEA and calculate ICERs
+# install.packages("dampack")   # for CEA and calculate ICERs
 # devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
 
 ### Load packages
@@ -72,7 +72,10 @@ d_c         <- 0.03                     # discount rate for costs
 d_e         <- 0.03                     # discount rate for QALYs
 
 # Strategies
-v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
+v_names_str <- c("Standard of care", # store the strategy names
+                 "Strategy A", 
+                 "Strategy B",
+                 "Strategy AB") 
 n_str       <- length(v_names_str)      # number of strategies
 
 # Within-cycle correction (WCC) using Simpson's 1/3 rule
@@ -105,24 +108,19 @@ u_S2   <- 0.5   # utility when Sicker
 u_D    <- 0     # utility when Healthy 
 u_trtA <- 0.95  # utility when being treated
 
-## Transition rewards
-du_HS1 <- 0.01  # disutility when transitioning from Healthy to Sick
-ic_HS1 <- 1000  # increase in cost when transitioning from Healthy to Sick
-ic_D   <- 2000  # increase in cost when dying
-
 # Discount weight (equal discounting is assumed for costs and effects)
 v_dwc  <- 1 / ((1 + d_e) ^ (0:n_cycles))
 v_dwe  <- 1 / ((1 + d_c) ^ (0:n_cycles))
 
 ### Process model inputs
-## Age-specific transition probabilities to the Dead state
+## Transition probabilities to the Dead state
 # compute mortality rates
-r_S1D <- r_HD * hr_S1        # hazard rate of dying when Sick
-r_S2D <- r_HD * hr_S2        # hazard rate of dying when Sicker
+r_S1D <- r_HD * hr_S1        # Mortality in the Sick state
+r_S2D <- r_HD * hr_S2        # Mortality in the Sick state
 # transform rates to probabilities
-p_HD  <- rate_to_prob(r_HD)  # probability of dying when Healthy
-p_S1D <- rate_to_prob(r_S1D) # probability of dying when Sick
-p_S2D <- rate_to_prob(r_S2D) # probability of dying when Sicker
+p_HD  <- rate_to_prob(r_HD)  # Mortality risk in the Healthy state
+p_S1D <- rate_to_prob(r_S1D) # Mortality risk in the Sick state
+p_S2D <- rate_to_prob(r_S2D) # Mortality risk in the Sicker state
 
 ## Transition probability of becoming Sicker when Sick for treatment B
 # transform probability to rate
@@ -185,16 +183,6 @@ check_transition_probability(m_P_strB, verbose = TRUE)
 check_sum_of_transition_array(m_P,      n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
 check_sum_of_transition_array(m_P_strB, n_states = n_states, n_cycles = n_cycles, verbose = TRUE)
 
-## Initialize transition array which will capture transitions from each state to another over time 
-# for strategies SoC and A
-a_A <- array(0,
-             dim = c(n_states, n_states, n_cycles + 1),
-             dimnames = list(v_names_states, v_names_states, 0:n_cycles))
-# Set first slice of A with the initial state vector in its diagonal
-diag(a_A[, , 1]) <- v_s_init
-# For strategies B and AB, the array structure and initial state are identical 
-a_A_strB <- a_A
-
 #### Run Markov model ####
 # Iterative solution of time-independent cSTM
 for(t in 1:n_cycles){
@@ -203,12 +191,6 @@ for(t in 1:n_cycles){
   m_M[t + 1, ]      <- m_M[t, ]      %*% m_P
   # For strategies B and AB
   m_M_strB[t + 1, ] <- m_M_strB[t, ] %*% m_P_strB
-  
-  ## Fill in transition dynamics array
-  # For strategies SoC and A
-  a_A[, , t + 1]      <- m_M[t, ]      * m_P
-  # For strategies B and AB
-  a_A_strB[, , t + 1] <- m_M_strB[t, ] * m_P_strB
 }
 
 ## Store the cohort traces in a list
@@ -274,14 +256,9 @@ l_c   <- list(SQ = v_c_SoC,
               A  = v_c_strA,
               B  = v_c_strB,
               AB = v_c_strAB)
-## Store the transition array for each strategy in a list
-l_a_A <- list(SQ = a_A,
-              A  = a_A,
-              B  = a_A_strB,
-              AB = a_A_strB)
 
 # assign strategy names to matching items in the lists
-names(l_u) <- names(l_c) <- names(l_a_A) <- v_names_str
+names(l_u) <- names(l_c) <- v_names_str
 
 ## create empty vectors to store total utilities and costs 
 v_tot_qaly <- v_tot_cost <- vector(mode = "numeric", length = n_str)
@@ -289,41 +266,14 @@ names(v_tot_qaly) <- names(v_tot_cost) <- v_names_str
 
 #### Loop through each strategy and calculate total utilities and costs ####
 for (i in 1:n_str) {
-  v_u_str <- l_u[[i]]   # select the vector of state utilities for the ith strategy
-  v_c_str <- l_c[[i]]   # select the vector of state costs for the ith strategy
-  a_A_str <- l_a_A[[i]] # select the transition array for the ith strategy
-  
-  #### Array of state rewards ####
-  # Create transition matrices of state utilities and state costs for the ith strategy 
-  m_u_str   <- matrix(v_u_str, nrow = n_states, ncol = n_states, byrow = T)
-  m_c_str   <- matrix(v_c_str, nrow = n_states, ncol = n_states, byrow = T)
-  # Expand the transition matrix of state utilities across cycles to form a transition array of state utilities
-  a_R_u_str <- array(m_u_str, 
-                     dim      = c(n_states, n_states, n_cycles + 1),
-                     dimnames = list(v_names_states, v_names_states, 0:n_cycles))
-  # Expand the transition matrix of state costs across cycles to form a transition array of state costs
-  a_R_c_str <- array(m_c_str, 
-                     dim      = c(n_states, n_states, n_cycles + 1),
-                     dimnames = list(v_names_states, v_names_states, 0:n_cycles))
-  
-  #### Apply transition rewards ####  
-  # Apply disutility due to transition from H to S1
-  a_R_u_str["H", "S1", ]      <- a_R_u_str["H", "S1", ]       - du_HS1
-  # Add transition cost per cycle due to transition from H to S1
-  a_R_c_str["H", "S1", ]      <- a_R_c_str["H", "S1", ]       + ic_HS1
-  # Add transition cost  per cycle of dying from all non-dead states
-  a_R_c_str[-n_states, "D", ] <- a_R_c_str[- n_states, "D", ] + ic_D
-  
-  #### Expected QALYs and Costs for all transitions per cycle ####
-  # QALYs = life years x QoL
-  # Note: all parameters are annual in our example. In case your own case example is different make sure you correctly apply .
-  a_Y_c_str <- a_A_str * a_R_c_str
-  a_Y_u_str <- a_A_str * a_R_u_str 
+  v_u_str <- l_u[[i]]   # select the vector of state utilities for the i-th strategy
+  v_c_str <- l_c[[i]]   # select the vector of state costs for the i-th strategy
   
   #### Expected QALYs and costs per cycle ####
-  ## Vector of QALYs and Costs
-  v_qaly_str <- apply(a_Y_u_str, 3, sum) # sum the proportion of the cohort across transitions 
-  v_cost_str <- apply(a_Y_c_str, 3, sum) # sum the proportion of the cohort across transitions
+  ### Vector of QALYs and Costs
+  ## Apply state rewards ###
+  v_qaly_str <- l_m_M[[i]] %*% v_u_str # sum the utilities of all states for each cycle
+  v_cost_str <- l_m_M[[i]] %*% v_c_str # sum the costs of all states for each cycle
   
   #### Discounted total expected QALYs and Costs per strategy and apply half-cycle correction if applicable ####
   ## QALYs

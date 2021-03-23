@@ -41,7 +41,7 @@ rm(list = ls())    # remove any variables in R's memory
 # install.packages("scales")    # for dollar signs and commas
 # install.packages("boot")      # to handle log odds and log odds ratios
 # install.packages("devtools")  # to ensure compatibility among packages
-# devtools::install_github("DARTH-git/dampack") # to install dampack from GitHub, for CEA and calculate ICERs
+# install.packages("dampack")   # for CEA and calculate ICERs
 # devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
 
 ### Load packages
@@ -73,7 +73,10 @@ d_c         <- 0.03                     # discount rate for costs
 d_e         <- 0.03                     # discount rate for QALYs
 
 # Strategies
-v_names_str <- c("SoC", "A", "B", "AB") # store the strategy names
+v_names_str <- c("Standard of care", # store the strategy names
+                 "Strategy A", 
+                 "Strategy B",
+                 "Strategy AB") 
 n_str       <- length(v_names_str)      # number of strategies
 
 # Within-cycle correction (WCC) using Simpson's 1/3 rule
@@ -384,41 +387,6 @@ plot(df_cea, label = "all", txtsize = 16) +
 ###################### Probabalistic Sensitivty Analysis #####################
 # Source functions that contain the model and CEA output
 source('R/Functions STM_02.R')
-
-# Function to generate PSA input dataset
-generate_psa_params <- function(n_sim = 1000, seed = 071818){
-  set.seed(seed) # set a seed to be able to reproduce the same results
-  df_psa <- data.frame(
-    # Transition probabilities (per cycle)
-    p_HS1    = rbeta(n_sim, 30, 170),        # probability to become sick when healthy conditional on surviving
-    p_S1H    = rbeta(n_sim, 60, 60) ,        # probability to become healthy when sick conditional on surviving
-    p_S1S2   = rbeta(n_sim, 84, 716),        # probability to become Sicker when Sick conditional on surviving
-    hr_S1    = rlnorm(n_sim, log(3), 0.01),  # rate ratio of death in S1 vs healthy
-    hr_S2    = rlnorm(n_sim, log(10), 0.02), # rate ratio of death in S2 vs healthy 
-    hr_S1S2_trtB = rlnorm(n_sim, log(0.6), 0.1), # hazard ratio of becoming Sicker when Sick under B
-    
-    # State rewards
-    # Costs
-    c_H    = rgamma(n_sim, shape = 100,   scale = 20),   # cost of remaining one cycle in state H
-    c_S1   = rgamma(n_sim, shape = 177.8, scale = 22.5), # cost of remaining one cycle in state S1
-    c_S2   = rgamma(n_sim, shape = 225,   scale = 66.7), # cost of remaining one cycle in state S2
-    c_trtA = rgamma(n_sim, shape = 576,   scale = 20.8), # cost of treatment A (per cycle)
-    c_trtB = rgamma(n_sim, shape = 676,   scale = 19.2), # cost of treatment B (per cycle)
-    c_D    = 0,                                          # cost of being in the death state
-    # Utilities
-    u_H    = rbeta(n_sim, shape1 = 200, shape2 = 3),     # utility when healthy
-    u_S1   = rbeta(n_sim, shape1 = 130, shape2 = 45),    # utility when sick
-    u_S2   = rbeta(n_sim, shape1 = 230,  shape2 = 230),  # utility when sicker
-    u_D    = 0,                                          # utility when dead
-    u_trtA = rbeta(n_sim, shape1 = 300, shape2 = 15),    # utility when being treated
-    
-    # Transition rewards
-    du_HS1 = rbeta(n_sim, shape1 = 11,  shape2 = 1088),  # disutility when transitioning from Healthy to Sick
-    ic_HS1 = rgamma(n_sim, shape = 25,  scale = 40),     # increase in cost when transitioning from Healthy to Sick
-    ic_D   = rgamma(n_sim, shape = 100, scale = 20)      # increase in cost when dying
-  )
-  return(df_psa)
-}
 
 # Number of PSA samples
 n_sim <- 1000

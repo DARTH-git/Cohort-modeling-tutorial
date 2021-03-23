@@ -1,0 +1,15 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Cohort state-transition models (cSTMs)}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Rates versus probabilities}{3}{subsection.2.1}%
+\contentsline {section}{\numberline {3}Case study: Sick-Sicker model}{4}{section.3}%
+\contentsline {section}{\numberline {4}Conceptualizing and implementing time-independent cSTM dynamics}{9}{section.4}%
+\contentsline {section}{\numberline {5}Economic and Epidemiological outcomes}{13}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Effectiveness and economic outcomes}{13}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}State rewards}{13}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Within-cycle correction}{15}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}Discounting future rewards}{16}{subsubsection.5.1.3}%
+\contentsline {section}{\numberline {6}Cost-effectiveness analysis and incremental cost-effectiveness ratios (ICERs)}{17}{section.6}%
+\contentsline {section}{\numberline {7}Probabilistic sensitivity analysis}{18}{section.7}%
+\contentsline {section}{\numberline {8}Discussion}{21}{section.8}%
+\contentsline {section}{\numberline {9}Acknowledgements}{23}{section.9}%
+\contentsline {section}{References}{23}{section*.2}%

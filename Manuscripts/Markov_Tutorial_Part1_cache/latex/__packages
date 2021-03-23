@@ -1,0 +1,11 @@
+base
+knitr
+kableExtra
+dplyr
+reshape2
+ggplot2
+scales
+boot
+dampack
+darthtools
+formatR
