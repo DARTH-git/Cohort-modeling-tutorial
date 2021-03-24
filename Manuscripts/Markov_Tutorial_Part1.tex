@@ -157,12 +157,12 @@
 
 \title{An Introductory Tutorial to Cohort State-Transition Models in R}
 \author{Fernando Alarid-Escudero, PhD\footnote{Division of Public Administration, Center for Research and Teaching in Economics (CIDE), Aguascalientes, AGS, Mexico} \and Eline Krijkamp, MSc\footnote{Department of Epidemiology, Erasmus University Medical Center, Rotterdam, The Netherlands} \and Eva A. Enns, PhD\footnote{Division of Health Policy and Management, University of Minnesota School of Public Health, Minneapolis, MN, USA} \and Alan Yang, MSc\footnote{The Hospital for Sick Children, Toronto} \and Myriam G.M. Hunink, PhD\(^\dagger\)\footnote{Center for Health Decision Sciences, Harvard T.H. Chan School of Public Health, Boston, USA} \and Petros Pechlivanoglou, PhD\footnote{The Hospital for Sick Children, Toronto and University of Toronto, Toronto, Ontario, Canada} \and Hawre Jalal, MD, PhD\footnote{University of Pittsburgh, Pittsburgh, PA, USA}}
-\date{2021-03-22}
+\date{2021-03-23}
 
 \begin{document}
 \maketitle
 \begin{abstract}
-Decision models can synthesize evidence from different sources to simulate the long-term consequences of different strategies in the presence of uncertainty. Cohort state-transition models (cSTM) are decision models commonly used in medical decision-making to simulate hypothetical cohorts' transitions across various health states over time. This tutorial shows how to implement cSTMs in R, an open-source mathematical and statistical programming language. As an example, we use a previously published cSTM-based cost-effectiveness analysis. With this example, we illustrate time-independent cSTMs, where transition probabilities are constant over. We demonstrate how to conduct a cost-effectiveness analysis of multiple strategies using the example model, including probabilistic sensitivity analyses. We provide a link to a public repository with all the R code described in this tutorial that can be used to replicate the example or be adapted for various decision modeling applications.
+Decision models can synthesize evidence from different sources to simulate the long-term consequences of different strategies in the presence of uncertainty. Cohort state-transition models (cSTM) are decision models commonly used in medical decision-making to simulate hypothetical cohorts' transitions across various health states over time. cSTMs can be time-independent, where transition probabilities are constant over time or depend on simulation time or time spent in a given state. This tutorial shows how to implement time-independent cSTMs in R, an open-source mathematical and statistical programming language, and is the first part of a two-part tutorial. We demonstrate how to calculate costs and effectiveness outcomes, conduct a cost-effectiveness analysis of multiple strategies and probabilistic sensitivity analyses using a previously published cSTM. We provide a link to a public repository with all the R code described in this tutorial that modelers can use to replicate the example or be adapted for various decision modeling applications.
 \end{abstract}
 
 {
@@ -174,23 +174,23 @@ Decision models can synthesize evidence from different sources to simulate the l
 
 Healthcare policymakers are often tasked to allocate healthcare resources under constrained budgets and uncertain contexts. Their final choice can be informed by health economic evaluations, which often rely on decision models to synthesize evidence from different sources and project long-term outcomes of different alternatives. A commonly used decision model is the discrete-time cohort state-transition model (cSTM), often referred to as a Markov model.\textsuperscript{\protect\hyperlink{ref-Kuntz2017}{1}}
 
-In a recent review, we illustrated the increased utilization of R's statistical programming framework in health decision sciences. We provided a collection of resources for its application in medical decision making.\textsuperscript{\protect\hyperlink{ref-Jalal2017b}{2}} Many packages have been developed specifically to estimate and construct cSTMs in R. However, these packages are necessarily inflexible and require the user to follow a specific cSTM structure. If the desired cSTM does not fit within this structure, using these packages can be challenging. For example, a realistic cSTM that accounts for simulation time-dependency (e.g., age dependency) and time dependency on state residence is challenging in the existing packages. Using an R package does not guide how to conceptualize and implement realistic cSTMs in a programming language, which is a current literature gap. The purpose of this tutorial is therefore twofold: (1) to conceptualize cSTMs in a programming language, and (2) to guide how to implement these cSTMs in base R. We focus on using R \emph{base} packages to avoid the limitation of constructing cSTMs in a pre-specified structure defined by a package and to ensure modelers understand the concept and structure of cSTMs rather than implementing them as a ``black box'\,'.
+In a recent review, we illustrated the increased utilization of R's statistical programming framework in health decision sciences. We provided a collection of resources for its application in medical decision making.\textsuperscript{\protect\hyperlink{ref-Jalal2017b}{2}} Many packages have been developed specifically to estimate and construct cSTMs in R. However, these packages are necessarily inflexible and require the user to follow a specific cSTM structure. If the desired cSTM does not fit within this structure, using these packages can be challenging. For example, a realistic cSTM that accounts for simulation time-dependency (e.g., age dependency) and time dependency on state residence is challenging in the existing packages. Using an R package does not guide how to conceptualize and implement realistic cSTMs in a programming language, which is a current literature gap. This introductory tutorial is part of a two-part series that aim to (1) conceptualize time-independent cSTMs in a programming language and (2) guide how to implement these cSTMs in \emph{base} R. We focus on using R \emph{base} packages to avoid the limitation of constructing cSTMs in a pre-specified structure defined by a package and to ensure modelers understand the concept and structure of cSTMs rather than implementing them as a ``black box''.
 
-A cSTM is a type of state transition model where a hypothetical cohort transitions between different health states over time. In contrast, an individual-based state transition model (iSTM) is another variety of STM, where individuals are the modeling unit, and each of them can transition between health states over time.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} We have previously published a tutorial on the implementation of iSTM in R.\textsuperscript{\protect\hyperlink{ref-Krijkamp2018}{4}} This tutorial focuses on cSTM. We first describe each of the components of a cSTM. Then, we illustrate the implementation of these components with an example. Our general conceptualization should apply to other programming languages (e.g., MATLAB, Python, C++). The full R code used in this tutorial is provided in the supplementary materials so that readers can replicate and modify the example to fit their needs. The reader can find the most up-to-date model code and code to create the graphs of this tutorial in the accompanying GitHub repository (\url{https://github.com/DARTH-git/Cohort-modeling-tutorial}). We assume that the reader is familiar with the basics of decision modeling and coding in programming languages. Thus, a prior introduction to R and linear algebra for decision modelers is recommended.
+A cSTM is a state transition model with a hypothetical cohort transitioning between different health states over time. In contrast, an individual-based state transition model (iSTM) is another variety of STM, where individuals are the modeling unit, Each of them can transition between health states over time.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} We have previously published a tutorial on the implementation of iSTM in R.\textsuperscript{\protect\hyperlink{ref-Krijkamp2018}{4}} This introductory tutorial covers time-independent cSTMs and how to use them to conduct a full cost-effectiveness analysis comparing multiple interventions and implementing probabilistic sensitivity analyses. The accompanying advanced tutorial covers cSTMs for which transition probabilities depend on simulation time and time spent in a state, calculation of various epidemiological outcomes, and incorporation of transition rewards.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{5}} We first describe each of the components of a time-independent cSTM. Then, we illustrate the implementation of these components with an example. Our general conceptualization should apply to other programming languages (e.g., MATLAB, Python, C++, Julia). The full R code used in this tutorial is provided in the supplementary materials so that readers can replicate and modify the example to fit their needs. The reader can find the most up-to-date model code and code to create the graphs of this tutorial in the accompanying GitHub repository (\url{https://github.com/DARTH-git/Cohort-modeling-tutorial}). We assume that the reader is familiar with the basics of decision modeling and coding in programming languages. Thus, a prior introduction to R and linear algebra for decision modelers is recommended.
 
 \hypertarget{cohort-state-transition-models-cstms}{%
 \section{Cohort state-transition models (cSTMs)}\label{cohort-state-transition-models-cstms}}
 
-A cSTM is most appropriate when the decision problem can be described with a reasonable number of health states. cSTMs are often used because of their transparency, efficiency, ease of debugging and ability to conduct specific value-of-information analyses.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} cSTMs have been used to evaluate screening and surveillance programs,\textsuperscript{\protect\hyperlink{ref-Suijkerbuijk2018}{5},\protect\hyperlink{ref-Sathianathen2018a}{6}} diagnostic procedures,\textsuperscript{\protect\hyperlink{ref-Lu2018b}{7}} disease management programs,\textsuperscript{\protect\hyperlink{ref-Djatche2018}{8}} and interventions.\textsuperscript{\protect\hyperlink{ref-Pershing2014}{9},\protect\hyperlink{ref-Smith-Spangler2010}{10}}
+A cSTM is most appropriate when the decision problem can be described with a reasonable number of health states. cSTMs are often used because of their transparency, efficiency, ease of debugging, and ability to conduct specific value-of-information analyses.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} cSTMs have been used to evaluate screening and surveillance programs,\textsuperscript{\protect\hyperlink{ref-Suijkerbuijk2018}{6},\protect\hyperlink{ref-Sathianathen2018a}{7}} diagnostic procedures,\textsuperscript{\protect\hyperlink{ref-Lu2018b}{8}} disease management programs,\textsuperscript{\protect\hyperlink{ref-Djatche2018}{9}}, and interventions.\textsuperscript{\protect\hyperlink{ref-Pershing2014}{10},\protect\hyperlink{ref-Smith-Spangler2010}{11}}
 
-A cSTM consists of a set of \(n_S\) mutually exclusive and collectively exhaustive health states. The cohort is assumed to be homogeneous within each health state. All persons residing in a particular health state are assumed to remain in the state for a cycle, have the same characteristics, and are indistinguishable from one another with respect to the cost and utility of being in the state. The cohort transitions between health states with defined probabilities called ``transition probabilities''. A transition probability represents the chance that individuals in the cohort residing in a state in a given cycle transition to another state or remain in the same state for the next cycle. Transition probabilities only depend on the current health state in a given cycle. They do not depend on the history prior to that cycle, which is often referred to as the ``Markovian assumption''.\textsuperscript{\protect\hyperlink{ref-Kuntz2001}{11}--\protect\hyperlink{ref-Beck1983}{13}} This means that in a Markovian cSTM, transition probabilities do not depend on the history of past transitions or time spent in a given state.
+A cSTM consists of a set of \(n_S\) mutually exclusive and collectively exhaustive health states. The cohort is assumed to be homogeneous within each health state. All persons residing in a particular health state are assumed to remain in the state for a cycle, have the same characteristics, and are indistinguishable from one another with respect to the cost and utility of being in the state. The cohort transitions between health states with defined probabilities, which are called ``transition probabilities.'' A transition probability represents the chance that individuals in the cohort residing in a state in a given cycle transition to another state or remain in the same state for the next cycle. Transition probabilities only depend on the current health state in a given cycle. They do not depend on the history before that cycle, often referred to as the ``Markovian assumption.''\textsuperscript{\protect\hyperlink{ref-Kuntz2001}{12}--\protect\hyperlink{ref-Beck1983}{14}} This means that in a Markovian cSTM, transition probabilities do not depend on the history of past transitions or time spent in a given state.
 
-cSTMs are classified as either time-independent (time-homogeneous) or time-dependent (time-inhomogeneous). Time-independent cSTMs have constant transition probabilities (i.e., the probability of any state transition is independent of time). In contrast, time-dependent cSTMs have transition probabilities or rewards that vary over time. Time-independent models are simpler to implement than time-dependent ones, but most problems in healthcare are best modeled with time-dependent cSTMs. For example, time-dependent cSTMs can capture the increasing age-specific background mortality as the cohort ages (age dependency) and dependency on the amount of time spent in a given state (state residence). In this tutorial, we cover time-dependent cSTMs. In an advanced tutorial, we describe how construct time-dependent cSTM.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{14}}
+cSTMs are classified as either time-independent (time-homogeneous) or time-dependent (time-inhomogeneous). Time-independent cSTMs have constant transition probabilities (i.e., the probability of any state transition is independent of time). In contrast, time-dependent cSTMs have transition probabilities or rewards that vary over time. Time-independent models are simpler to implement than time-dependent ones, but most problems in healthcare are best modeled with time-dependent cSTMs. For example, time-dependent cSTMs can capture the increasing age-specific background mortality as the cohort ages (age dependency) and dependency on the amount of time spent in a given state (state residence). In this tutorial, we cover time-dependent cSTMs. In an advanced tutorial, we describe how to construct time-dependent cSTM.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{5}}
 
 \hypertarget{rates-versus-probabilities}{%
 \subsection{Rates versus probabilities}\label{rates-versus-probabilities}}
 
-Probabilities and rates are commonly used input parameters in decision-analytic models. While they are often numerically similar in practice, there is a subtle but important conceptual difference between them. A rate represents the \textit{instantaneous} force of an event occurrence per unit time, while a probability represents the cumulative risk of an event over a defined time period.
+Probabilities and rates are commonly used input parameters in decision-analytic models. While they are often numerically similar in practice, there is a subtle but important conceptual difference. A rate represents the \textit{instantaneous} force of an event occurrence per unit time, while a probability represents the cumulative risk of an event over a defined time period.
 
 To discuss these concepts further, let's assume that after 10,000 person-years of observation of healthy individuals (e.g., 10,000 observed for an average of 1 year, 5,000 individuals observed for an average of 2 years, etc.), we observe 500 events of getting sick. The annual event rate of becoming sick, \(\mu_{yearly}\), is then equal to \(\mu_{yearly}=500 / 10,000=0.05\).
 
@@ -213,12 +213,12 @@ The monthly probability can then be calculated from the monthly rate using equat
     p_{monthly} = 1-\exp{\left(-\mu_{monthly}\right)}.
 \end{equation}
 
-Sometimes, a transition probability might be available from published literature in one time frame (e.g.~annual), whereas the model cycle length is different (e.g.~monthly). In this case, one can first convert the transition probability to a rate using the following formula:
+Sometimes, a transition probability might be available from published literature in one time frame (e.g., annual), whereas the model cycle length is different (e.g., monthly). In this case, one can first convert the transition probability to a rate using the following formula:
 \begin{equation}
     \mu_{yearly} = -\ln{\left(1-p_{yearly}\right)}.
     \label{eq:prob-to-rate-ann}
 \end{equation}
-The annual rate can then be divided by the appropriate number to convert to a new time unit (e.g., 12 for monthly, 52 for weekly, etc.) and then converted back to a probability. In cSTMs, a one-cycle transition probability reflects a conditional probability of transitioning during the cycle given that the person is alive at the beginning of the cycle.\textsuperscript{\protect\hyperlink{ref-Miller1994}{15}}
+The annual rate can then be divided by the appropriate number to convert to a new time unit (e.g., 12 for monthly, 52 for weekly, etc.) and then converted back to a probability. In cSTMs, a one-cycle transition probability reflects a conditional probability of transitioning during the cycle, given that the person is alive at the beginning of the cycle.\textsuperscript{\protect\hyperlink{ref-Miller1994}{15}}
 
 \hypertarget{case-study-sick-sicker-model}{%
 \section{Case study: Sick-Sicker model}\label{case-study-sick-sicker-model}}
@@ -785,7 +785,7 @@ Cycle & H & S1 & S2 & D\\
 \hypertarget{economic-and-epidemiological-outcomes}{%
 \section{Economic and Epidemiological outcomes}\label{economic-and-epidemiological-outcomes}}
 
-cSTMs can be used to generate different effectiveness and economic outputs. In a CEA, the outcomes are typically the total expected QALYs and total costs accrued by the cohort over a predefined time horizon. However, epidemiological outcomes are often used to produce other measures of interest or model calibration and validation. Some common epidemiological outcomes include survival, prevalence, incidence, the average number of events, and lifetime risk of events.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} In this tutorial, we describe how to generate the effectiveness and economic outcomes. We describe how to compute epidemiological outcomes in an accompanying tutorial.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{14}}
+cSTMs can be used to generate different effectiveness and economic outputs. In a CEA, the outcomes are typically the total expected QALYs and total costs accrued by the cohort over a predefined time horizon. However, epidemiological outcomes are often used to produce other measures of interest or model calibration and validation. Some common epidemiological outcomes include survival, prevalence, incidence, the average number of events, and lifetime risk of events.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} In this tutorial, we describe how to generate the effectiveness and economic outcomes. We describe how to compute epidemiological outcomes in an accompanying tutorial.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{5}}
 
 \hypertarget{effectiveness-and-economic-outcomes}{%
 \subsection{Effectiveness and economic outcomes}\label{effectiveness-and-economic-outcomes}}
@@ -1089,45 +1089,45 @@ Dr.~Alarid-Escudero was supported by a grant from the National Cancer Institute 
 \CSLLeftMargin{4. }
 \CSLRightInline{Krijkamp EM, Alarid-Escudero F, Enns EA, et al. {Microsimulation Modeling for Health Decision Sciences Using R: A Tutorial}. \emph{Medical Decision Making}; 38: 400--422, \url{http://journals.sagepub.com/doi/10.1177/0272989X18754513} (2018).}
 
-\leavevmode\hypertarget{ref-Suijkerbuijk2018}{}%
+\leavevmode\hypertarget{ref-Alarid-Escudero2021b}{}%
 \CSLLeftMargin{5. }
+\CSLRightInline{Alarid-Escudero F, Krijkamp E, Enns EA, et al. {A Tutorial on Time-Dependent Cohort State-Transition Models in R}. 2021.}
+
+\leavevmode\hypertarget{ref-Suijkerbuijk2018}{}%
+\CSLLeftMargin{6. }
 \CSLRightInline{Suijkerbuijk AWM, Van Hoek AJ, Koopsen J, et al. {Cost-effectiveness of screening for chronic hepatitis B and C among migrant populations in a low endemic country}. \emph{PLoS ONE} 2018; 13: 1--16.}
 
 \leavevmode\hypertarget{ref-Sathianathen2018a}{}%
-\CSLLeftMargin{6. }
+\CSLLeftMargin{7. }
 \CSLRightInline{Sathianathen NJ, Konety BR, Alarid-Escudero F, et al. {Cost-effectiveness Analysis of Active Surveillance Strategies for Men with Low-risk Prostate Cancer}. \emph{European Urology}; 75: 910--917, \url{https://linkinghub.elsevier.com/retrieve/pii/S0302283818308534} (2019).}
 
 \leavevmode\hypertarget{ref-Lu2018b}{}%
-\CSLLeftMargin{7. }
+\CSLLeftMargin{8. }
 \CSLRightInline{Lu S, Yu Y, Fu S, et al. {Cost-effectiveness of ALK testing and first-line crizotinib therapy for non-small-cell lung cancer in China}. \emph{PLoS ONE} 2018; 13: 1--12.}
 
 \leavevmode\hypertarget{ref-Djatche2018}{}%
-\CSLLeftMargin{8. }
+\CSLLeftMargin{9. }
 \CSLRightInline{Djatche LM, Varga S, Lieberthal RD. {Cost-Effectiveness of Aspirin Adherence for Secondary Prevention of Cardiovascular Events}. \emph{PharmacoEconomics - Open}; 2: 371--380, \url{https://doi.org/10.1007/s41669-018-0075-2} (2018).}
 
 \leavevmode\hypertarget{ref-Pershing2014}{}%
-\CSLLeftMargin{9. }
+\CSLLeftMargin{10. }
 \CSLRightInline{Pershing S, Enns EA, Matesic B, et al. {Cost-Effectiveness of Treatment of Diabetic Macular Edema}. \emph{Annals of Internal Medicine} 2014; 160: 18--29.}
 
 \leavevmode\hypertarget{ref-Smith-Spangler2010}{}%
-\CSLLeftMargin{10. }
+\CSLLeftMargin{11. }
 \CSLRightInline{Smith-Spangler CM, Juusola JL, Enns EA, et al. {Population Strategies to Decrease Sodium Intake and the Burden of Cardiovascular Disease: A Cost-Effectiveness Analysis}. \emph{Annals of Internal Medicine}; 152: 481--487, \url{http://annals.org/article.aspx?articleid=745729} (2010).}
 
 \leavevmode\hypertarget{ref-Kuntz2001}{}%
-\CSLLeftMargin{11. }
+\CSLLeftMargin{12. }
 \CSLRightInline{Kuntz KM, Weinstein MC. {Modelling in economic evaluation}. In: Drummond MF, McGuire A (eds) \emph{Economic evaluation in health care: Merging theory with practice}. New York, NY: Oxford University Press, 2001, pp. 141--171.}
 
 \leavevmode\hypertarget{ref-Sonnenberg1993}{}%
-\CSLLeftMargin{12. }
+\CSLLeftMargin{13. }
 \CSLRightInline{Sonnenberg FA, Beck JR. {Markov models in medical decision making: A practical guide}. \emph{Medical Decision Making}; 13: 322--338, \url{http://mdm.sagepub.com/cgi/doi/10.1177/0272989X9301300409} (1993).}
 
 \leavevmode\hypertarget{ref-Beck1983}{}%
-\CSLLeftMargin{13. }
-\CSLRightInline{Beck JR, Pauker SG. {The Markov process in medical prognosis}. \emph{Medical Decision Making}; 3: 419--458, \url{http://mdm.sagepub.com/cgi/doi/10.1177/0272989X8300300403} (1983).}
-
-\leavevmode\hypertarget{ref-Alarid-Escudero2021b}{}%
 \CSLLeftMargin{14. }
-\CSLRightInline{Alarid-Escudero F, Krijkamp E, Enns EA, et al. {A Tutorial on Time-Dependent Cohort State-Transition Models in R}. 2021.}
+\CSLRightInline{Beck JR, Pauker SG. {The Markov process in medical prognosis}. \emph{Medical Decision Making}; 3: 419--458, \url{http://mdm.sagepub.com/cgi/doi/10.1177/0272989X8300300403} (1983).}
 
 \leavevmode\hypertarget{ref-Miller1994}{}%
 \CSLLeftMargin{15. }
