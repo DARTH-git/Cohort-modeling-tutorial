@@ -2,7 +2,7 @@
 ### Cohort State-Transition Models in R                                    ###
 ##############################################################################
 # This code forms the basis for the state-transition model of the article: 
-# 'cohort State-transition Models in R' 
+# 'An Introductory Tutorial to Cohort State-Transition Models in R' 
 # Authors: 
 # - Fernando Alarid-Escudero <fernando.alarid@cide.edu>
 # - Eline Krijkamp
@@ -86,15 +86,15 @@ v_wcc <- darthtools::gen_wcc(n_cycles = n_cycles,
                              method = "Simpson1/3") # vector of wcc
 
 ## Transition probabilities (per cycle), hazard ratios 
-r_HD        <- 0.002 # constant rate of dying when Healthy (all-cause mortality)
-p_HS1       <- 0.15  # probability to become Sick when Healthy conditional on surviving
-p_S1H       <- 0.5   # probability to become Healthy when Sick conditional on surviving
-p_S1S2      <- 0.105 # probability to become Sicker when Sick conditional on surviving
-hr_S1       <- 3     # hazard ratio of death in Sick vs Healthy 
-hr_S2       <- 10    # hazard ratio of death in Sicker vs Healthy 
+r_HD   <- 0.002 # constant rate of dying when Healthy (all-cause mortality)
+p_HS1  <- 0.15  # probability to become Sick when Healthy conditional on surviving
+p_S1H  <- 0.5   # probability to become Healthy when Sick conditional on surviving
+p_S1S2 <- 0.105 # probability to become Sicker when Sick conditional on surviving
+hr_S1  <- 3     # hazard ratio of death in Sick vs Healthy 
+hr_S2  <- 10    # hazard ratio of death in Sicker vs Healthy 
 
 # Effectiveness of treatment B 
-hr_S1S2_trtB <- 0.6  # hazard ratio of becoming Sicker when Sick under B under treatment B
+hr_S1S2_trtB <- 0.6  # hazard ratio of becoming Sicker when Sick under treatment B
 
 ## State rewards
 # Costs
@@ -134,7 +134,7 @@ r_S1S2_trtB <- r_S1S2 * hr_S1S2_trtB
 p_S1S2_trtB <- rate_to_prob(r = r_S1S2_trtB) # probability to become Sicker when Sick 
                                              # under treatment B conditional on surviving
 
-###################### Construct state-transition models ##################### 
+####################### Construct state-transition models ######################
 ## Initial state vector
 # All starting healthy
 v_s_init <- c(H = 1, S1 = 0, S2 = 0, D = 0) # initial state vector
@@ -142,7 +142,7 @@ v_s_init
 
 ## Initialize cohort trace for cSTM for strategies SoC and A
 m_M <- matrix(0, 
-              nrow = (n_cycles + 1), ncol = n_states, 
+              nrow = (n_cycles + 1), ncol = n_states,
               dimnames = list(0:n_cycles, v_names_states))
 # Store the initial state vector in the first row of the cohort trace
 m_M[1, ] <- v_s_init
@@ -153,10 +153,11 @@ m_M_strB <- m_M # structure and initial states remain the same.
 # all transitions to a non-death state are assumed to be conditional on survival 
 m_P <- matrix(0, 
               nrow = n_states, ncol = n_states, 
-              dimnames = list(v_names_states, v_names_states)) # define row and column names
+              dimnames = list(v_names_states, 
+                              v_names_states)) # define row and column names
 ## Fill in matrix
 # From H
-m_P["H", "H"]   <- (1 - p_HD) * (1 - p_HS1)    
+m_P["H", "H"]   <- (1 - p_HD) * (1 - p_HS1)
 m_P["H", "S1"]  <- (1 - p_HD) * p_HS1 
 m_P["H", "D"]   <- p_HD
 # From S1
@@ -301,6 +302,9 @@ plot(df_cea, label = "all") +
   expand_limits(x = max(table_cea$QALYs) + 0.5) 
 
 ###################### Probabilistic Sensitivity Analysis (PSA) ##################### 
+### Load model, CEA and PSA functions
+source("R/Functions STM_01.R")
+
 # List of input parameters
 l_params_all <- as.list(data.frame(
   # Transition probabilities (per cycle), hazard ratios
@@ -331,8 +335,6 @@ l_params_all <- as.list(data.frame(
 # store the parameter names into a vector
 v_names_params <- names(l_params_all)
 
-# Load model functions
-source("R/Functions STM_01.R")
 # Test function to compute CE outcomes
 calculate_ce_out(l_params_all)
 
@@ -388,7 +390,7 @@ l_psa <- make_psa_obj(cost          = df_c,
 
 # Create PSA graphs
 # Vector with willingness-to-pay (WTP) thresholds.
-v_wtp <- seq(0, 300000, by = 10000)
+v_wtp <- seq(0, 250000, by = 5000)
 
 # Cost-Effectiveness Scatter plot
 plot(l_psa)
@@ -423,5 +425,3 @@ plot(elc_obj, log_y = FALSE)
 evpi <- calc_evpi(wtp = v_wtp, psa = l_psa)
 # EVPI plot
 plot(evpi, effect_units = "QALY")
-
-

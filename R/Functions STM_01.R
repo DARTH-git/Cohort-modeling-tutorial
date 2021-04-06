@@ -8,7 +8,7 @@
 #' @param l_params_all List with all parameters of decision model
 #' @param verbose Logical variable to indicate print out of messages
 #' @return The transition probability array and the cohort trace matrix.
-#' 
+#' @export
 decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
     ### Process model inputs
@@ -113,7 +113,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
 #' @param l_params_all List with all parameters of decision model
 #' @param n_wtp Willingness-to-pay threshold to compute net benefits
 #' @return A data frame with discounted costs, effectiveness and NMB.
-#' 
+#' @export
 calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
   with(as.list(l_params_all), {
     
@@ -213,8 +213,18 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
   )
 }
 
-
-# Function to generate PSA input dataset
+#------------------------------------------------------------------------------#
+####                     Generate a PSA dataset                             ####
+#------------------------------------------------------------------------------#
+#' Generate parameter sets for the probabilistic sensitivity analysis (PSA)
+#'
+#' \code{generate_psa_params} generates a PSA dataset of the parameters of the 
+#' cost-effectiveness analysis.
+#' @param n_sim Number of parameter sets for the PSA dataset
+#' @param seed Seed for the random number generation
+#' @return A data.frame with a PSA dataset of he parameters of the 
+#' cost-effectiveness analysis
+#' @export
 generate_psa_params <- function(n_sim = 1000, seed = 071818){
   set.seed(seed) # set a seed to be able to reproduce the same results
   df_psa <- data.frame(
