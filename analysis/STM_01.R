@@ -331,52 +331,19 @@ l_params_all <- as.list(data.frame(
 # store the parameter names into a vector
 v_names_params <- names(l_params_all)
 
-# Load model function
+# Load model functions
 source("R/Functions STM_01.R")
-# Test function
+# Test function to compute CE outcomes
 calculate_ce_out(l_params_all)
 
-# Function to generate PSA input dataset
-gen_psa <- function(n_sim = 1000, seed = 071818){
-  set.seed(seed) # set a seed to be able to reproduce the same results
-  df_psa <- data.frame(
-    # Transition probabilities (per cycle), hazard ratios
-    r_HD    = rlnorm(n_sim, meanlog = log(0.002), sdlog = 0.01), # constant rate of dying when Healthy (all-cause mortality)
-    p_HS1   = rbeta(n_sim, shape1 = 30, shape2 = 170),        # probability to become Sick when Healthy conditional on surviving
-    p_S1H   = rbeta(n_sim, shape1 = 60, shape2 = 60) ,        # probability to become Healthy when Sick conditional on surviving
-    p_S1S2  = rbeta(n_sim, shape1 = 84, shape2 = 716),        # probability to become Sicker when Sick conditional on surviving
-    hr_S1   = rlnorm(n_sim, meanlog = log(3),  sdlog = 0.01), # hazard ratio of death in Sick vs Healthy 
-    hr_S2   = rlnorm(n_sim, meanlog = log(10), sdlog = 0.02), # hazard ratio of death in Sicker vs Healthy 
-    
-    # Effectiveness of treatment B 
-    hr_S1S2_trtB = rlnorm(n_sim, meanlog = log(0.6), sdlog = 0.02), # hazard ratio of becoming Sicker when Sick under B under treatment B
-    
-    # State rewards
-    # Costs
-    c_H     = rgamma(n_sim, shape = 100, scale = 20),     # cost of remaining one cycle in Healthy 
-    c_S1    = rgamma(n_sim, shape = 177.8, scale = 22.5), # cost of remaining one cycle in Sick 
-    c_S2    = rgamma(n_sim, shape = 225, scale = 66.7),   # cost of remaining one cycle in Sicker 
-    c_D     = 0,                                          # cost of being dead (per cycle)
-    c_trtA  = rgamma(n_sim, shape = 73.5, scale = 163.3), # cost of treatment A
-    c_trtB  = rgamma(n_sim, shape = 86.2, scale = 150.8), # cost of treatment B
-    
-    # Utilities
-    u_H     = rbeta(n_sim, shape1 = 200, shape2 = 3),     # utility when Healthy 
-    u_S1    = rbeta(n_sim, shape1 = 130, shape2 = 45),    # utility when Sick 
-    u_S2    = rbeta(n_sim, shape1 = 230, shape2 = 230),   # utility when Sicker
-    u_D     = 0,                                          # utility when Dead 
-    u_trtA  = rbeta(n_sim, shape1 = 300, shape2 = 15)     # utility when being treated with A
-  )
-  return(df_psa)
-}
-# Try it
-gen_psa(10) 
+# Test function to generate PSA input dataset
+generate_psa_params(10) 
 
 # Number of simulations
 n_sim <- 1000
 
 # Generate PSA input dataset
-df_psa_input <- gen_psa(n_sim = n_sim)
+df_psa_input <- generate_psa_params(n_sim = n_sim)
 # First six observations
 head(df_psa_input)
 
