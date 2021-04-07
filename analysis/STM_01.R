@@ -301,12 +301,12 @@ table_cea
 plot(df_cea, label = "all") +
   expand_limits(x = max(table_cea$QALYs) + 0.5) 
 
-###################### Probabilistic Sensitivity Analysis (PSA) ##################### 
+################### Probabilistic Sensitivity Analysis (PSA) ###################
 ### Load model, CEA and PSA functions
 source("R/Functions STM_01.R")
 
 # List of input parameters
-l_params_all <- as.list(data.frame(
+l_params_all <- list(
   # Transition probabilities (per cycle), hazard ratios
   r_HD        = 0.002, # constant rate of dying when Healthy (all-cause mortality)
   p_HS1       = 0.15,  # probability to become Sick when Healthy conditional on surviving
@@ -330,7 +330,7 @@ l_params_all <- as.list(data.frame(
   u_S2   = 0.5,   # utility when Sicker
   u_D    = 0,     # utility when Dead 
   u_trtA = 0.95   # utility when being treated with A
-))
+)
 
 # store the parameter names into a vector
 v_names_params <- names(l_params_all)
@@ -357,13 +357,13 @@ ggplot(melt(df_psa_input, variable.name = "Parameter"), aes(x = value)) +
   theme_bw(base_size = 16) + 
   theme(axis.text = element_text(size=6)) 
 
-# Initialize dataframes with PSA output 
-# Dataframe of costs
+# Initialize data.frames with PSA output 
+# data.frame of costs
 df_c <- as.data.frame(matrix(0, 
                              nrow = n_sim,
                              ncol = n_str))
 colnames(df_c) <- v_names_str
-# Dataframe of effectiveness
+# data.frame of effectiveness
 df_e <- as.data.frame(matrix(0, 
                              nrow = n_sim,
                              ncol = n_str))
@@ -371,6 +371,7 @@ colnames(df_e) <- v_names_str
 
 ## Conduct probabilistic sensitivity analysis
 # Run Markov model on each parameter set of PSA input dataset
+n_time_init_psa_series <- Sys.time()
 for(i in 1:n_sim){
   l_out_temp <- calculate_ce_out(df_psa_input[i, ])
   df_c[i, ] <- l_out_temp$Cost
@@ -380,6 +381,11 @@ for(i in 1:n_sim){
     cat('\r', paste(i/n_sim * 100, "% done", sep = " "))
   }
 }
+n_time_end_psa_series <- Sys.time()
+n_time_total_psa_series <- n_time_end_psa_series - n_time_init_psa_series
+print(paste0("PSA with ", comma(n_sim), " simulations run in series in ", 
+             round(n_time_total_psa_series, 2), " ", 
+             units(n_time_total_psa_series)))
 
 ## Visualize PSA results and CEA
 # Create PSA object for dampack

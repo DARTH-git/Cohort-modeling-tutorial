@@ -1,0 +1,21 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Time-dependent cSTMs}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Simulation-time dependency}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Time dependency on state residence}{3}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Case study: Time-dependent Sick-Sicker model}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Simulation-time dependency}{8}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Time dependency on state residence}{13}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Epidemiological and economic outputs}{18}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Epidemiological outcomes}{18}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Survival probability}{18}{subsubsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.2}Prevalence}{19}{subsubsection.4.1.2}%
+\contentsline {subsubsection}{\numberline {4.1.3}Life expectancy}{21}{subsubsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.2}Economic outcomes}{22}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}State rewards}{22}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Transition rewards}{23}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Within-cycle correction and discounting future rewards}{27}{subsubsection.4.2.3}%
+\contentsline {section}{\numberline {5}Cost-effectiveness analysis and incremental cost-effectiveness ratios (ICERs)}{28}{section.5}%
+\contentsline {section}{\numberline {6}Probabilistic sensitivity analysis}{30}{section.6}%
+\contentsline {section}{\numberline {7}Discussion}{32}{section.7}%
+\contentsline {section}{\numberline {8}Acknowledgements}{34}{section.8}%
+\contentsline {section}{References}{35}{section*.2}%

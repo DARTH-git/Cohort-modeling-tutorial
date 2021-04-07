@@ -2,7 +2,7 @@
 ### Cohort State-Transition Models in R                                    ###
 ##############################################################################
 # This code forms the basis for the state-transition model of the article: 
-# 'cohort State-transition Models in R' 
+# 'A Tutorial on Time-Dependent Cohort State-Transition Models in R' 
 # Authors: 
 # - Fernando Alarid-Escudero <fernando.alarid@cide.edu>
 # - Eline Krijkamp
@@ -384,11 +384,48 @@ plot(df_cea, label = "all", txtsize = 16) +
      expand_limits(x = max(table_cea$QALYs) + 0.1) +
   theme(legend.position = c(0.8, 0.2))
 
-###################### Probabalistic Sensitivty Analysis #####################
-# Source functions that contain the model and CEA output
+###################### Probabilistic Sensitivity Analysis ######################
+### Load model, CEA and PSA functions
 source('R/Functions STM_02.R')
 
-# Number of PSA samples
+# List of input parameters
+l_params_all <- list(
+  # Transition probabilities (per cycle), hazard ratios
+  v_r_HDage   = v_r_HDage, # constant rate of dying when Healthy (all-cause mortality)
+  p_HS1       = 0.15,  # probability to become Sick when Healthy conditional on surviving
+  p_S1H       = 0.5,   # probability to become Healthy when Sick conditional on surviving
+  p_S1S2      = 0.105, # probability to become Sicker when Sick conditional on surviving
+  hr_S1       = 3,     # hazard ratio of death in Sick vs Healthy 
+  hr_S2       = 10,    # hazard ratio of death in Sicker vs Healthy 
+  # Effectiveness of treatment B 
+  hr_S1S2_trtB = 0.6,  # hazard ratio of becoming Sicker when Sick under B under treatment B
+  ## State rewards
+  # Costs
+  c_H    = 2000,  # cost of remaining one cycle in Healthy 
+  c_S1   = 4000,  # cost of remaining one cycle in Sick 
+  c_S2   = 15000, # cost of remaining one cycle in Sicker 
+  c_D    = 0,     # cost of being dead (per cycle)
+  c_trtA = 12000, # cost of treatment A
+  c_trtB = 13000, # cost of treatment B
+  # Utilities
+  u_H    = 1,     # utility when Healthy 
+  u_S1   = 0.75,  # utility when Sick 
+  u_S2   = 0.5,   # utility when Sicker
+  u_D    = 0,     # utility when Dead 
+  u_trtA = 0.95,  # utility when being treated with A
+  ## Transition rewards
+  du_HS1 = 0.01,  # disutility when transitioning from Healthy to Sick
+  ic_HS1 = 1000,  # increase in cost when transitioning from Healthy to Sick
+  ic_D   = 2000   # increase in cost when dying
+)
+
+# store the parameter names into a vector
+v_names_params <- names(l_params_all)
+
+# Test function to generate PSA input dataset
+generate_psa_params(10) 
+
+# Number of simulations
 n_sim <- 1000
 
 # Generate PSA input dataset
@@ -397,19 +434,20 @@ df_psa_input <- generate_psa_params(n_sim = n_sim)
 head(df_psa_input)
 
 # Histogram of parameters
-ggplot(melt(df_psa_input, variable.name = "Parameter"), 
-       aes(x = value)) +
-       facet_wrap(~Parameter, scales = "free") +
-       geom_histogram(aes(y = ..density..)) +
-       theme_bw(base_size = 16)
+ggplot(melt(df_psa_input, variable.name = "Parameter"), aes(x = value)) +
+  facet_wrap(~Parameter, scales = "free") +
+  geom_histogram(aes(y = ..density..)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 3)) + 
+  theme_bw(base_size = 16) + 
+  theme(axis.text = element_text(size=6)) 
 
-# Initialize matrices with PSA output 
-# Dataframe of costs
+# Initialize data.frames with PSA output 
+# data.frame of costs
 df_c <- as.data.frame(matrix(0, 
                              nrow = n_sim,
                              ncol = n_str))
 colnames(df_c) <- v_names_str
-# Dataframe of effectiveness
+# data.frame of effectiveness
 df_e <- as.data.frame(matrix(0, 
                              nrow = n_sim,
                              ncol = n_str))

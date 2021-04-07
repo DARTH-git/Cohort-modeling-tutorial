@@ -11,7 +11,7 @@
 #' @export
 decision_model <- function(l_params_all, verbose = FALSE) {
   with(as.list(l_params_all), {
-    ### Process model inputs
+    ########################### Process model inputs ###########################
     ## Transition probabilities to the Dead state
     # compute mortality rates
     r_S1D <- r_HD * hr_S1        # Mortality in the Sick state
@@ -30,7 +30,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     p_S1S2_trtB <- rate_to_prob(r = r_S1S2_trtB) # probability to become Sicker when Sick 
     # under treatment B conditional on surviving
     
-    ###################### Construct state-transition models ##################### 
+    ##################### Construct state-transition models ####################
     ## Initial state vector
     # All starting healthy
     v_s_init <- c(H = 1, S1 = 0, S2 = 0, D = 0) # initial state vector
@@ -202,7 +202,7 @@ calculate_ce_out <- function(l_params_all, n_wtp = 100000){ # User defined
     ## Vector with discounted net monetary benefits (NMB)
     v_nmb <- v_tot_qaly * n_wtp - v_tot_cost
     
-    ## Dataframe with discounted costs, effectiveness and NMB
+    ## data.frame with discounted costs, effectiveness and NMB
     df_ce <- data.frame(Strategy = v_names_str,
                         Cost     = v_tot_cost,
                         Effect   = v_tot_qaly,

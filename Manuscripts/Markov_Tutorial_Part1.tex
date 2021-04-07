@@ -562,7 +562,7 @@ The following sections include R code snippets. All the code is stored as a GitH
 \end{Highlighting}
 \end{Shaded}
 
-To compute the background mortality risk, \texttt{p\_HD}, from the background mortality rate for the same cycle length (i.e.,\texttt{cycle\_length=1}), we apply Eq.\eqref{eq:rate-to-prob-ann} to \texttt{r\_HD}. To compute the mortality risks from S1 and S2, we multiply the background mortality rate \texttt{r\_HD} by the hazard ratios \texttt{hr\_S1} and \texttt{hr\_S2}, respectively, and then convert back to probabilities using Eq.\eqref{eq:rate-to-prob-ann}. These calculations are required because hazard ratios only apply to rates and not to probabilities. The code below performs the computation in R. In the supplementary material, we provide R functions that compute transformations between rates and probabilities since these transformations are frequently used.
+To compute the background mortality risk, \texttt{p\_HD}, from the background mortality rate for the same cycle length (i.e.,\texttt{cycle\_length=1}), we apply Equation \eqref{eq:rate-to-prob-ann} to \texttt{r\_HD}. To compute the mortality risks of the cohort in S1 and S2, we multiply the background mortality rate \texttt{r\_HD} by the hazard ratios \texttt{hr\_S1} and \texttt{hr\_S2}, respectively, and then convert back to probabilities using Equation \eqref{eq:rate-to-prob-ann}. These calculations are required because hazard ratios only apply to rates and not to probabilities. The code below performs the computation in R. In the supplementary material, we provide R functions that compute transformations between rates and probabilities since these transformations are frequently used.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -577,19 +577,19 @@ To compute the background mortality risk, \texttt{p\_HD}, from the background mo
 \end{Highlighting}
 \end{Shaded}
 
-To compute the risk of progression from S1 to S2 under treatment B, we first transform \texttt{p\_S1S2} to a rate, \texttt{r\_S1S2}, using Eq.\eqref{eq:prob-to-rate-ann}. Then, we multiply the hazard ratio of treatment B to the rate of progressing from S1 to S2 and transform it back to probabilities by applying Eq.\eqref{eq:rate-to-prob-ann}.
+To compute the risk of progression from S1 to S2 under treatment B, we first transform \texttt{p\_S1S2} to a rate, \texttt{r\_S1S2}, using Equation \eqref{eq:prob-to-rate-ann}. Then, we multiply the hazard ratio of treatment B to the rate of progressing from S1 to S2 and transform it back to probabilities by applying Equation \eqref{eq:rate-to-prob-ann}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \DocumentationTok{\#\# Transition probability of becoming Sicker when Sick for treatment B}
 \CommentTok{\# transform probability to rate}
-\NormalTok{r\_S1S2 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FunctionTok{log}\NormalTok{(}\DecValTok{1}\SpecialCharTok{{-}}\NormalTok{p\_S1S2)}\SpecialCharTok{/}\NormalTok{cycle\_length}
+\NormalTok{r\_S1S2 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FunctionTok{log}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}}\NormalTok{ p\_S1S2)}\SpecialCharTok{/}\NormalTok{cycle\_length}
 \CommentTok{\# apply hazard ratio to rate to obtain transition rate of becoming Sicker when Sick }
 \CommentTok{\# for treatment B}
 \NormalTok{r\_S1S2\_trtB }\OtherTok{\textless{}{-}}\NormalTok{ r\_S1S2 }\SpecialCharTok{*}\NormalTok{ hr\_S1S2\_trtB}
 \CommentTok{\# transform rate to probability}
-\NormalTok{p\_S1S2\_trtB }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{{-}}\FunctionTok{exp}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{r\_S1S2\_trtB}\SpecialCharTok{*}\NormalTok{cycle\_length) }\CommentTok{\# probability to become Sicker when Sick }
-                                                \CommentTok{\# under treatment B conditional on surviving}
+\NormalTok{p\_S1S2\_trtB }\OtherTok{\textless{}{-}} \DecValTok{1} \SpecialCharTok{{-}} \FunctionTok{exp}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{r\_S1S2\_trtB}\SpecialCharTok{*}\NormalTok{cycle\_length) }\CommentTok{\# probability to become Sicker when Sick }
+                                                  \CommentTok{\# under treatment B conditional on surviving}
 \end{Highlighting}
 \end{Shaded}
 
@@ -634,7 +634,7 @@ The cohort trace matrix, \(M\), is a matrix of dimensions \((n_T+1) \times n_S\)
   \end{bmatrix}. 
 \]
 
-Note that the initial cycle (i.e., cycle 0) corresponds to \(t=0\), which is on the first row of \(M\). Thus, \(M\) stores the output of the cSTM, which could be used to compute various epidemiological outcomes, such as prevalence and survival probability over time, and economic outcomes, such as cumulative resource use and costs. Table \ref{tab:cSTM-components-table} describes the elements related to the core components of cSTM and their suggested R code names. For a more detailed description of the variable types, data structure, R name for all cSTM elements, please see the Supplementary Material.
+Note that the initial cycle (i.e., cycle 0) corresponds to \(t=0\), which is on the first row of \(M\). Thus, \(M\) stores the output of the cSTM, which could be used to compute various economic outcomes, such as cumulative resource use and costs. Table \ref{tab:cSTM-components-table} describes the elements related to the core components of cSTM and their suggested R code names. For a more detailed description of the variable types, data structure, R name for all cSTM elements, please see the Supplementary Material.
 
 \begin{longtable}[]{@{}llcl@{}}
 \caption{\label{tab:cSTM-components-table} Components of a cSTM with their R name.}\tabularnewline
@@ -655,7 +655,7 @@ Element & Description & R name &\tabularnewline
 \bottomrule
 \end{longtable}
 
-For the Sick-Sicker model, the entire cohort starts in the H state. Therefore, we create the \(n_S \times 1\) initial state vector \texttt{v\_s\_init} with all of the cohort assigned to the H state:
+For the Sick-Sicker model, the entire cohort starts in the H state. Therefore, we create the \(1 \times n_S\) initial state vector \texttt{v\_s\_init} with all of the cohort assigned to the H state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -669,7 +669,7 @@ For the Sick-Sicker model, the entire cohort starts in the H state. Therefore, w
 ##  1  0  0  0
 \end{verbatim}
 
-The variable \texttt{v\_s\_init} is used to initialize \(M\) represented by \texttt{m\_M} for the cohorts under SoC strategy and strategy A because the transition probabilities are the same under both strategies, and by \texttt{m\_M\_trtB} for the cohorts under strategies B and AB because both transition probabilities under both strategies are affected by treatment B.
+The variable \texttt{v\_s\_init} is used to initialize \(M\) represented by \texttt{m\_M} for the cohort under under strategies SoC or A, and by \texttt{m\_M\_trtB} for the cohort under strategies B or AB.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -686,7 +686,7 @@ The variable \texttt{v\_s\_init} is used to initialize \(M\) represented by \tex
 
 Note that the initial state vector, \texttt{v\_s\_init}, can be modified to account for the cohort's distribution across the states at the start of the simulation and might vary by strategy.
 
-Since the Sick-Sicker model consists of 4 states, we create a 4 \(\times\) 4 transition probability matrix, \texttt{m\_P}. We initialize the matrix with default values of zero for all transition probabilities and then populate it with the corresponding transition probabilities. To access an element of \texttt{m\_P}, we specify first the row number (or name) and then the column number (or name) separated by a comma. For example, the transition probability of going from state Healthy (H) to state Sick (S1) could be accessed by \texttt{m\_P{[}1,\ 2{]}} or by using the corresponding row or column state-names as characters \texttt{m\_P{[}"H",\ "S1"{]}}. We assume that all transitions to non-death states are conditional on not dying in a cycle. Thus, we first condition on surviving by multiplying the transition probabilities times \texttt{1-p\_HD}, the probability of not dying in a cycle. For example, to obtain the probability of transitioning from H to S1, we multiply the transition probability from H to S1 conditional of being alive, \texttt{p\_HS1} by \texttt{1-p\_HD}.
+Since the Sick-Sicker model consists of 4 states, we create a 4 \(\times\) 4 transition probability matrix, \texttt{m\_P}. We initialize the matrix with default values of zero for all transition probabilities and then populate it with the corresponding transition probabilities. To access an element of \texttt{m\_P}, we specify first the row number (or name) and then the column number (or name) separated by a comma. For example, the transition probability of going from state Healthy (H) to state Sick (S1) could be accessed by \texttt{m\_P{[}1,\ 2{]}} or by using the corresponding row or column state-names as characters \texttt{m\_P{[}"H",\ "S1"{]}}. We assume that all transitions to non-death states are conditional on not dying in a cycle. Thus, we first condition on surviving by multiplying the transition probabilities times \texttt{1-p\_HD}, the probability of not dying in a cycle. For example, to obtain the probability of transitioning from H to S1, we multiply the transition probability from H to S1 conditional on being alive, \texttt{p\_HS1} by \texttt{1-p\_HD}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -724,7 +724,7 @@ Because treatment B alters progression from S1 to S2, we created a different tra
 \end{Highlighting}
 \end{Shaded}
 
-Once both transition matrices are created, we verify they are valid by checking that all of their rows sum to one and that each of the transition probabilities of both matrices is between 0 and 1 using the functions \texttt{check\_sum\_of\_transition\_array} and \texttt{check\_transition\_probability}, respectively, which have been used previously elsewhere\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2019e}{17}} and are provided in the \texttt{darthtools} package (\url{https://github.com/DARTH-git/darthtools}). If a transition matrix is not valid, they will produce an error message.
+Once both transition matrices are created, we verify they are valid by checking that all of their rows sum to one and that each of the transition probabilities of both matrices is between 0 and 1 using the functions \texttt{check\_sum\_of\_transition\_array} and \texttt{check\_transition\_probability}, respectively, which have been used previously elsewhere\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2019e}{17}} and are provided in the \texttt{darthtools} package (\url{https://github.com/DARTH-git/darthtools}). If a transition matrix is not valid, the functions will produce an error message to warn the user.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -752,11 +752,11 @@ Next, we obtain the cohort distribution across the 4 states over 75 cycles using
 \end{Highlighting}
 \end{Shaded}
 
-Table \ref{tab:Trace} shows the cohort trace matrix \(M\) of the Sick-Sicker model under the SoC strategy for the first six cycles. The whole cohort starts in the H state and transitions to the rest of the states over time. Given that the D state is absorbing, the proportion in this state increases over time. A graphical representation of the cohort trace for all the cycles is shown in Figure \ref{fig:Sick-Sicker-Trace-TimeHom}.
+Table \ref{tab:Trace} shows the cohort trace matrix \(M\) of the Sick-Sicker model under strategies SoC and A for the first six cycles. The whole cohort starts in the H state and transitions to the rest of the states over time. Given that the D state is absorbing, the proportion in this state increases over time. A graphical representation of the cohort trace for all the cycles is shown in Figure \ref{fig:Sick-Sicker-Trace-TimeHom}.
 
 \begin{table}[!h]
 
-\caption{\label{tab:Trace}The distribution of the cohort under SoC for the first six cycles of the time-independent Sick-Sicker model. The first row, labeled with cycle 0, contains the distribution of the cohort at time zero.}
+\caption{\label{tab:Trace}The distribution of the cohort under strategies SoC and A for the first six cycles of the time-independent Sick-Sicker model. The first row, labeled with cycle 0, contains the distribution of the cohort at time zero.}
 \centering
 \begin{tabular}[t]{ccccc}
 \toprule
@@ -779,13 +779,13 @@ Cycle & H & S1 & S2 & D\\
 
 }
 
-\caption{Cohort trace of the time-independent cSTM}\label{fig:Sick-Sicker-Trace-TimeHom}
+\caption{Cohort trace of the time-independent cSTM under strategies SoC and A.}\label{fig:Sick-Sicker-Trace-TimeHom}
 \end{figure}
 
-\hypertarget{economic-and-epidemiological-outcomes}{%
-\section{Economic and Epidemiological outcomes}\label{economic-and-epidemiological-outcomes}}
+\hypertarget{economic-outcomes}{%
+\section{Economic outcomes}\label{economic-outcomes}}
 
-cSTMs can be used to generate different effectiveness and economic outputs. In a CEA, the outcomes are typically the total expected QALYs and total costs accrued by the cohort over a predefined time horizon. However, epidemiological outcomes are often used to produce other measures of interest or model calibration and validation. Some common epidemiological outcomes include survival, prevalence, incidence, the average number of events, and lifetime risk of events.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} In this tutorial, we describe how to generate the effectiveness and economic outcomes. We describe how to compute epidemiological outcomes in an accompanying tutorial.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{5}}
+cSTMs can be used to generate different effectiveness and economic outputs. In a CEA, the outcomes are typically the total expected QALYs and total costs accrued by the cohort over a predefined time horizon. However, epidemiological outcomes are often used to produce other measures of interest or model calibration and validation. Some common epidemiological outcomes include survival, prevalence, incidence, the average number of events, and lifetime risk of events.\textsuperscript{\protect\hyperlink{ref-Siebert2012c}{3}} In this tutorial, we describe how to generate the effectiveness and economic outcomes. In an accompanying tutorial,\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2021b}{5}} we describe how to compute epidemiological outcomes.
 
 \hypertarget{effectiveness-and-economic-outcomes}{%
 \subsection{Effectiveness and economic outcomes}\label{effectiveness-and-economic-outcomes}}
@@ -798,7 +798,7 @@ A state reward refers to a value assigned to individuals for being in a given st
   \mathbf{y} = M\mathbf{r}.
   \label{eq:exp-rew-cycle}
 \end{equation}
-Note that rewards can also be time- or age-dependent; in such cases, the vector of state rewards will be time-dependent, \(\mathbf{r}_t\). For the Sick-Sicker model, we create a vector of utilities and costs for each of the four strategies considered. The vectors of utilities and costs in R, \texttt{v\_u\_SoC} and \texttt{v\_c\_SoC}, respectively, contain the utilities and costs corresponding with being in each of the four health states under SoC, which are shown in Table \ref{tab:param-table}.
+For the Sick-Sicker model, we create a vector of utilities and costs for each of the four strategies considered. The vectors of utilities and costs in R, \texttt{v\_u\_SoC} and \texttt{v\_c\_SoC}, respectively, contain the utilities and costs corresponding with being in each of the four health states under SoC, which are shown in Table \ref{tab:param-table}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -844,7 +844,7 @@ Both treatments A and B incur a cost. To create the vector of state costs for st
 \end{Highlighting}
 \end{Shaded}
 
-To compute the expected QALYs and costs for the Sick-Sicker model under SoC and strategy A, we apply Eq. \eqref{eq:exp-rew-cycle} by multiplying the cohort trace matrix, \texttt{m\_M}, times the corresponding strategy-specific state vectors of rewards. Similarly, To compute the expected rewards for strategies B and AB, we multiply the cohort trace matrix accounting for the effectiveness of treatment B, \texttt{m\_M\_trtB}, times their corresponding state vectors of rewards.
+To compute the expected QALYs and costs for the Sick-Sicker model under SoC and strategy A, we apply Equation \eqref{eq:exp-rew-cycle} by multiplying the cohort trace matrix, \texttt{m\_M}, times the corresponding strategy-specific state vectors of rewards. Similarly, To compute the expected rewards for strategies B and AB, we multiply the cohort trace matrix accounting for the effectiveness of treatment B, \texttt{m\_M\_trtB}, times their corresponding state vectors of rewards.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -870,7 +870,7 @@ To compute the expected QALYs and costs for the Sick-Sicker model under SoC and 
 \hypertarget{within-cycle-correction}{%
 \subsubsection{Within-cycle correction}\label{within-cycle-correction}}
 
-Discretizing a continuous-time cSTM with a discrete-time cSTM might introduce biases in the time spent on each state.\textsuperscript{\protect\hyperlink{ref-VanRosmalen2013}{19}} One approach to reducing these biases is to reduce cycle length, which will require simulating the model for a larger number of cycles, which sometimes is not computationally efficient. Another approach to better approximate the expected rewards of cumulative health and cost outcomes from a continuous-time process using a discrete-time model is to use within-cycle corrections (WCC).\textsuperscript{\protect\hyperlink{ref-Hunink2014}{20}} In this tutorial, we use Simpson's 1/3rd rule as a WCC by multiplying the rewards (e.g., costs and effectiveness) by \(1/3\) in the first and last cycles, by \(4/3\) if cycle number is odd, and by \(2/3\) if the cycle number is even.\textsuperscript{\protect\hyperlink{ref-Elbasha2016a}{22}} We implement the WCC by generating a column vector \(\mathbf{wcc}\) of size \(n_T+1\) with values corresponding to the first, \(t=0\), and last cycle, \(t= n_T + 1\), equal to \(1/3\), and the entries corresponding to the odd and even cycles with \(4/3\) and \(2/3\), respectively.
+Discretizing a continuous-time cSTM with a discrete-time cSTM might introduce biases in the time spent on each state.\textsuperscript{\protect\hyperlink{ref-VanRosmalen2013}{19}} One approach to reducing these biases is to reduce cycle length, which will require simulating the model for a larger number of cycles, which sometimes is not computationally efficient. Another approach to better approximate the expected rewards of cumulative health and cost outcomes from a continuous-time process using a discrete-time model is to use within-cycle corrections (WCC).\textsuperscript{\protect\hyperlink{ref-Hunink2014}{20}} In this tutorial, we use Simpson's 1/3rd rule as a WCC by multiplying the rewards (e.g., costs and effectiveness) by \(1/3\) in the first and last cycles, by \(4/3\) if cycle number is odd, and by \(2/3\) if the cycle number is even.\textsuperscript{\protect\hyperlink{ref-Elbasha2016a}{22}} We implement the WCC by generating a column vector \(\mathbf{wcc}\) of size \(n_T+1\) with values corresponding to the first, \(t=0\), and last cycle, \(t= n_T + 1\), equal to \(1/3\), and the entries corresponding to the even and odd cycles with \(2/3\) and \(4/3\), respectively.
 
 \[
   \mathbf{wcc} = \left[\frac{1}{3}, \frac{2}{3}, \frac{4}{3}, \cdots, \frac{1}{3}\right]
@@ -881,9 +881,9 @@ The within-cycle correction vector is the same for both costs and QALYs; thus, o
 \begin{Shaded}
 \begin{Highlighting}[]
 \DocumentationTok{\#\# Vector with cycles}
-\NormalTok{v\_cycles }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\DecValTok{1}\NormalTok{, n\_cycles}\SpecialCharTok{+}\DecValTok{1}\NormalTok{)}
+\NormalTok{v\_cycles }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\DecValTok{1}\NormalTok{, n\_cycles }\SpecialCharTok{+} \DecValTok{1}\NormalTok{)}
 \DocumentationTok{\#\# Generate 2/3 and 4/3 multipliers for even and odd entries, respectively}
-\NormalTok{v\_wcc }\OtherTok{\textless{}{-}}\NormalTok{ ((v\_cycles }\SpecialCharTok{\%\%} \DecValTok{2}\NormalTok{)}\SpecialCharTok{==}\DecValTok{0}\NormalTok{)}\SpecialCharTok{*}\NormalTok{(}\DecValTok{2}\SpecialCharTok{/}\DecValTok{3}\NormalTok{) }\SpecialCharTok{+}\NormalTok{ ((v\_cycles }\SpecialCharTok{\%\%} \DecValTok{2}\NormalTok{)}\SpecialCharTok{!=}\DecValTok{0}\NormalTok{)}\SpecialCharTok{*}\NormalTok{(}\DecValTok{4}\SpecialCharTok{/}\DecValTok{3}\NormalTok{)}
+\NormalTok{v\_wcc }\OtherTok{\textless{}{-}}\NormalTok{ ((v\_cycles }\SpecialCharTok{\%\%} \DecValTok{2}\NormalTok{) }\SpecialCharTok{==} \DecValTok{0}\NormalTok{)}\SpecialCharTok{*}\NormalTok{(}\DecValTok{2}\SpecialCharTok{/}\DecValTok{3}\NormalTok{) }\SpecialCharTok{+}\NormalTok{ ((v\_cycles }\SpecialCharTok{\%\%} \DecValTok{2}\NormalTok{) }\SpecialCharTok{!=} \DecValTok{0}\NormalTok{)}\SpecialCharTok{*}\NormalTok{(}\DecValTok{4}\SpecialCharTok{/}\DecValTok{3}\NormalTok{)}
 \DocumentationTok{\#\# Substitute 1/3 in first and last entries}
 \NormalTok{v\_wcc[}\DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}}\NormalTok{ v\_wcc[n\_cycles }\SpecialCharTok{+} \DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{/}\DecValTok{3}
 \end{Highlighting}
@@ -918,7 +918,7 @@ To account for both discounting and within-cycle correction, we incorporate \(\m
  \label{eq:tot-exp-disc-rewd-wcc}
 \end{equation}
 
-To compute the total expected discounted QALYs and costs under all four strategies accounting for within-cycle correction, we apply equation \eqref{eq:tot-exp-disc-rewd-wcc} to the vectors with the rewards, discounts, and within-cycle correction.
+To compute the total expected discounted QALYs and costs under all four strategies accounting for within-cycle correction, we apply Equation \eqref{eq:tot-exp-disc-rewd-wcc} to the vectors with the rewards, discounts, and within-cycle correction.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -957,7 +957,7 @@ Strategy AB & \$361,341 & 23.354\\
 \end{tabular}
 \end{table}
 
-The total expected QALYs and costs for the Sick-Sicker model under the four strategies accounting for within-cycle correction are shown in Table \ref{tab:Expected-outcomes-table}.
+The total expected discounted QALYs and costs for the Sick-Sicker model under the four strategies accounting for within-cycle correction are shown in Table \ref{tab:Expected-outcomes-table}.
 
 \hypertarget{cost-effectiveness-analysis-and-incremental-cost-effectiveness-ratios-icers}{%
 \section{Cost-effectiveness analysis and incremental cost-effectiveness ratios (ICERs)}\label{cost-effectiveness-analysis-and-incremental-cost-effectiveness-ratios-icers}}
@@ -978,7 +978,7 @@ We combine the total expected discounted costs and QALYs for all four strategies
 \end{Highlighting}
 \end{Shaded}
 
-The CEA results of the Sick-Sicker model are presented in Table \ref{tab:table-cea}. SoC is the least costly and effective strategy, followed by Strategy B producing an expected benefit of 1.492 QALYs per individual for an additional expected cost of \$99,913 with an ICER of \$66,960/QALY followed by Strategy AB with an ICER \$129,354/QALY. Strategy A is a dominated strategy.
+The CEA results of the Sick-Sicker model are presented in Table \ref{tab:table-cea}. SoC is the least costly and effective strategy, followed by Strategy B producing an expected incremental benefit of 1.492 QALYs per individual for an additional expected cost of \$99,913 with an ICER of \$66,960/QALY followed by Strategy AB with an ICER \$129,354/QALY. Strategy A is a dominated strategy.
 
 \begin{table}[!h]
 
@@ -996,7 +996,7 @@ Strategy A & 275,937 & 21.717 & NA & NA & NA & D\\
 \end{tabular}
 \end{table}
 
-Figure \ref{fig:Sick-Sicker-CEA} shows the cost-effectiveness efficient frontier of all four strategies for the Sick-Sicker model.
+Figure \ref{fig:Sick-Sicker-CEA} shows the cost-effectiveness efficient frontier of all four strategies for the time-independent Sick-Sicker model.
 
 \begin{figure}[H]
 
@@ -1004,7 +1004,7 @@ Figure \ref{fig:Sick-Sicker-CEA} shows the cost-effectiveness efficient frontier
 
 }
 
-\caption{Cost-effectiveness efficient frontier of all four strategies for the Sick-Sicker model.}\label{fig:Sick-Sicker-CEA}
+\caption{Cost-effectiveness efficient frontier of all four strategies for the time-independent Sick-Sicker model.}\label{fig:Sick-Sicker-CEA}
 \end{figure}
 
 \hypertarget{probabilistic-sensitivity-analysis}{%
@@ -1016,11 +1016,11 @@ To quantify the effect of model parameter uncertainty on cost-effectiveness outc
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  A function called \texttt{generate\_psa\_params(n\_sim,\ seed)} that generates a sample of size \texttt{n\_sim} for the model parameters from their distributions defined in Table \ref{tab:param-table}. The function also takes a seed number as input, which ensures reproducibility of the PSA results. By calling this function, we generate the sample of parameter sets for the PSA: \texttt{df\_psa\_input\ \textless{}-\ generate\_psa\_params(n\_sim\ =\ n\_sim)}.
+  A function called \texttt{generate\_psa\_params(n\_sim,\ seed)} with arguments \texttt{n\_sim} and \texttt{seed}. The function generates a sample of size \texttt{n\_sim} for the model parameters from their distributions defined in Table \ref{tab:param-table}. The function also takes a seed number as input, \texttt{seed}, which ensures reproducibility of the PSA results. By calling this function, we generate the sample of parameter sets for the PSA, \texttt{df\_psa\_input}, via: \texttt{df\_psa\_input\ \textless{}-\ generate\_psa\_params(n\_sim\ =\ n\_sim)}.
 \item
-  A function called \texttt{decision\_model} that wraps the R code of the cSTM described in section \protect\hyperlink{conceptualizing-and-implementing-time-independent-cSTM-dynamics}{Conceptualizing and implementing time-independent cSTM dynamics} and requires as input a list of model parameter values.
+  A function called \texttt{decision\_model(l\_params\_all)} that wraps the R code of the time-independent cSTM described in section \protect\hyperlink{conceptualizing-and-implementing-time-independent-cSTM-dynamics}{Conceptualizing and implementing time-independent cSTM dynamics}. This function requires inputting a list of all model parameter values, \texttt{l\_params\_all} and whether the user wants print messages via the \texttt{verbose} parameter.
 \item
-  A function called \texttt{calculate\_ce\_out} that calculates total discounted costs and QALYs based on the \texttt{decision\_model} function output.
+  A function called \texttt{calculate\_ce\_out(l\_params\_all,\ n\_wtp\ =\ 100000)} that calculates total discounted costs and QALYs based on the \texttt{decision\_model} function output. This function also computes the net monetary benefit (NMB) for a given willingness-to-pay threshold, specified by the argument \texttt{n\_wtp}.
 \end{enumerate}
 
 These functions are provided in the Supplementary Material and the accompanying GitHub repository of this manuscript.
@@ -1058,9 +1058,9 @@ In general, cSTMs are recommended when the number of states is ``not too large''
 
 With increasing model complexity and interdependency of functions to conduct various analyses like PSA, it is important to ensure all code and functions work as expected and all elements of cSTM are valid. We can achieve this by creating functions that help with model debugging and validation and thorough unit testing. In the accompanying GitHub repository, we provided functions to check that transition probability matrices and their elements are valid. However, unit testing is beyond the scope of this tutorial. Still, we refer the reader to a previously published manuscript where we describe unit testing in more detail and provide accompanying code.\textsuperscript{\protect\hyperlink{ref-Alarid-Escudero2019e}{17}}
 
-We focused on discrete-time matrix-form cSTMs, but these can also be implemented via a set of difference equations and continuous-time using differential equations in R.\textsuperscript{\protect\hyperlink{ref-Grimmett2014}{27},\protect\hyperlink{ref-Axler2005}{28}} We refer readers interested in learning more on continuous-time cSTMs to previously published manuscripts\textsuperscript{\protect\hyperlink{ref-VanRosmalen2013}{19},\protect\hyperlink{ref-Cao2016}{29}--\protect\hyperlink{ref-Soares2012}{31}} and a tutorial using R.\textsuperscript{\protect\hyperlink{ref-Frederix2013a}{32}} There are other approaches to construct Markov models in R, most of them through purpose-specific R packages. For example, the \texttt{heemod}\textsuperscript{\protect\hyperlink{ref-Filipovic-Pierucci2017}{33}} package is designed to build Markov models that account for dependency using a pre-defined structure. Although \texttt{heemod} is a well-structured package, it requires users to set up the Markov model structure, specify the parameters, and run analyses in a pre-specified approach. This, however, limits the understanding of how cSTMs and Markov models work and are constructed. This tutorial shows how cSTMs are constructed, parameterized, and run by using only base R, so readers get a deep understanding of this type of decision models. Finally, the variable names used in this paper reflect our own style. While we provide standardized variable names, adopting these conventions is ultimately a personal preference.
+We focused on discrete-time matrix-form cSTMs, but these can also be implemented via a set of difference equations and continuous-time using differential equations in R.\textsuperscript{\protect\hyperlink{ref-Grimmett2014}{27},\protect\hyperlink{ref-Axler2005}{28}} We refer readers interested in learning more on continuous-time cSTMs to previously published manuscripts\textsuperscript{\protect\hyperlink{ref-VanRosmalen2013}{19},\protect\hyperlink{ref-Cao2016}{29}--\protect\hyperlink{ref-Soares2012}{31}} and a tutorial using R.\textsuperscript{\protect\hyperlink{ref-Frederix2013a}{32}} There are other approaches to construct cSTMs in R, most of them through purpose-specific R packages. For example, the \texttt{heemod}\textsuperscript{\protect\hyperlink{ref-Filipovic-Pierucci2017}{33}} package is designed to build cSTMs that account for dependency using a pre-defined structure. Although \texttt{heemod} is a well-structured package, it requires users to set up the cSTM structure, specify the parameters, and run analyses in a pre-specified approach. This, however, limits the understanding of how cSTMs work and are constructed. This tutorial shows how cSTMs are constructed, parameterized, and run using only base R, so readers get a deep understanding of this type of decision model. Finally, the variable names used in this paper reflect our style. While we provide standardized variable names, adopting these conventions is ultimately a personal preference.
 
-In summary, this tutorial provides a conceptualization of cSTMs and a step-by-step guide to implement them in R. We aim to add to the current body of literature and material on building this type of decision models, so health decision scientists and health economists can develop cSTMs in a more flexible, efficient, open-source manner, and encouraging increased transparency and reproducibility.
+In summary, this tutorial provides a conceptualization of time-independent cSTMs and a step-by-step guide to implement them in R. We aim to add to the current body of literature and material on building this type of decision model, so health decision scientists and health economists can develop cSTMs in a more flexible, efficient, open-source manner and encourage increased transparency and reproducibility.
 
 \hypertarget{acknowledgements}{%
 \section{Acknowledgements}\label{acknowledgements}}

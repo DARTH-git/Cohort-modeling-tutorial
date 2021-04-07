@@ -67,7 +67,7 @@ library(darthtools)
 knitr::opts_chunk$set(echo = TRUE)
 doc_type <- knitr::opts_knit$get('rmarkdown.pandoc.to')
 
-# Load costumed functions
+# Load cSTM and CEA functions
 source("../R/Functions STM_01.R")
 # source("../R/Functions.R")
 
@@ -292,7 +292,7 @@ u_D    <- 0     # utility of being dead for one cycle
 u_trtA <- 0.95  # utility when receiving treatment A for one cycle
 ```
 
-To compute the background mortality risk, `p_HD`, from the background mortality rate for the same cycle length (i.e.,`cycle_length=1`), we apply Eq.\@ref(eq:rate-to-prob-ann) to `r_HD`. To compute the mortality risks from S1 and S2, we multiply the background mortality rate `r_HD` by the hazard ratios `hr_S1` and `hr_S2`, respectively, and then convert back to probabilities using Eq.\@ref(eq:rate-to-prob-ann). These calculations are required because hazard ratios only apply to rates and not to probabilities. The code below performs the computation in R. In the supplementary material, we provide R functions that compute transformations between rates and probabilities since these transformations are frequently used.
+To compute the background mortality risk, `p_HD`, from the background mortality rate for the same cycle length (i.e.,`cycle_length=1`), we apply Equation \@ref(eq:rate-to-prob-ann) to `r_HD`. To compute the mortality risks of the cohort in S1 and S2, we multiply the background mortality rate `r_HD` by the hazard ratios `hr_S1` and `hr_S2`, respectively, and then convert back to probabilities using Equation \@ref(eq:rate-to-prob-ann). These calculations are required because hazard ratios only apply to rates and not to probabilities. The code below performs the computation in R. In the supplementary material, we provide R functions that compute transformations between rates and probabilities since these transformations are frequently used.
 
 ```{r Sick-Sicker-Params, eval=TRUE}
 ## Mortality rates
@@ -305,18 +305,18 @@ p_S1D <- 1 - exp(-r_S1D*cycle_length) # probability of dying when Sick
 p_S2D <- 1 - exp(-r_S2D*cycle_length) # probability of dying when Sicker
 ```
 
-To compute the risk of progression from S1 to S2 under treatment B, we first transform `p_S1S2` to a rate, `r_S1S2`, using Eq.\@ref(eq:prob-to-rate-ann). Then, we multiply the hazard ratio of treatment B to the rate of progressing from S1 to S2 and transform it back to probabilities by applying Eq.\@ref(eq:rate-to-prob-ann).
+To compute the risk of progression from S1 to S2 under treatment B, we first transform `p_S1S2` to a rate, `r_S1S2`, using Equation \@ref(eq:prob-to-rate-ann). Then, we multiply the hazard ratio of treatment B to the rate of progressing from S1 to S2 and transform it back to probabilities by applying Equation \@ref(eq:rate-to-prob-ann).
 
 ```{r New-Treatment-2-Effectiveness, eval=TRUE}
 ## Transition probability of becoming Sicker when Sick for treatment B
 # transform probability to rate
-r_S1S2 <- -log(1-p_S1S2)/cycle_length
+r_S1S2 <- -log(1 - p_S1S2)/cycle_length
 # apply hazard ratio to rate to obtain transition rate of becoming Sicker when Sick 
 # for treatment B
 r_S1S2_trtB <- r_S1S2 * hr_S1S2_trtB
 # transform rate to probability
-p_S1S2_trtB <- 1-exp(-r_S1S2_trtB*cycle_length) # probability to become Sicker when Sick 
-                                                # under treatment B conditional on surviving
+p_S1S2_trtB <- 1 - exp(-r_S1S2_trtB*cycle_length) # probability to become Sicker when Sick 
+                                                  # under treatment B conditional on surviving
 ```
 
 # Conceptualizing and implementing time-independent cSTM dynamics
@@ -358,7 +358,7 @@ $$
   \end{bmatrix}. 
 $$
 
-Note that the initial cycle (i.e., cycle 0) corresponds to $t=0$, which is on the first row of $M$. Thus, $M$ stores the output of the cSTM, which could be used to compute various epidemiological outcomes, such as prevalence and survival probability over time, and economic outcomes, such as cumulative resource use and costs. Table \@ref(tab:cSTM-components-table) describes the elements related to the core components of cSTM and their suggested R code names. For a more detailed description of the variable types, data structure, R name for all cSTM elements, please see the Supplementary Material.
+Note that the initial cycle (i.e., cycle 0) corresponds to $t=0$, which is on the first row of $M$. Thus, $M$ stores the output of the cSTM, which could be used to compute various economic outcomes, such as cumulative resource use and costs. Table \@ref(tab:cSTM-components-table) describes the elements related to the core components of cSTM and their suggested R code names. For a more detailed description of the variable types, data structure, R name for all cSTM elements, please see the Supplementary Material.
 
 Table: (\#tab:cSTM-components-table) Components of a cSTM with their R name.
 
@@ -371,13 +371,13 @@ Table: (\#tab:cSTM-components-table) Components of a cSTM with their R name.
 | $P$     | Time-independent transition probability matrix| `m_P` |   |
 | $\mathbf{A}$ | Transition-dynamics array | `a_A` |   |
 
-For the Sick-Sicker model, the entire cohort starts in the H state. Therefore, we create the $n_S \times 1$ initial state vector `v_s_init` with all of the cohort assigned to the H state:
+For the Sick-Sicker model, the entire cohort starts in the H state. Therefore, we create the $1 \times n_S$ initial state vector `v_s_init` with all of the cohort assigned to the H state:
 ```{r Sick-Sicker-s0}
 v_s_init <- c(H = 1, S1 = 0, S2 = 0, D = 0) # initial state vector
 v_s_init
 ```
 
-The variable `v_s_init` is used to initialize $M$ represented by `m_M` for the cohorts under SoC strategy and strategy A because the transition probabilities are the same under both strategies, and by `m_M_trtB` for the cohorts under strategies B and AB because both transition probabilities under both strategies are affected by treatment B.
+The variable `v_s_init` is used to initialize $M$ represented by `m_M` for the cohort under under strategies SoC or A, and by `m_M_trtB` for the cohort under strategies B or AB.
 
 ```{r Sick-Sicker-M}
 ## Initialize cohort trace for SoC
@@ -392,7 +392,7 @@ m_M_trtB <- m_M # structure and initial states remain the same.
 
 Note that the initial state vector, `v_s_init`, can be modified to account for the cohort's distribution across the states at the start of the simulation and might vary by strategy.
 
-Since the Sick-Sicker model consists of `r n_states` states, we create a `r n_states` $\times$ `r n_states` transition probability matrix, `m_P`. We initialize the matrix with default values of zero for all transition probabilities and then populate it with the corresponding transition probabilities. To access an element of `m_P`, we specify first the row number (or name) and then the column number (or name) separated by a comma. For example, the transition probability of going from state Healthy (H) to state Sick (S1) could be accessed by `m_P[1, 2]` or by using the corresponding row or column state-names as characters `m_P["H", "S1"]`. We assume that all transitions to non-death states are conditional on not dying in a cycle. Thus, we first condition on surviving by multiplying the transition probabilities times `1-p_HD`, the probability of not dying in a cycle. For example, to obtain the probability of transitioning from H to S1, we multiply the transition probability from H to S1 conditional of being alive, `p_HS1` by `1-p_HD`.
+Since the Sick-Sicker model consists of `r n_states` states, we create a `r n_states` $\times$ `r n_states` transition probability matrix, `m_P`. We initialize the matrix with default values of zero for all transition probabilities and then populate it with the corresponding transition probabilities. To access an element of `m_P`, we specify first the row number (or name) and then the column number (or name) separated by a comma. For example, the transition probability of going from state Healthy (H) to state Sick (S1) could be accessed by `m_P[1, 2]` or by using the corresponding row or column state-names as characters `m_P["H", "S1"]`. We assume that all transitions to non-death states are conditional on not dying in a cycle. Thus, we first condition on surviving by multiplying the transition probabilities times `1-p_HD`, the probability of not dying in a cycle. For example, to obtain the probability of transitioning from H to S1, we multiply the transition probability from H to S1 conditional on being alive, `p_HS1` by `1-p_HD`.
 
 ```{r Sick-Sicker-P2}
 ## Initialize transition probability matrix
@@ -426,7 +426,7 @@ m_P_trtB["S1", "S1"] <- (1 - p_S1D) * (1 - (p_S1H + p_S1S2_trtB))
 m_P_trtB["S1", "S2"] <- (1 - p_S1D) * p_S1S2_trtB
 ```
 
-Once both transition matrices are created, we verify they are valid by checking that all of their rows sum to one and that each of the transition probabilities of both matrices is between 0 and 1 using the functions `check_sum_of_transition_array` and `check_transition_probability`, respectively, which have been used previously elsewhere[@Alarid-Escudero2019e] and are provided in the `darthtools` package (https://github.com/DARTH-git/darthtools). If a transition matrix is not valid, they will produce an error message.
+Once both transition matrices are created, we verify they are valid by checking that all of their rows sum to one and that each of the transition probabilities of both matrices is between 0 and 1 using the functions `check_sum_of_transition_array` and `check_transition_probability`, respectively, which have been used previously elsewhere[@Alarid-Escudero2019e] and are provided in the `darthtools` package (https://github.com/DARTH-git/darthtools).  If a transition matrix is not valid, the functions will produce an error message to warn the user.
 
 ```{r}
 ### Check if transition probability matrices are valid
@@ -450,19 +450,19 @@ for(t in 1:n_cycles){
 }
 ```
 
-Table \@ref(tab:Trace) shows the cohort trace matrix $M$ of the Sick-Sicker model under the SoC strategy for the first six cycles. The whole cohort starts in the H state and transitions to the rest of the states over time. Given that the D state is absorbing, the proportion in this state increases over time. A graphical representation of the cohort trace for all the cycles is shown in Figure \@ref(fig:Sick-Sicker-Trace-TimeHom).
+Table \@ref(tab:Trace) shows the cohort trace matrix $M$ of the Sick-Sicker model under strategies SoC and A for the first six cycles. The whole cohort starts in the H state and transitions to the rest of the states over time. Given that the D state is absorbing, the proportion in this state increases over time. A graphical representation of the cohort trace for all the cycles is shown in Figure \@ref(fig:Sick-Sicker-Trace-TimeHom).
 
 ```{r Trace, echo=FALSE, message=FALSE, warning=FALSE, purl=FALSE}
 kable(head(round(cbind(Cycle = as.numeric(rownames(m_M)), m_M), 3)), 
       format = ifelse(doc_type == "docx", "markdown", "latex"),  
       row.names = FALSE,
       booktabs = TRUE,
-      caption = "The distribution of the cohort under SoC for the first six cycles of the time-independent Sick-Sicker model. The first row, labeled with cycle 0, contains the distribution of the cohort at time zero.",
+      caption = "The distribution of the cohort under strategies SoC and A for the first six cycles of the time-independent Sick-Sicker model. The first row, labeled with cycle 0, contains the distribution of the cohort at time zero.",
       align = c("c", "c", "c", "c", "c")) %>%
   kable_styling(latex_options = "hold_position")
 ```
 
-```{r Sick-Sicker-Trace-TimeHom, echo=FALSE, fig.cap='Cohort trace of the time-independent cSTM', message=FALSE, warning=FALSE, fig.pos="H"} 
+```{r Sick-Sicker-Trace-TimeHom, echo=FALSE, fig.cap='Cohort trace of the time-independent cSTM under strategies SoC and A.', message=FALSE, warning=FALSE, fig.pos="H"} 
 cols <- get_DARTH_cols()
 lty <-  c("H" = 1, "S1" = 2, "S2" = 4, "D" = 3)
 ggplot(melt(m_M), aes(x = Var1, y = value, 
@@ -480,8 +480,8 @@ ggplot(melt(m_M), aes(x = Var1, y = value,
         legend.background = element_rect(fill = NA))
 ```
 
-# Economic and Epidemiological outcomes
-cSTMs can be used to generate different effectiveness and economic outputs. In a CEA, the outcomes are typically the total expected QALYs and total costs accrued by the cohort over a predefined time horizon. However, epidemiological outcomes are often used to produce other measures of interest or model calibration and validation. Some common epidemiological outcomes include survival, prevalence, incidence, the average number of events, and lifetime risk of events.[@Siebert2012c] In this tutorial, we describe how to generate the effectiveness and economic outcomes. We describe how to compute epidemiological outcomes in an accompanying tutorial.[@Alarid-Escudero2021b]
+# Economic outcomes
+cSTMs can be used to generate different effectiveness and economic outputs. In a CEA, the outcomes are typically the total expected QALYs and total costs accrued by the cohort over a predefined time horizon. However, epidemiological outcomes are often used to produce other measures of interest or model calibration and validation. Some common epidemiological outcomes include survival, prevalence, incidence, the average number of events, and lifetime risk of events.[@Siebert2012c] In this tutorial, we describe how to generate the effectiveness and economic outcomes. In an accompanying tutorial,[@Alarid-Escudero2021b] we describe how to compute epidemiological outcomes.
 
 ## Effectiveness and economic outcomes
 ### State rewards
@@ -490,7 +490,8 @@ A state reward refers to a value assigned to individuals for being in a given st
   \mathbf{y} = M\mathbf{r}.
   (\#eq:exp-rew-cycle)
 \end{equation}
-Note that rewards can also be time- or age-dependent; in such cases, the vector of state rewards will be time-dependent, $\mathbf{r}_t$. For the Sick-Sicker model, we create a vector of utilities and costs for each of the four strategies considered. The vectors of utilities and costs in R, `v_u_SoC` and `v_c_SoC`, respectively, contain the utilities and costs corresponding with being in each of the four health states under SoC, which are shown in Table \@ref(tab:param-table).
+<!-- Note that rewards can also be time- or age-dependent; in such cases, the vector of state rewards will be time-dependent, $\mathbf{r}_t$.  -->
+For the Sick-Sicker model, we create a vector of utilities and costs for each of the four strategies considered. The vectors of utilities and costs in R, `v_u_SoC` and `v_c_SoC`, respectively, contain the utilities and costs corresponding with being in each of the four health states under SoC, which are shown in Table \@ref(tab:param-table).
 
 ```{r State-rewards-UC}
 # Vector of state utilities under SOC
@@ -530,7 +531,7 @@ v_c_strAB <- c(H  = c_H,
                D  = c_D)
 ```
 
-To compute the expected QALYs and costs for the Sick-Sicker model under SoC and strategy A, we apply Eq. \@ref(eq:exp-rew-cycle) by multiplying the cohort trace matrix, `m_M`, times the corresponding strategy-specific state vectors of rewards. Similarly, To compute the expected rewards for strategies B and AB, we multiply the cohort trace matrix accounting for the effectiveness of treatment B, `m_M_trtB`, times their corresponding state vectors of rewards.
+To compute the expected QALYs and costs for the Sick-Sicker model under SoC and strategy A, we apply Equation \@ref(eq:exp-rew-cycle) by multiplying the cohort trace matrix, `m_M`, times the corresponding strategy-specific state vectors of rewards. Similarly, To compute the expected rewards for strategies B and AB, we multiply the cohort trace matrix accounting for the effectiveness of treatment B, `m_M_trtB`, times their corresponding state vectors of rewards.
 
 ```{r Expected-outcomes-each-cycle}
 # Vector of QALYs under SoC
@@ -552,7 +553,7 @@ v_cost_strAB <- m_M_trtB %*% v_c_strAB
 ```
 
 ### Within-cycle correction
-Discretizing a continuous-time cSTM with a discrete-time cSTM might introduce biases in the time spent on each state.[@VanRosmalen2013] One approach to reducing these biases is to reduce cycle length, which will require simulating the model for a larger number of cycles, which sometimes is not computationally efficient. Another approach to better approximate the expected rewards of cumulative health and cost outcomes from a continuous-time process using a discrete-time model is to use within-cycle corrections (WCC).[@Siebert2012c, @Hunink2014] In this tutorial, we use Simpson's 1/3rd rule as a WCC by multiplying the rewards (e.g., costs and effectiveness) by $1/3$ in the first and last cycles, by $4/3$ if cycle number is odd, and by $2/3$ if the cycle number is even.[@Elbasha2016, @Elbasha2016a] We implement the WCC by generating a column vector $\mathbf{wcc}$ of size $n_T+1$ with values corresponding to the first, $t=0$, and last cycle, $t= n_T + 1$, equal to $1/3$, and the entries corresponding to the odd and even cycles with $4/3$ and $2/3$, respectively.
+Discretizing a continuous-time cSTM with a discrete-time cSTM might introduce biases in the time spent on each state.[@VanRosmalen2013] One approach to reducing these biases is to reduce cycle length, which will require simulating the model for a larger number of cycles, which sometimes is not computationally efficient. Another approach to better approximate the expected rewards of cumulative health and cost outcomes from a continuous-time process using a discrete-time model is to use within-cycle corrections (WCC).[@Siebert2012c, @Hunink2014] In this tutorial, we use Simpson's 1/3rd rule as a WCC by multiplying the rewards (e.g., costs and effectiveness) by $1/3$ in the first and last cycles, by $4/3$ if cycle number is odd, and by $2/3$ if the cycle number is even.[@Elbasha2016, @Elbasha2016a] We implement the WCC by generating a column vector $\mathbf{wcc}$ of size $n_T+1$ with values corresponding to the first, $t=0$, and last cycle, $t= n_T + 1$, equal to $1/3$, and the entries corresponding to the even and odd cycles with $2/3$ and $4/3$, respectively.
 
 \[
   \mathbf{wcc} = \left[\frac{1}{3}, \frac{2}{3}, \frac{4}{3}, \cdots, \frac{1}{3}\right]
@@ -561,9 +562,9 @@ Discretizing a continuous-time cSTM with a discrete-time cSTM might introduce bi
 The within-cycle correction vector is the same for both costs and QALYs; thus, only one vector, `v_wcc`, is required.
 ```{r within-cycle-vector}
 ## Vector with cycles
-v_cycles <- seq(1, n_cycles+1)
+v_cycles <- seq(1, n_cycles + 1)
 ## Generate 2/3 and 4/3 multipliers for even and odd entries, respectively
-v_wcc <- ((v_cycles %% 2)==0)*(2/3) + ((v_cycles %% 2)!=0)*(4/3)
+v_wcc <- ((v_cycles %% 2) == 0)*(2/3) + ((v_cycles %% 2) != 0)*(4/3)
 ## Substitute 1/3 in first and last entries
 v_wcc[1] <- v_wcc[n_cycles + 1] <- 1/3
 ```
@@ -593,7 +594,7 @@ To account for both discounting and within-cycle correction, we incorporate $\ma
  (\#eq:tot-exp-disc-rewd-wcc)
 \end{equation}
 
-To compute the total expected discounted QALYs and costs under all four strategies accounting for within-cycle correction, we apply equation \@ref(eq:tot-exp-disc-rewd-wcc) to the vectors with the rewards, discounts, and within-cycle correction.
+To compute the total expected discounted QALYs and costs under all four strategies accounting for within-cycle correction, we apply Equation \@ref(eq:tot-exp-disc-rewd-wcc) to the vectors with the rewards, discounts, and within-cycle correction.
 
 ```{r Expected-outcomes-all-cycles}
 ## Expected discounted QALYs under SoC
@@ -633,7 +634,7 @@ kable(m_outcomes,
   kable_styling(latex_options = "hold_position")
 ```
 
-The total expected QALYs and costs for the Sick-Sicker model under the four strategies accounting for within-cycle correction are shown in Table \@ref(tab:Expected-outcomes-table). 
+The total expected discounted QALYs and costs for the Sick-Sicker model under the four strategies accounting for within-cycle correction are shown in Table \@ref(tab:Expected-outcomes-table). 
 
 # Cost-effectiveness analysis and incremental cost-effectiveness ratios (ICERs)
 We combine the total expected discounted costs and QALYs for all four strategies into outcome-specific vectors, `v_cost_str` for costs and `v_qaly_str` for QALYs. We use the R package `dampack` (https://cran.r-project.org/web/packages/dampack/)[@Alarid-Escudero2021] to calculate the incremental costs and effectiveness and the incremental cost-effectiveness ratio (ICER) the non-dominated strategies and create the data frame `df_cea` with this information.
@@ -663,7 +664,7 @@ table_cea$`Incremental QALYs` <- round(table_cea$`Incremental QALYs`, 3)
 table_cea$`ICER ($/QALY)` <- comma(round(table_cea$`ICER ($/QALY)`, 0))
 ```
 
-The CEA results of the Sick-Sicker model are presented in Table \@ref(tab:table-cea). SoC is the least costly and effective strategy, followed by Strategy B producing an expected benefit of `r round(table_cea[2, 5], 3)` QALYs per individual for an additional expected cost of \$`r table_cea[2, 4]` with an ICER of \$`r table_cea[2, 6]`/QALY followed by Strategy AB with an ICER \$`r table_cea[3, 6]`/QALY. Strategy A is a dominated strategy. 
+The CEA results of the Sick-Sicker model are presented in Table \@ref(tab:table-cea). SoC is the least costly and effective strategy, followed by Strategy B producing an expected incremental benefit of `r round(table_cea[2, 5], 3)` QALYs per individual for an additional expected cost of \$`r table_cea[2, 4]` with an ICER of \$`r table_cea[2, 6]`/QALY followed by Strategy AB with an ICER \$`r table_cea[3, 6]`/QALY. Strategy A is a dominated strategy. 
 <!-- The total expected QALYs for SoC and strategies A, B and AB are `r round(n_tot_qaly_SoC, 3)`, `r round(n_tot_qaly_strA, 3)`, `r round(n_tot_qaly_strB, 3)` and `r round(n_tot_qaly_strAB, 3)`, respectively. The total expected costs for SoC and strategies A, B and AB are `r dollar(round(n_tot_cost_SoC, 0))`, `r dollar(round(n_tot_cost_strA, 0))`, `r dollar(round(n_tot_cost_strB, 0))` and `r dollar(round(n_tot_cost_strB, 0))`, respectively.  -->
 
 ```{r table-cea, echo=FALSE, message=FALSE, warning=FALSE, purl=FALSE}
@@ -675,9 +676,9 @@ kable(table_cea,
   kable_styling(latex_options = "hold_position")
 ```
 
-Figure \@ref(fig:Sick-Sicker-CEA) shows the cost-effectiveness efficient frontier of all four strategies for the Sick-Sicker model.
+Figure \@ref(fig:Sick-Sicker-CEA) shows the cost-effectiveness efficient frontier of all four strategies for the time-independent Sick-Sicker model.
 
-```{r Sick-Sicker-CEA, echo=FALSE, fig.cap='Cost-effectiveness efficient frontier of all four strategies for the Sick-Sicker model.', message=FALSE, warning=FALSE, fig.pos="H"} 
+```{r Sick-Sicker-CEA, echo=FALSE, fig.cap='Cost-effectiveness efficient frontier of all four strategies for the time-independent Sick-Sicker model.', message=FALSE, warning=FALSE, fig.pos="H"} 
 plot(df_cea, label = "all", txtsize = 16) +
   expand_limits(x = c(NA, 21.8)) +
   theme(legend.position = c(0.8, 0.2))
@@ -705,10 +706,9 @@ df_e <- as.data.frame(matrix(0,
 colnames(df_e) <- v_names_str
 ```
 
-
-1. A function called `generate_psa_params(n_sim, seed)` that generates a sample of size `n_sim` for the model parameters from their distributions defined in Table \@ref(tab:param-table). The function also takes a seed number as input, which ensures reproducibility of the PSA results. By calling this function, we generate the sample of parameter sets for the PSA: `df_psa_input <- generate_psa_params(n_sim = n_sim)`.
-2. A function called `decision_model` that wraps the R code of the cSTM described in section [Conceptualizing and implementing time-independent cSTM dynamics](#conceptualizing-and-implementing-time-independent-cSTM-dynamics) and requires as input a list of model parameter values.
-3. A function called `calculate_ce_out` that calculates total discounted costs and QALYs based on the `decision_model` function output.
+1. A function called `generate_psa_params(n_sim, seed)` with arguments `n_sim` and `seed`. The function generates a sample of size `n_sim` for the model parameters from their distributions defined in Table \@ref(tab:param-table). The function also takes a seed number as input, `seed`, which ensures reproducibility of the PSA results. By calling this function, we generate the sample of parameter sets for the PSA, `df_psa_input`, via: `df_psa_input <- generate_psa_params(n_sim = n_sim)`.
+2. A function called `decision_model(l_params_all)` that wraps the R code of the time-independent cSTM described in section [Conceptualizing and implementing time-independent cSTM dynamics](#conceptualizing-and-implementing-time-independent-cSTM-dynamics). This function requires inputting a list of all model parameter values, `l_params_all` and whether the user wants print messages via the `verbose` parameter.
+3. A function called `calculate_ce_out(l_params_all, n_wtp = 100000)` that calculates total discounted costs and QALYs based on the `decision_model` function output. This function also computes the net monetary benefit (NMB) for a given willingness-to-pay threshold, specified by the argument `n_wtp`.
 
 These functions are provided in the Supplementary Material and the accompanying GitHub repository of this manuscript.
 
@@ -777,9 +777,9 @@ In general, cSTMs are recommended when the number of states is "not too large".[
 
 With increasing model complexity and interdependency of functions to conduct various analyses like PSA, it is important to ensure all code and functions work as expected and all elements of cSTM are valid. We can achieve this by creating functions that help with model debugging and validation and thorough unit testing. In the accompanying GitHub repository, we provided functions to check that transition probability matrices and their elements are valid. However, unit testing is beyond the scope of this tutorial. Still, we refer the reader to a previously published manuscript where we describe unit testing in more detail and provide accompanying code.[@Alarid-Escudero2019e]
 
-We focused on discrete-time matrix-form cSTMs, but these can also be implemented via a set of difference equations and continuous-time using differential equations in R.[@Grimmett2014; @Axler2005] We refer readers interested in learning more on continuous-time cSTMs to previously published manuscripts[@Cao2016;@VanRosmalen2013;@Begun2013;@Soares2012] and a tutorial using R.[@Frederix2013a] There are other approaches to construct Markov models in R, most of them through purpose-specific R packages. For example, the `heemod`[@Filipovic-Pierucci2017] package is designed to build Markov models that account for dependency using a pre-defined structure. Although `heemod` is a well-structured package, it requires users to set up the Markov model structure, specify the parameters, and run analyses in a pre-specified approach. This, however, limits the understanding of how cSTMs and Markov models work and are constructed. This tutorial shows how cSTMs are constructed, parameterized, and run by using only base R, so readers get a deep understanding of this type of decision models. Finally, the variable names used in this paper reflect our own style. While we provide standardized variable names, adopting these conventions is ultimately a personal preference.
+We focused on discrete-time matrix-form cSTMs, but these can also be implemented via a set of difference equations and continuous-time using differential equations in R.[@Grimmett2014; @Axler2005] We refer readers interested in learning more on continuous-time cSTMs to previously published manuscripts[@Cao2016;@VanRosmalen2013;@Begun2013;@Soares2012] and a tutorial using R.[@Frederix2013a] There are other approaches to construct cSTMs in R, most of them through purpose-specific R packages. For example, the `heemod`[@Filipovic-Pierucci2017] package is designed to build cSTMs that account for dependency using a pre-defined structure. Although `heemod` is a well-structured package, it requires users to set up the cSTM structure, specify the parameters, and run analyses in a pre-specified approach. This, however, limits the understanding of how cSTMs work and are constructed. This tutorial shows how cSTMs are constructed, parameterized, and run using only base R, so readers get a deep understanding of this type of decision model. Finally, the variable names used in this paper reflect our style. While we provide standardized variable names, adopting these conventions is ultimately a personal preference.
 
-In summary, this tutorial provides a conceptualization of cSTMs and a step-by-step guide to implement them in R. We aim to add to the current body of literature and material on building this type of decision models, so health decision scientists and health economists can develop cSTMs in a more flexible, efficient, open-source manner, and encouraging increased transparency and reproducibility.
+In summary, this tutorial provides a conceptualization of time-independent cSTMs and a step-by-step guide to implement them in R. We aim to add to the current body of literature and material on building this type of decision model, so health decision scientists and health economists can develop cSTMs in a more flexible, efficient, open-source manner and encourage increased transparency and reproducibility.
 
 # Acknowledgements
 Dr. Alarid-Escudero was supported by a grant from the National Cancer Institute (U01-CA-199335) as part of the Cancer Intervention and Surveillance Modeling Network (CISNET) and the Gordon and Betty Moore Foundation. Miss Krijkamp was supported by a fellowship from a grant by the Gordon and Betty Moore Foundation (GBMF7853) through the Society for Medical Decision Making (SMDM). Dr. Enns was supported by a grant from the National Institute of Allergy and Infectious Diseases of the National Institutes of Health under award no. K25AI118476. Dr. Hunink receives Royalties from Cambridge University Press for a textbook on Medical Decision Making, reimbursement of expenses from the European Society of Radiology (ESR) for work on the ESR guidelines for imaging referrals, reimbursement of expenses from the European Institute for Biomedical Imaging Research (EIBIR) for membership of the Scientific Advisory Board, and research funding from the American Diabetes Association, the Netherlands Organization for Health Research and Development, the German Innovation Fund, Netherlands Educational Grant ("Studie Voorschot Middelen"), and the Gordon and Betty Moore Foundation. Dr. Jalal was supported by a grant from the National Institute on Drug Abuse of the National Institute of Health under award no. K01DA048985. The content is solely the authors' responsibility and does not necessarily represent the official views of the National Institutes of Health. The funding agencies had no role in the study's design, interpretation of results, or writing of the manuscript. The funding agreement ensured the authors’ independence in designing the study, interpreting the data, writing, and publishing the report. We also want to thank the anonymous reviewers of *Medical Decision Making* for their valuable suggestions and the students that took our classes to try our materials.
