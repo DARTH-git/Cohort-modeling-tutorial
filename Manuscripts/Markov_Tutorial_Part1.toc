@@ -10,6 +10,6 @@
 \contentsline {subsubsection}{\numberline {5.1.3}Discounting future rewards}{16}{subsubsection.5.1.3}%
 \contentsline {section}{\numberline {6}Cost-effectiveness analysis and incremental cost-effectiveness ratios (ICERs)}{17}{section.6}%
 \contentsline {section}{\numberline {7}Probabilistic sensitivity analysis}{18}{section.7}%
-\contentsline {section}{\numberline {8}Discussion}{21}{section.8}%
-\contentsline {section}{\numberline {9}Acknowledgements}{23}{section.9}%
-\contentsline {section}{References}{23}{section*.2}%
+\contentsline {section}{\numberline {8}Discussion}{22}{section.8}%
+\contentsline {section}{\numberline {9}Acknowledgements}{24}{section.9}%
+\contentsline {section}{References}{24}{section*.2}%

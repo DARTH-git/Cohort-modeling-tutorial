@@ -1169,6 +1169,16 @@ ceac_obj$Strategy <- ordered(ceac_obj$Strategy, v_names_str)
 elc_obj <- calc_exp_loss(wtp = v_wtp, psa = l_psa)
 ```
 
+To conduct the PSA of the CEA using the time-independent Sick-Sicker cSTM, we sampled `r comma(n_sim)` parameter sets for all the parameters from the distributions defined in Table \@ref(tab:). For each sampled parameter set, we simulated each strategy. Results from a PSA can be represented in various ways. For example, the joint distribution, 95% confidence ellipse, and the expected values of the total discounted costs and QALYs for each strategy can be plotted in a cost-effectiveness (CE) scatter plot ( Figure \@ref(fig:CE-scatter-TimeDep)),[@Briggs2002] where each of the `r comma(n_sim)` simulations are plotted as a point in the graph. The CE scatter plot for CEA using the time-independent model shows that strategy AB has the highest expected costs and QALYs. Standard of care has the lowest expected cost and QALYs. Strategy B is more effective and least costly than Strategy A. Strategy A is a strongly dominated strategy.
+
+```{r CE-scatter-TimeDep, echo=FALSE, fig.cap='Cost-effectiveness scatter plot.', message=FALSE, warning=FALSE, fig.pos="H"} 
+# CEAC & CEAF plot
+plot(l_psa, txtsize = 16) +
+  xlab("Effectiveness (QALYs)") +
+  guides(col = guide_legend(nrow = 2)) +
+  theme(legend.position = "bottom")
+```
+
 In Figure \@ref(fig:CEAC-AgeDep), we present the cost-effectiveness acceptability curves (CEACs), which shows the probability that each strategy is cost-effective, and the cost-effectiveness frontier (CEAF) which shows the strategy with the highest expected monetary benefit, over a range of willingness-to-pay (WTP) thresholds. The net monetary benefit for each strategy is defined as the product of total discounted QALYs and the WTP threshold minus the total discounted costs, calculated for each PSA parameter set sample. At WTP thresholds less than \$65,000 per QALY, SoC is the strategy with the highest probability of being cost-effective and the highest expected net monetary benefit. Strategy B has the highest probability of being cost-effective and the highest expected net monetary benefit for WTP thresholds between \$65,000 and \$100,000 per QALY. Strategy AB, has the highest expected net monetary benefit for WTP thresholds greater than or equal to \$100,000 per QALY and is the strategy with the highest probability of being cost-effective.
 
 ```{r CEAC-AgeDep, echo=FALSE, fig.cap='Cost-effectiveness acceptability curves (CEACs) and frontier (CEAF).', message=FALSE, warning=FALSE, fig.pos="H"} 
