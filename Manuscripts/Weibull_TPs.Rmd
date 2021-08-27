@@ -1,0 +1,52 @@
+---
+title: "Weibull transition probabilities"
+output:
+  bookdown::pdf_book:
+    toc: no
+  # pdf_document: default
+  # html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Weibull hazard
+To add a state-residence dependency to the simulation-time-dependent Sick-Sicker model defined above, we assume the risk of progression from S1 to S2 increases as a function of the time $\tau = 1, \ldots, n_{\text{tunnels}}$ the cohort remains in the S1 state. This increase follows a Weibull hazard function, $h(\tau)$, defined as
+<!-- To add a state-residence dependency to the simulation-time-dependent Sick-Sicker model defined above, we assume the risk of progression from S1 to S2 increases the longer the cohort remains in the S1 state. This increase follows a Weibull hazard function, $h(\tau)$, defined as  -->
+$$
+  h(\tau) = \gamma \lambda (\lambda \tau)^{\gamma-1},
+$$
+with a corresponding cumulative hazard, $H(\tau)$,
+$$
+H(\tau) = (\lambda \tau)^{\gamma},
+$$
+<!-- where $\tau = 1, \ldots, n_{\text{tunnels}}$ represents the duration that the cohort has been in S1, and $\lambda$ and $\gamma$ are the scale and shape parameters of the Weibull function, respectively. -->
+where $\lambda$ and $\gamma$ are the scale and shape parameters of the Weibull function, respectively.
+
+## Weibull transition probability
+To derive a transition probability from S1 to S2 as a function as a function of the time the cohort spends in S1, $p_{\left[S1_{\tau},S2, \tau\right]}$, from $H(\tau)$, we use the following equation[@Diaby2014]
+\begin{equation}
+p_{\left[S1_{\tau},S2, \tau\right]} = 1-\exp{(H(\tau-1) - H(\tau))}
+(\#eq:tp-from-H)
+\end{equation}
+
+Substituting the Weibull cumulative hazard in Equation \@ref(eq:tp-from-H), the transition probability is
+$$
+p_{\left[S1_{\tau},S2, \tau\right]} = 1-\exp{((\lambda (\tau-1))^{\gamma} -  (\lambda \tau)^{\gamma})}
+$$
+and simplifies to
+$$
+p_{\left[S1_{\tau},S2, \tau\right]} = 1-\exp{(\lambda^{\gamma}((\tau-1)^{\gamma} - \tau^{\gamma}))}
+$$
+
+## Effectiveness of a treatment as a hazard ratio
+To account for the effectiveness of a treatment, we multiply the hazard ratio of the treatment by the difference of the cumulative hazards.
+$$
+p\_treat_{\left[S1_{\tau},S2, \tau\right]} = 1-\exp{(hr\cdot\left((\lambda (\tau-1))^{\gamma} -  (\lambda \tau)^{\gamma})\right)}
+$$
+or
+$$
+p_{\left[S1_{\tau},S2, \tau\right]} = 1-\exp{(hr\cdot\lambda^{\gamma}((\tau-1)^{\gamma} - \tau^{\gamma}))},
+$$
+which is equivalent to transform $p_{\left[S1_{\tau},S2, \tau\right]}$ to a vector of rates, $r_{\left[S1_{\tau},S2, \tau\right]}$, and multiply it by the hazard ratio of the treatment, $hr$. Then, we transform back to probabilities to produce $p\_treat_{\left[S1_{\tau},S2, \tau\right]}$, a transition probabilities that accounts for the duration of S1 state-residence under the treatment.
