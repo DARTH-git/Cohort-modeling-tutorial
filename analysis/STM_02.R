@@ -42,7 +42,7 @@ rm(list = ls())    # remove any variables in R's memory
 # install.packages("boot")      # to handle log odds and log odds ratios
 # install.packages("devtools")  # to ensure compatibility among packages
 # install.packages("dampack")   # for CEA and calculate ICERs
-# devtools::install_github("DARTH-git/darthtools") # to install darthtools from GitHub
+# devtools::install_github("DARTH-git/darthtools") # to install darthtools (>= 0.4.1) from GitHub
 
 ### Load packages
 library(dplyr)    
@@ -54,6 +54,12 @@ library(scales)
 library(boot)
 library(dampack) 
 library(darthtools)
+# darthtools versions up to 0.4.0 assign the Simpson's 1/3 within-cycle
+# correction weights by vector position instead of by time (see README.md).
+if (utils::packageVersion("darthtools") < "0.4.1") {
+  stop("Please update darthtools to version 0.4.1 or later: ",
+       "remotes::install_github(\"DARTH-git/darthtools\")")
+}
 library(doParallel)
 
 ### Load supplementary functions
@@ -112,7 +118,7 @@ c_trtB <- 13000 # cost of treatment B
 u_H    <- 1     # utility when Healthy 
 u_S1   <- 0.75  # utility when Sick 
 u_S2   <- 0.5   # utility when Sicker
-u_D    <- 0     # utility when Healthy 
+u_D    <- 0     # utility when Dead 
 u_trtA <- 0.95  # utility when being treated
 
 ## Transition rewards
