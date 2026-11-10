@@ -60,7 +60,7 @@ decision_model <- function(l_params_all, verbose = FALSE) {
     ## History-dependent transition probability of becoming Sicker when Sick
     # conditional on surviving
     # Weibull hazard
-    v_p_S1S2_tunnels <- r_S1S2_lambda * r_S1S2_gamma * (1:n_tunnel_size)^{r_S1S2_gamma-1}
+    v_p_S1S2_tunnels <- r_S1S2_scale * r_S1S2_shape * (1:n_tunnel_size)^{r_S1S2_shape-1}
     
     ## History-dependent transition probability of becoming Sicker when Sick for treatment B
     # transform probability to rate
